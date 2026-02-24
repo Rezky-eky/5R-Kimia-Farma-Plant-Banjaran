@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <!-- Outer Ring - 5 Segmen (Urutan sesuai gambar asli) -->
+    
+    <!-- Segmen 1: RINGKAS (Red) - Top Left -->
+    <path
+        d="M 100,100 L 20,100 A 80,80 0 0,1 41.22,41.22 Z"
+        fill="#DC2626"
+    />
+    <text
+        x="30"
+        y="75"
+        font-family="Arial, sans-serif"
+        font-size="11"
+        font-weight="bold"
+        fill="white"
+        text-anchor="middle"
+        dominant-baseline="middle"
+    >
+        RINGKAS
+    </text>
+    
+    <!-- Segmen 2: RAPI (Blue) - Top Right -->
+    <path
+        d="M 100,100 L 180,100 A 80,80 0 0,1 158.78,41.22 Z"
+        fill="#2563EB"
+    />
+    <text
+        x="140"
+        y="75"
+        font-family="Arial, sans-serif"
+        font-size="11"
+        font-weight="bold"
+        fill="white"
+        text-anchor="middle"
+        dominant-baseline="middle"
+    >
+        RAPI
+    </text>
+    
+    <!-- Segmen 3: RESIK (Orange) - Bottom Right -->
+    <path
+        d="M 100,100 L 158.78,158.78 A 80,80 0 0,1 100,180 Z"
+        fill="#F97316"
+    />
+    <text
+        x="130"
+        y="165"
+        font-family="Arial, sans-serif"
+        font-size="11"
+        font-weight="bold"
+        fill="white"
+        text-anchor="middle"
+        dominant-baseline="middle"
+    >
+        RESIK
+    </text>
+    
+    <!-- Segmen 4: RAWAT (Green) - Bottom Middle (Terbalik) -->
+    <path
+        d="M 100,100 L 100,180 A 80,80 0 0,1 41.22,158.78 Z"
+        fill="#16A34A"
+    />
+    <text
+        x="70"
+        y="165"
+        font-family="Arial, sans-serif"
+        font-size="11"
+        font-weight="bold"
+        fill="white"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        transform="rotate(180 70 165)"
+    >
+        RAWAT
+    </text>
+    
+    <!-- Segmen 5: RAJIN (Cyan) - Bottom Left -->
+    <path
+        d="M 100,100 L 41.22,158.78 A 80,80 0 0,1 20,100 Z"
+        fill="#06B6D4"
+    />
+    <text
+        x="30"
+        y="130"
+        font-family="Arial, sans-serif"
+        font-size="11"
+        font-weight="bold"
+        fill="white"
+        text-anchor="middle"
+        dominant-baseline="middle"
+    >
+        RAJIN
+    </text>
+    
+    <!-- Inner White Circle -->
+    <circle cx="100" cy="100" r="60" fill="white" />
+    
+    <!-- Logo kimia farma di atas kanan -->
+    <g transform="translate(120, 42)">
+        <text
+            x="0"
+            y="0"
+            font-family="Arial, sans-serif"
+            font-size="6.5"
+            font-weight="600"
+            fill="#00529b"
+            text-anchor="start"
+        >
+            kimia farma
+        </text>
+        <text
+            x="0"
+            y="8.5"
+            font-family="Arial, sans-serif"
+            font-size="5"
+            font-weight="500"
+            fill="#00529b"
+            text-anchor="start"
+        >
+            Plant Banjaran
+        </text>
+    </g>
+    
+    <!-- Logo 5R besar di tengah (outline biru gelap) -->
+    <text
+        x="100"
+        y="110"
+        font-family="Arial, sans-serif"
+        font-size="50"
+        font-weight="900"
+        fill="none"
+        stroke="#00529b"
+        stroke-width="3"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        style="letter-spacing: -4px;"
+    >
+        5R
+    </text>
+</svg>

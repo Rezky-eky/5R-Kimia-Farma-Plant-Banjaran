@@ -1,0 +1,241 @@
+<script setup>
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+
+const props = defineProps({
+    dbrItems: {
+        type: Array,
+        default: () => [],
+    },
+    userBagian: {
+        type: String,
+        default: null,
+    },
+});
+
+const isSameDepartment = (item) => props.userBagian && item.bagian === props.userBagian;
+
+const statusTpsOptions = ['Diperlukan', 'Ragu-Ragu', 'Tidak Diperlukan', 'Semua'];
+const selectedStatusFilter = ref('Semua');
+
+const filteredItems = computed(() => {
+    if (selectedStatusFilter.value === 'Semua') {
+        return props.dbrItems;
+    }
+    return props.dbrItems.filter(item => item.status_tps === selectedStatusFilter.value);
+});
+
+const getStatusBadgeClass = (status) => {
+    switch (status) {
+        case 'Diperlukan':
+            return 'bg-blue-100 text-blue-700';
+        case 'Ragu-Ragu':
+            return 'bg-yellow-100 text-yellow-700';
+        case 'Tidak Diperlukan':
+            return 'bg-red-100 text-red-700';
+        default:
+            return 'bg-gray-100 text-gray-700';
+    }
+};
+</script>
+
+<template>
+    <Head title="Daftar Barang Ringkas (DBR)" />
+
+    <AuthenticatedLayout>
+        <template #header>
+            <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
+                Daftar Barang Ringkas (DBR)
+            </h2>
+        </template>
+
+        <div class="py-12">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="overflow-hidden rounded-2xl bg-white/90 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                    <div class="px-8 py-6 border-b border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    Semua Data Daftar Barang Ringkas
+                                </h3>
+                                <p class="mt-2 text-sm text-gray-600">
+                                    Daftar lengkap barang yang tercatat dalam laporan GO ACTION
+                                </p>
+                            </div>
+                            
+                            <!-- Filter Dropdown -->
+                            <div class="flex items-center gap-3">
+                                <label for="status_filter" class="text-sm font-medium text-gray-700">
+                                    Filter Status TPS:
+                                </label>
+                                <select
+                                    id="status_filter"
+                                    v-model="selectedStatusFilter"
+                                    class="rounded-xl border-0 bg-white/95 px-3 py-2 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                >
+                                    <option
+                                        v-for="status in statusTpsOptions"
+                                        :key="status"
+                                        :value="status"
+                                    >
+                                        {{ status }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50/70">
+                                <tr>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        No
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        Tanggal
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        Bagian
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        Nama Ruangan
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        Nama Barang
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        Jumlah
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        No Aktiva/SAP
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        Status di TPS
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        Tindakan Barang
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
+                                    >
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white/95 divide-y divide-gray-100">
+                                <tr
+                                    v-for="(item, index) in filteredItems"
+                                    :key="item.id"
+                                    class="transition-colors hover:bg-gray-50/40"
+                                >
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                        {{ index + 1 }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {{ item.tanggal }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+                                        {{ item.bagian }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {{ item.nama_ruangan }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-800 max-w-xs">
+                                        {{ item.nama_barang }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {{ item.jumlah }} {{ item.satuan }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {{ item.no_aktiva_sap }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            :class="['inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold', getStatusBadgeClass(item.status_tps)]"
+                                        >
+                                            {{ item.status_tps }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                                        {{ item.tindakan_barang || '-' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <!-- Barang dari bagian lain: Offer/Sale = meminta dari bagian lain -->
+                                        <template v-if="!isSameDepartment(item)">
+                                            <Link
+                                                :href="route('go_offer.create', { go_action_id: item.go_action_id, dbr_index: item.dbr_index, mode: 'request' })"
+                                                class="inline-flex items-center mr-2 px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+                                            >
+                                                Offer
+                                            </Link>
+                                            <Link
+                                                :href="route('go_sale.create', { go_action_id: item.go_action_id, dbr_index: item.dbr_index, mode: 'request' })"
+                                                class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+                                            >
+                                                Sale
+                                            </Link>
+                                        </template>
+                                        <!-- Barang dari bagian sendiri: Offer/Sale ke User (mention) -->
+                                        <template v-else>
+                                            <Link
+                                                :href="route('go_offer.create', { go_action_id: item.go_action_id, dbr_index: item.dbr_index, mode: 'mention' })"
+                                                class="inline-flex items-center mr-2 px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+                                            >
+                                                Offer ke User
+                                            </Link>
+                                            <Link
+                                                :href="route('go_sale.create', { go_action_id: item.go_action_id, dbr_index: item.dbr_index, mode: 'mention' })"
+                                                class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
+                                            >
+                                                Sale ke User
+                                            </Link>
+                                        </template>
+                                    </td>
+                                </tr>
+                                <tr v-if="filteredItems.length === 0">
+                                    <td
+                                        colspan="10"
+                                        class="px-6 py-10 text-center text-sm text-gray-500"
+                                    >
+                                        Tidak ada data DBR yang ditemukan.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </AuthenticatedLayout>
+</template>
+
