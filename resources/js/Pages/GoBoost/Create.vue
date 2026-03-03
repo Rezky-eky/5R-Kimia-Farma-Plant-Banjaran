@@ -77,7 +77,7 @@ const form = useForm({
 
 const photoPreviews = ref([]);
 const maxFiles = 5;
-const maxFileSize = 2 * 1024 * 1024; // 2MB in bytes
+const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
 const errorMessage = ref('');
 const fileInputRef = ref(null);
 
@@ -106,7 +106,7 @@ const handleFileChange = (event) => {
     const validFiles = [];
     for (const file of files) {
         if (file.size > maxFileSize) {
-            errorMessage.value = `File "${file.name}" melebihi 2MB. File diabaikan.`;
+            errorMessage.value = `File "${file.name}" melebihi 10MB. File diabaikan.`;
             continue;
         }
         validFiles.push(file);
@@ -392,7 +392,7 @@ const submit = () => {
                                     </button>
                                     
                                     <p class="mt-3 text-xs font-medium" style="color: #00529b;">
-                                        Maksimal 5 Foto @ 2MB per Foto
+                                        Maksimal 5 Foto @ 10MB per Foto
                                     </p>
                                     <p class="mt-1 text-xs text-gray-500">
                                         Format: JPG, PNG, atau GIF. Klik tombol di atas untuk membuka kamera.

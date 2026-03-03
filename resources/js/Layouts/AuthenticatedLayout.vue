@@ -18,7 +18,7 @@ const isAdmin = computed(() => {
 // State untuk Hamburger Menu
 const showingNavigationDropdown = ref(false);
 // State untuk sidebar admin (mobile: bisa collapse)
-const showAdminSidebar = ref(true);
+const showAdminSidebar = ref(false);
 
 // State dan Logic untuk Notifikasi Flash Message
 const showSuccessNotification = ref(false);
@@ -36,6 +36,12 @@ watch(flashSuccess, (newValue) => {
         }, 7000);
     }
 }, { immediate: true });
+
+// Saat sidebar drawer terbuka di mobile, kunci scroll background
+watch(showAdminSidebar, (isOpen) => {
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+});
 
 // Fungsi untuk menutup notifikasi secara manual
 const closeNotification = () => {
@@ -173,17 +179,26 @@ const closeNotification = () => {
                 </div>
             </nav>
             <div class="flex relative">
+                <!-- Overlay hanya untuk mobile saat drawer terbuka -->
                 <div
                     v-show="showAdminSidebar"
-                    class="fixed inset-0 bg-black/40 z-20 lg:hidden"
+                    class="fixed inset-0 bg-black/45 z-20 lg:hidden"
                     aria-hidden="true"
                     @click="showAdminSidebar = false"
                 />
+
+                <!-- Sidebar: desktop (in-flow + sticky), mobile (fixed drawer) -->
                 <aside
-                    class="flex-shrink-0 transition-all duration-200 z-30 min-h-[calc(100vh-3.5rem)] sticky top-14 lg:w-60 w-60 bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/80 shadow-sm"
-                    :class="showAdminSidebar ? 'w-60' : 'w-0 overflow-hidden lg:w-60'"
+                    class="z-30 bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/80 shadow-sm
+                           fixed lg:sticky top-14 lg:top-14 left-0
+                           h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-3.5rem)]
+                           w-72 sm:w-80 lg:w-60
+                           transform transition-transform duration-200
+                           lg:translate-x-0"
+                    :class="showAdminSidebar ? 'translate-x-0' : '-translate-x-full'"
+                    aria-label="Sidebar navigasi"
                 >
-                    <nav class="py-5 px-3 space-y-1 flex flex-col w-full" :class="{ 'hidden lg:!flex': !showAdminSidebar }">
+                    <nav class="py-5 px-3 space-y-1 flex flex-col w-full">
                         <NavLink v-if="isAdmin" :href="route('admin.dashboard')" :active="route().current('admin.dashboard')">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                             Admin Dashboard
@@ -226,7 +241,11 @@ const closeNotification = () => {
                         </NavLink>
                     </nav>
                 </aside>
-                <div class="flex-1 min-w-0">
+
+                <div
+                    class="flex-1 min-w-0 transition-[transform,filter,opacity] duration-200 lg:transition-none"
+                    :class="showAdminSidebar ? 'lg:opacity-100 lg:scale-100 lg:filter-none opacity-70 scale-[0.985] brightness-75 pointer-events-none' : ''"
+                >
                     <header v-if="$slots.header" class="bg-white border-b border-gray-200">
                         <div class="px-4 py-2 sm:px-6 lg:px-8"><slot name="header" /></div>
                     </header>

@@ -74,6 +74,7 @@ const togglePerbaikanForm = (goBoostId) => {
 
 const fotoPerbaikanPreviews = ref({});
 const maxFiles = 5;
+const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
 const fileInputRefs = ref({});
 
 const handleFotoPerbaikanChange = (event, goBoostId) => {
@@ -89,8 +90,8 @@ const handleFotoPerbaikanChange = (event, goBoostId) => {
 
     const validFiles = [];
     for (const file of files) {
-        if (file.size > 2 * 1024 * 1024) {
-            alert(`File "${file.name}" melebihi 2MB. File diabaikan.`);
+        if (file.size > maxFileSize) {
+            alert(`File "${file.name}" melebihi 10MB. File diabaikan.`);
             continue;
         }
         validFiles.push(file);
@@ -353,7 +354,7 @@ const submitPerbaikan = (goBoostId) => {
                                                                 📷 Ambil Foto Perbaikan
                                                             </button>
                                                             <p class="mt-2 text-xs text-gray-500">
-                                                                Maksimal {{ maxFiles }} foto @ 2MB per foto
+                                                                Maksimal {{ maxFiles }} foto @ 10MB per foto
                                                             </p>
                                                             <div v-if="fotoPerbaikanPreviews[notification.go_boost.id]?.length > 0" class="mt-2 grid grid-cols-2 gap-2">
                                                                 <div

@@ -18,6 +18,7 @@ const props = defineProps({
 const showForm = ref(false);
 const editingReward = ref(null);
 const imagePreview = ref(null);
+const maxImageSize = 10 * 1024 * 1024; // 10MB in bytes
 
 const form = useForm({
     title: '',
@@ -57,6 +58,14 @@ const closeForm = () => {
 const handleImageChange = (event) => {
     const file = event.target.files[0];
     if (file) {
+        if (file.size > maxImageSize) {
+            form.image = null;
+            imagePreview.value = null;
+            form.setError('image', 'Ukuran gambar maksimal 10MB.');
+            event.target.value = '';
+            return;
+        }
+        form.clearErrors('image');
         form.image = file;
         const reader = new FileReader();
         reader.onload = (e) => {

@@ -539,7 +539,7 @@ class AdminController extends Controller
             'title' => 'required|string|max:255',
             'points_required' => 'required|integer|min:1',
             'stock' => 'required|integer|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'is_active' => 'boolean',
         ]);
 
@@ -572,7 +572,7 @@ class AdminController extends Controller
             'title' => 'required|string|max:255',
             'points_required' => 'required|integer|min:1',
             'stock' => 'required|integer|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
             'is_active' => 'boolean',
         ]);
 

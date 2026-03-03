@@ -89,7 +89,7 @@ class GoBoostController extends Controller
             'pic_terkait' => 'required|string|max:255',
             'mentioned_user_id' => 'nullable|exists:users,id',
             'photo_temuan' => 'nullable|array|max:5',
-            'photo_temuan.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo_temuan.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
         ]);
 
         $photoPaths = [];
@@ -164,7 +164,7 @@ class GoBoostController extends Controller
         $validatedData = $request->validate([
             'keterangan_perbaikan' => 'required|string',
             'foto_perbaikan' => 'nullable|array|max:5',
-            'foto_perbaikan.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'foto_perbaikan.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
         ]);
 
         $photoPaths = [];

@@ -33,7 +33,7 @@ class GoActionController extends Controller
             'nama_ruangan' => 'nullable|string|max:255',
             'penjelasan_aksi' => 'nullable|string',
             'foto_kegiatan' => 'nullable|array|max:5',
-            'foto_kegiatan.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'foto_kegiatan.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
             'list_barang_ringkas' => 'nullable|array',
