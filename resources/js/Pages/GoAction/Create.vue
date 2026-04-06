@@ -8,6 +8,12 @@ import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
 
 const user = usePage().props.auth.user;
+const props = defineProps({
+    importedDbrItems: {
+        type: Array,
+        default: () => [],
+    },
+});
 
 // List Bagian Kimia Farma
 const departemenOptions = [
@@ -69,7 +75,7 @@ const currentDateTime = new Date().toLocaleString('id-ID', {
 const form = useForm({
     nama_karyawan: user.name || '',
     npp_karyawan: user.npp || '',
-    bagian: '',
+    bagian: user.bagian || '',
     nama_ruangan: '',
     penjelasan_aksi: '',
     foto_kegiatan: [],
@@ -77,6 +83,13 @@ const form = useForm({
     longitude: null,
     list_barang_ringkas: [],
 });
+
+const importForm = useForm({
+    excel_file: null,
+});
+
+// (Toggle) tampilan kartu "Daftar Barang Ringkas (DBR)" tanpa menghapus logika form-nya
+const showDaftarBarangRingkas = ref(true);
 
 const fotoPreviews = ref([]);
 const maxFiles = 5;
@@ -131,6 +144,10 @@ const getLocation = () => {
 // Ambil lokasi otomatis saat komponen dimuat
 onMounted(() => {
     getLocation();
+
+    if (Array.isArray(props.importedDbrItems) && props.importedDbrItems.length > 0) {
+        form.list_barang_ringkas = [...props.importedDbrItems];
+    }
 });
 
 const triggerCamera = () => {
@@ -206,6 +223,7 @@ const addBarang = () => {
         nama_barang: '',
         jumlah: 1,
         satuan: 'Unit',
+        distribution_type: '',
         no_aktiva_sap: '',
         kondisi_barang: 'baik',
         status_tps: 'Diperlukan',
@@ -216,6 +234,21 @@ const addBarang = () => {
 // Fungsi untuk menghapus item DBR
 const removeBarang = (index) => {
     form.list_barang_ringkas.splice(index, 1);
+};
+
+const importDbrFromExcel = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    importForm.excel_file = file;
+    importForm.post(route('go_action.import_dbr'), {
+        forceFormData: true,
+        preserveScroll: true,
+        onFinish: () => {
+            importForm.reset('excel_file');
+            event.target.value = '';
+        },
+    });
 };
 
 const submit = () => {
@@ -512,11 +545,17 @@ const submit = () => {
                         </section>
 
                         <!-- Card 3: Daftar Barang Ringkas (DBR) (Opsional - Dinamis) -->
-                        <section class="rounded-2xl bg-white/95 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/40">
+                        <section
+                            v-if="showDaftarBarangRingkas"
+                            class="rounded-2xl bg-white/95 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/40"
+                        >
                             <div class="mb-6 flex items-center justify-between">
                                 <div>
                                     <h4 class="text-lg font-semibold text-gray-900">Daftar Barang Ringkas (DBR)</h4>
                                     <p class="text-sm text-gray-500">Opsional: Catat setiap barang yang ditemukan dalam aksi ringkas ini.</p>
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        Import dari Excel: simpan file sebagai <span class="font-semibold">CSV (UTF-8)</span>, lalu upload di bawah.
+                                    </p>
                                 </div>
                                 <button
                                     type="button"
@@ -529,6 +568,20 @@ const submit = () => {
                                     </svg>
                                     <span>Tambah Barang</span>
                                 </button>
+                            </div>
+
+                            <div class="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                                <label class="mb-2 block text-sm font-semibold text-gray-700">Import DBR dari Excel/CSV</label>
+                                <input
+                                    type="file"
+                                    accept=".csv,.txt"
+                                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+                                    @change="importDbrFromExcel"
+                                />
+                                <p class="mt-2 text-xs text-gray-500">
+                                    Header disarankan: nama_barang, jumlah, satuan, distribution_type, no_aktiva_sap, kondisi_barang, status_tps, tindakan_barang.
+                                </p>
+                                <InputError class="mt-2" :message="importForm.errors.excel_file" />
                             </div>
 
                             <div v-if="form.list_barang_ringkas.length === 0" class="rounded-lg bg-gray-50 border border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
@@ -567,6 +620,21 @@ const submit = () => {
                                                 placeholder="Masukkan nama barang..."
                                             />
                                             <InputError class="mt-2" :message="form.errors[`list_barang_ringkas.${index}.nama_barang`]" />
+                                        </div>
+
+                                        <div>
+                                            <InputLabel :for="`distribution_type_${index}`" value="Jenis Distribusi (Offer/Sale) *" />
+                                            <select
+                                                :id="`distribution_type_${index}`"
+                                                v-model="barang.distribution_type"
+                                                class="mt-2 block w-full rounded-xl border-0 bg-white/95 px-3 py-2 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                                required
+                                            >
+                                                <option value="">-- Pilih Jenis --</option>
+                                                <option value="offer">Offer</option>
+                                                <option value="sale">Sale</option>
+                                            </select>
+                                            <InputError class="mt-2" :message="form.errors[`list_barang_ringkas.${index}.distribution_type`]" />
                                         </div>
 
                                         <div>

@@ -23,6 +23,9 @@ class GoCare extends Model
      */
     protected $fillable = [
         'user_id',
+        'nama_karyawan',
+        'npp_karyawan',
+        'bagian',
         'bagian_temuan',
         'area_temuan',
         'penjelasan_temuan',

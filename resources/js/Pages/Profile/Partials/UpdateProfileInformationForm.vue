@@ -16,6 +16,7 @@ const user = usePage().props.auth.user;
 const form = useForm({
     name: user.name,
     npp: user.npp,
+    bagian: user.bagian ?? '',
 });
 </script>
 
@@ -64,6 +65,22 @@ const form = useForm({
                 />
 
                 <InputError class="mt-2" :message="form.errors.npp" />
+            </div>
+
+            <div>
+                <InputLabel for="bagian" value="Bagian / Departemen" />
+
+                <TextInput
+                    id="bagian"
+                    type="text"
+                    class="mt-1 block w-full"
+                    v-model="form.bagian"
+                    required
+                    placeholder="Contoh: Produksi, QA, Gudang, Finance"
+                    autocomplete="organization"
+                />
+
+                <InputError class="mt-2" :message="form.errors.bagian" />
             </div>
 
             <div class="flex items-center gap-4">

@@ -44,7 +44,11 @@ defineProps({
                                     <h4 class="text-sm font-semibold text-gray-900 mb-2">Informasi</h4>
                                     <div class="bg-gray-50 p-3 rounded-lg space-y-2 text-sm">
                                         <div><strong>Tanggal:</strong> {{ goCare.created_at }}</div>
-                                        <div><strong>Karyawan:</strong> {{ goCare.nama_karyawan }} (NPP: {{ goCare.npp_karyawan }})</div>
+                                        <div>
+                                            <strong>Karyawan:</strong>
+                                            {{ goCare.nama_karyawan || goCare.user_name }} (NPP:
+                                            {{ goCare.npp_karyawan || goCare.user_npp || '-' }})
+                                        </div>
                                         <div><strong>Bagian:</strong> {{ goCare.bagian }}</div>
                                         <div><strong>Bagian Temuan:</strong> {{ goCare.bagian_temuan }}</div>
                                         <div><strong>Area Temuan:</strong> {{ goCare.area_temuan || '-' }}</div>

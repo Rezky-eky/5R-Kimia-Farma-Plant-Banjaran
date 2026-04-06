@@ -16,7 +16,8 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
+        // Fitur "Daftar" (register) dinonaktifkan: route masih ada, tapi link tidak ditampilkan.
+        'canRegister' => false,
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
@@ -31,6 +32,7 @@ Route::middleware('auth')->group(function () {
     
     // GO ACTION Routes
     Route::get('/go-action/create', [GoActionController::class, 'create'])->name('go_action.create');
+    Route::post('/go-action/import-dbr', [GoActionController::class, 'importDbr'])->name('go_action.import_dbr');
     Route::post('/go-action', [GoActionController::class, 'store'])->name('go_action.store');
     Route::get('/go-action/dbr', [GoActionController::class, 'dbrIndex'])->name('go_action.dbr_index');
     
@@ -63,6 +65,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/go-sale', [GoSaleController::class, 'index'])->name('go_sale.index');
     Route::get('/go-sale/create', [GoSaleController::class, 'create'])->name('go_sale.create');
     Route::post('/go-sale', [GoSaleController::class, 'store'])->name('go_sale.store');
+    Route::post('/go-sale/{id}/accept', [GoSaleController::class, 'accept'])->name('go_sale.accept');
+    Route::post('/go-sale/{id}/reject', [GoSaleController::class, 'reject'])->name('go_sale.reject');
     Route::post('/go-sale/{id}/complete', [GoSaleController::class, 'complete'])->name('go_sale.complete');
 });
 

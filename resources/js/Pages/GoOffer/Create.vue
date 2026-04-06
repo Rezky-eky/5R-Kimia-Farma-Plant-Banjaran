@@ -3,21 +3,23 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     goAction: { type: Object, required: true },
-    dbrIndex: { type: Number, required: true },
+    dbrIndex: { type: [Number, String], required: true },
     dbrItem: { type: Object, required: true },
     mode: { type: String, default: 'request' }, // request = meminta dari bagian lain, mention = tawarkan ke user
     targetOptions: { type: Array, default: () => [] },
     userOptions: { type: Array, default: () => [] },
 });
 
+const page = usePage();
+
 const form = useForm({
-    go_action_id: props.goAction.id,
-    dbr_index: props.dbrIndex,
-    mode: props.mode,
+    go_action_id: Number(props.goAction.id),
+    dbr_index: Number(props.dbrIndex),
+    mode: props.mode || 'request',
     target_bagian: '',
     target_user_id: '',
 });
@@ -26,12 +28,12 @@ const isMention = () => props.mode === 'mention';
 </script>
 
 <template>
-    <Head :title="isMention() ? 'Tawarkan ke User - Go Offer' : 'Meminta Barang - Go Offer'" />
+    <Head :title="isMention() ? 'Tawarkan ke User - Go Offer' : 'Ajukan Mutasi DBR - Offer'" />
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between">
                 <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
-                    {{ isMention() ? 'Tawarkan Barang ke User' : 'Meminta Barang dari Bagian Lain' }}
+                    {{ isMention() ? 'Tawarkan Barang ke User' : 'Ajukan Mutasi Barang (DBR)' }}
                 </h2>
                 <Link :href="route('go_offer.index')" class="rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300">
                     ← Kembali
@@ -48,11 +50,24 @@ const isMention = () => props.mode === 'mention';
 
                     <!-- Mode: Meminta dari bagian lain -->
                     <form v-if="!isMention()" @submit.prevent="form.post(route('go_offer.store'))" class="space-y-6">
+                        <div
+                            v-if="page.props.flash?.error"
+                            class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+                            role="alert"
+                        >
+                            {{ page.props.flash.error }}
+                        </div>
+                        <ul
+                            v-if="Object.keys(form.errors).length"
+                            class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 list-disc list-inside space-y-1"
+                        >
+                            <li v-for="(msg, key) in form.errors" :key="key">{{ msg }}</li>
+                        </ul>
                         <p class="text-sm text-gray-700">
-                            Anda meminta barang ini dari <strong>{{ goAction.bagian }}</strong>. Tawaran akan ditujukan ke bagian Anda dan pemilik barang dapat menerima atau menolak.
+                            Anda mengajukan <strong>permintaan mutasi</strong> barang ini ke bagian Anda. Pemilik entri DBR (yang menginput data) akan menerima notifikasi dan dapat menyetujui atau menolak.
                         </p>
                         <div class="flex gap-4">
-                            <PrimaryButton type="submit" :disabled="form.processing">Kirim Permintaan Tawaran</PrimaryButton>
+                            <PrimaryButton type="submit" :disabled="form.processing">Kirim permintaan mutasi</PrimaryButton>
                             <Link :href="route('go_offer.index')" class="inline-flex items-center rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300">
                                 Batal
                             </Link>

@@ -20,11 +20,16 @@ const showingNavigationDropdown = ref(false);
 // State untuk sidebar admin (mobile: bisa collapse)
 const showAdminSidebar = ref(false);
 
+// (Toggle) tampilan fitur "Daftar Barang Ringkas (DBR)" tanpa menghapus fungsinya
+const showDaftarBarangRingkasMenu = ref(true);
+
 // State dan Logic untuk Notifikasi Flash Message
 const showSuccessNotification = ref(false);
+const showErrorNotification = ref(false);
 
 // Computed untuk mendeteksi flash success message
 const flashSuccess = computed(() => page.props.flash?.success);
+const flashError = computed(() => page.props.flash?.error);
 
 // Watch flash success untuk menampilkan notifikasi
 watch(flashSuccess, (newValue) => {
@@ -32,8 +37,22 @@ watch(flashSuccess, (newValue) => {
         showSuccessNotification.value = true;
         setTimeout(() => {
             showSuccessNotification.value = false;
-            page.props.flash.success = null; 
+            if (page.props.flash) {
+                page.props.flash.success = null;
+            }
         }, 7000);
+    }
+}, { immediate: true });
+
+watch(flashError, (newValue) => {
+    if (newValue) {
+        showErrorNotification.value = true;
+        setTimeout(() => {
+            showErrorNotification.value = false;
+            if (page.props.flash) {
+                page.props.flash.error = null;
+            }
+        }, 10000);
     }
 }, { immediate: true });
 
@@ -46,7 +65,16 @@ watch(showAdminSidebar, (isOpen) => {
 // Fungsi untuk menutup notifikasi secara manual
 const closeNotification = () => {
     showSuccessNotification.value = false;
-    page.props.flash.success = null; 
+    if (page.props.flash) {
+        page.props.flash.success = null;
+    }
+};
+
+const closeErrorNotification = () => {
+    showErrorNotification.value = false;
+    if (page.props.flash) {
+        page.props.flash.error = null;
+    }
 };
 </script>
 
@@ -85,6 +113,38 @@ const closeNotification = () => {
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
+                        </button>
+                    </div>
+                </div>
+            </Transition>
+
+            <!-- Flash error (validasi / gagal simpan) -->
+            <Transition
+                enter-active-class="transition ease-out duration-300 transform"
+                enter-from-class="opacity-0 translate-x-full"
+                enter-to-class="opacity-100 translate-x-0"
+                leave-active-class="transition ease-in duration-200 transform"
+                leave-from-class="opacity-100 translate-x-0"
+                leave-to-class="opacity-0 translate-x-full"
+            >
+                <div
+                    v-if="flashError && showErrorNotification"
+                    class="fixed top-4 right-4 z-50 max-w-sm w-full sm:w-auto sm:top-20"
+                >
+                    <div class="rounded-xl bg-red-600 text-white shadow-2xl ring-1 ring-red-700/30 p-4 flex items-start justify-between gap-4">
+                        <div class="flex items-start gap-3 flex-1 min-w-0">
+                            <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="font-medium text-sm sm:text-base break-words">{{ flashError }}</p>
+                        </div>
+                        <button
+                            type="button"
+                            class="shrink-0 text-white/80 hover:text-white"
+                            aria-label="Tutup"
+                            @click="closeErrorNotification"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
                 </div>
@@ -207,7 +267,11 @@ const closeNotification = () => {
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                             Ringkasan 5R
                         </NavLink>
-                        <NavLink :href="route('go_action.dbr_index')" :active="route().current('go_action.dbr_index')">
+                        <NavLink
+                            v-if="showDaftarBarangRingkasMenu"
+                            :href="route('go_action.dbr_index')"
+                            :active="route().current('go_action.dbr_index')"
+                        >
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                             Data Barang Ringkas (DBR)
                         </NavLink>

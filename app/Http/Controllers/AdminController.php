@@ -982,7 +982,11 @@ class AdminController extends Controller
                     ->orWhere('bagian_temuan', 'like', "%{$search}%")
                     ->orWhere('area_temuan', 'like', "%{$search}%")
                     ->orWhere('penjelasan_temuan', 'like', "%{$search}%")
-                    ->orWhere('penjelasan_capa', 'like', "%{$search}%");
+                    ->orWhere('penjelasan_capa', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('npp', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -1026,6 +1030,7 @@ class AdminController extends Controller
                 'foto_after' => $fotoAfter,
                 'created_at' => $goCare->created_at->format('d/m/Y H:i'),
                 'user_name' => $goCare->user->name ?? 'N/A',
+                'user_npp' => $goCare->user->npp ?? null,
             ];
         });
 
@@ -1076,6 +1081,7 @@ class AdminController extends Controller
             'foto_after' => $fotoAfter,
             'created_at' => $goCare->created_at->format('d/m/Y H:i'),
             'user_name' => $goCare->user->name ?? 'N/A',
+            'user_npp' => $goCare->user->npp ?? null,
         ];
 
         return Inertia::render('Admin/GoCareDetail', ['goCare' => $item]);

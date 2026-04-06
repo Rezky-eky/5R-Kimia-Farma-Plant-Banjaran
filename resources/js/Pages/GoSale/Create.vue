@@ -27,12 +27,12 @@ const isMention = () => props.mode === 'mention';
 </script>
 
 <template>
-    <Head :title="isMention() ? 'Jual ke User - Go Sale' : 'Meminta Pembelian - Go Sale'" />
+    <Head :title="isMention() ? 'Jual ke User - Go Sale' : 'Ajukan Beli - Go Sale'" />
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between">
                 <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
-                    {{ isMention() ? 'Jual Barang ke User' : 'Meminta Pembelian dari Bagian Lain' }}
+                    {{ isMention() ? 'Jual Barang ke User' : 'Ajukan Beli Barang DBR' }}
                 </h2>
                 <Link :href="route('go_sale.index')" class="rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300">
                     ← Kembali
@@ -50,7 +50,7 @@ const isMention = () => props.mode === 'mention';
                     <!-- Mode: Meminta pembelian dari bagian lain -->
                     <form v-if="!isMention()" @submit.prevent="form.post(route('go_sale.store'))" class="space-y-6">
                         <p class="text-sm text-gray-700">
-                            Anda meminta pembelian barang ini dari <strong>{{ goAction.bagian }}</strong>. Ajukan harga kesepakatan; pemilik barang dapat menyetujui atau menolak.
+                            Anda mengajukan permintaan pembelian barang ini. Ajukan harga kesepakatan; pemilik barang (creator) dapat menyetujui atau menolak.
                         </p>
                         <div>
                             <InputLabel for="agreed_price" value="Harga yang diajukan (Rp) *" />
@@ -67,7 +67,7 @@ const isMention = () => props.mode === 'mention';
                             <InputError class="mt-2" :message="form.errors.agreed_price" />
                         </div>
                         <div class="flex gap-4">
-                            <PrimaryButton type="submit" :disabled="form.processing">Kirim Permintaan Pembelian</PrimaryButton>
+                            <PrimaryButton type="submit" :disabled="form.processing">Ajukan Beli</PrimaryButton>
                             <Link :href="route('go_sale.index')" class="inline-flex items-center rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300">
                                 Batal
                             </Link>

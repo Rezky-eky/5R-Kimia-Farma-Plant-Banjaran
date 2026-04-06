@@ -1,20 +1,16 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+
+const page = usePage();
 
 const props = defineProps({
     dbrItems: {
         type: Array,
         default: () => [],
     },
-    userBagian: {
-        type: String,
-        default: null,
-    },
 });
-
-const isSameDepartment = (item) => props.userBagian && item.bagian === props.userBagian;
 
 const statusTpsOptions = ['Diperlukan', 'Ragu-Ragu', 'Tidak Diperlukan', 'Semua'];
 const selectedStatusFilter = ref('Semua');
@@ -38,6 +34,46 @@ const getStatusBadgeClass = (status) => {
             return 'bg-gray-100 text-gray-700';
     }
 };
+
+/** Pemilik baris DBR (creator) — bandingkan ID dengan aman (string vs number dari JSON/Inertia). */
+const isRowCreator = (item) =>
+    Number(item.creator_user_id) === Number(page.props.auth?.user?.id);
+
+/** Tombol Request (mutasi): non-creator, baris eligible, belum ada request aktif. */
+const canRequestMutation = (item) => {
+    if (item.ringkas_status !== 'available') {
+        return false;
+    }
+    if (typeof item.mutation_eligible === 'boolean') {
+        return item.mutation_eligible;
+    }
+    return !item.distribution_type || ['offer', 'sale'].includes(item.distribution_type);
+};
+
+const approveOffer = (id) => {
+    if (confirm('Setujui permintaan mutasi ini?')) {
+        router.post(route('go_offer.accept', id));
+    }
+};
+
+const rejectOffer = (id) => {
+    if (confirm('Tolak permintaan mutasi ini?')) {
+        router.post(route('go_offer.reject', id));
+    }
+};
+
+const approveSale = (id) => {
+    if (confirm('Setujui request pembelian (legacy Sale) ini?')) {
+        router.post(route('go_sale.accept', id));
+    }
+};
+
+const rejectSale = (id) => {
+    if (confirm('Tolak request pembelian (legacy Sale) ini?')) {
+        router.post(route('go_sale.reject', id));
+    }
+};
+
 </script>
 
 <template>
@@ -90,64 +126,34 @@ const getStatusBadgeClass = (status) => {
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50/70">
                                 <tr>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-800">
                                         No
                                     </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-800">
                                         Tanggal
                                     </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-800">
                                         Bagian
                                     </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-800">
                                         Nama Ruangan
                                     </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-800">
                                         Nama Barang
                                     </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-800">
                                         Jumlah
                                     </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-800">
                                         No Aktiva/SAP
                                     </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-800">
                                         Status di TPS
                                     </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-gray-800">
                                         Tindakan Barang
                                     </th>
-                                    <th
-                                        scope="col"
-                                        class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-gray-700"
-                                    >
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold uppercase tracking-widest text-gray-800">
                                         Aksi
                                     </th>
                                 </tr>
@@ -158,7 +164,7 @@ const getStatusBadgeClass = (status) => {
                                     :key="item.id"
                                     class="transition-colors hover:bg-gray-50/40"
                                 >
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-center">
                                         {{ index + 1 }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -189,37 +195,66 @@ const getStatusBadgeClass = (status) => {
                                     <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
                                         {{ item.tindakan_barang || '-' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <!-- Barang dari bagian lain: Offer/Sale = meminta dari bagian lain -->
-                                        <template v-if="!isSameDepartment(item)">
-                                            <Link
-                                                :href="route('go_offer.create', { go_action_id: item.go_action_id, dbr_index: item.dbr_index, mode: 'request' })"
-                                                class="inline-flex items-center mr-2 px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
-                                            >
-                                                Offer
-                                            </Link>
-                                            <Link
-                                                :href="route('go_sale.create', { go_action_id: item.go_action_id, dbr_index: item.dbr_index, mode: 'request' })"
-                                                class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
-                                            >
-                                                Sale
-                                            </Link>
-                                        </template>
-                                        <!-- Barang dari bagian sendiri: Offer/Sale ke User (mention) -->
-                                        <template v-else>
-                                            <Link
-                                                :href="route('go_offer.create', { go_action_id: item.go_action_id, dbr_index: item.dbr_index, mode: 'mention' })"
-                                                class="inline-flex items-center mr-2 px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
-                                            >
-                                                Offer ke User
-                                            </Link>
-                                            <Link
-                                                :href="route('go_sale.create', { go_action_id: item.go_action_id, dbr_index: item.dbr_index, mode: 'mention' })"
-                                                class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
-                                            >
-                                                Sale ke User
-                                            </Link>
-                                        </template>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                        <div class="flex flex-wrap justify-end gap-2">
+                                            <!-- Pemilik entri DBR: tidak bisa Offer; bisa Terima/Tolak jika ada request -->
+                                            <template v-if="isRowCreator(item)">
+                                                <template v-if="item.ringkas_status === 'requested' && item.active_offer_id">
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex items-center rounded-full bg-[#00529b]/10 px-3 py-1 text-xs font-semibold text-[#00529b] hover:bg-[#00529b]/20 transition"
+                                                        @click="approveOffer(item.active_offer_id)"
+                                                    >
+                                                        Terima
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition"
+                                                        @click="rejectOffer(item.active_offer_id)"
+                                                    >
+                                                        Tolak
+                                                    </button>
+                                                </template>
+                                                <template v-else-if="item.ringkas_status === 'requested' && item.active_sale_request_id">
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex items-center rounded-full bg-[#00529b]/10 px-3 py-1 text-xs font-semibold text-[#00529b] hover:bg-[#00529b]/20 transition"
+                                                        @click="approveSale(item.active_sale_request_id)"
+                                                    >
+                                                        Terima
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex items-center rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition"
+                                                        @click="rejectSale(item.active_sale_request_id)"
+                                                    >
+                                                        Tolak
+                                                    </button>
+                                                </template>
+                                                <span v-else class="text-xs text-gray-400">Barang Anda</span>
+                                            </template>
+
+                                            <!-- Bagian lain: tautan Request → form mutasi (Go Offer) -->
+                                            <template v-else>
+                                                <Link
+                                                    v-if="canRequestMutation(item)"
+                                                    :href="route('go_offer.create', { go_action_id: item.go_action_id, dbr_index: item.dbr_index, mode: 'request' })"
+                                                    class="inline-flex items-center rounded-full bg-[#00529b]/10 px-3 py-1 text-xs font-semibold text-[#00529b] hover:bg-[#00529b]/20 transition"
+                                                >
+                                                    Request
+                                                </Link>
+                                                <span v-else-if="item.ringkas_status === 'requested'" class="text-xs font-semibold text-amber-800">
+                                                    Sedang diajukan — menunggu pemilik DBR
+                                                </span>
+                                                <span v-else-if="item.ringkas_status === 'allocated'" class="text-xs font-medium text-green-700">
+                                                    Mutasi disetujui
+                                                </span>
+                                                <span v-else-if="item.ringkas_status === 'completed'" class="text-xs font-medium text-green-700">
+                                                    Selesai
+                                                </span>
+                                                <span v-else class="text-xs text-gray-400">—</span>
+                                            </template>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr v-if="filteredItems.length === 0">

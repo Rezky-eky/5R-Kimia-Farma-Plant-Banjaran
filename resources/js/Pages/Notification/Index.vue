@@ -51,6 +51,17 @@ const getNotificationColor = (type) => {
             return 'bg-blue-100 text-blue-800';
         case 'go_boost_perbaikan':
             return 'bg-blue-100 text-blue-800';
+        case 'go_offer_request':
+        case 'go_sale_request':
+            return 'bg-blue-100 text-blue-800';
+        case 'go_offer_request_sent':
+            return 'bg-emerald-100 text-emerald-800';
+        case 'go_offer_approved':
+        case 'go_sale_approved':
+            return 'bg-green-100 text-green-800';
+        case 'go_offer_rejected':
+        case 'go_sale_rejected':
+            return 'bg-red-100 text-red-800';
         default:
             return 'bg-gray-100 text-gray-800';
     }

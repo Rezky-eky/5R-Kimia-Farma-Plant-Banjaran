@@ -119,8 +119,12 @@ const toggleDetail = (id) => {
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900">
                                         <div>
-                                            <div class="font-medium">{{ goCare.nama_karyawan }}</div>
-                                            <div class="text-xs text-gray-500">NPP: {{ goCare.npp_karyawan }}</div>
+                                            <div class="font-medium">
+                                                {{ goCare.nama_karyawan || goCare.user_name }}
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                NPP: {{ goCare.npp_karyawan || goCare.user_npp || '-' }}
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900">
@@ -152,6 +156,13 @@ const toggleDetail = (id) => {
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- Left Column -->
                             <div class="space-y-4">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-2">Karyawan</h4>
+                                    <p class="text-sm text-gray-700 bg-white p-3 rounded-lg">
+                                        {{ goCare.nama_karyawan || goCare.user_name }} (NPP:
+                                        {{ goCare.npp_karyawan || goCare.user_npp || '-' }})
+                                    </p>
+                                </div>
                                 <div v-if="goCare.area_temuan">
                                     <h4 class="text-sm font-semibold text-gray-900 mb-2">Area Temuan</h4>
                                     <p class="text-sm text-gray-700 bg-white p-3 rounded-lg">{{ goCare.area_temuan }}</p>

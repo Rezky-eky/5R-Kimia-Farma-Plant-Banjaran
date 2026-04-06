@@ -70,6 +70,16 @@ class GoCareController extends Controller
             'penjelasan_capa' => $validatedData['penjelasan_capa'],
             'photo_after' => !empty($photoAfterPaths) ? json_encode($photoAfterPaths) : null,
         ];
+
+        if (Schema::hasColumn('go_cares', 'nama_karyawan')) {
+            $data['nama_karyawan'] = $user->name;
+        }
+        if (Schema::hasColumn('go_cares', 'npp_karyawan')) {
+            $data['npp_karyawan'] = $user->npp;
+        }
+        if (Schema::hasColumn('go_cares', 'bagian')) {
+            $data['bagian'] = $validatedData['bagian'];
+        }
         if (Schema::hasColumn('go_cares', 'area_temuan')) {
             $data['area_temuan'] = $validatedData['area_temuan'] ?? null;
         }

@@ -39,10 +39,10 @@ defineProps({
                         <template v-else>
                             <Link
                                 :href="route('login')"
-                                class="inline-flex items-center px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 hover:bg-gray-100"
-                                style="color: #00529b;"
+                                class="inline-flex items-center px-6 py-3 text-sm font-bold rounded-xl text-white shadow-lg shadow-[#00529b]/30 ring-2 ring-[#00529b]/25 transition-all duration-200 hover:shadow-2xl hover:scale-[1.02] hover:bg-[#004080]"
+                                style="background-color: #00529b; border-color: rgba(0, 82, 155, 0.35);"
                             >
-                                Masuk
+                                Login
                             </Link>
 
                             <Link

@@ -37,6 +37,7 @@ class StoreGoActionRequest extends FormRequest
             'list_barang_ringkas.*.nama_barang' => ['required_with:list_barang_ringkas', 'string', 'max:255'],
             'list_barang_ringkas.*.jumlah' => ['required_with:list_barang_ringkas', 'integer', 'min:1'],
             'list_barang_ringkas.*.satuan' => ['required_with:list_barang_ringkas', 'string', 'max:50'],
+            'list_barang_ringkas.*.distribution_type' => ['required_with:list_barang_ringkas', Rule::in(['offer', 'sale'])],
             'list_barang_ringkas.*.no_aktiva_sap' => ['nullable', 'string', 'max:100'],
             'list_barang_ringkas.*.kondisi_barang' => ['required_with:list_barang_ringkas', 'in:baik,rusak,kadaluarsa,lainnya'],
             'list_barang_ringkas.*.status_tps' => ['required_with:list_barang_ringkas', Rule::in(['Diperlukan', 'Ragu-Ragu', 'Tidak Diperlukan'])],

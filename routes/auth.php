@@ -12,10 +12,23 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
+    // Fitur "Daftar user" dinonaktifkan (route tidak dihapus).
+    $registerDisabled = true;
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    if ($registerDisabled) {
+        Route::get('register', function () {
+            abort(404);
+        })->name('register');
+
+        Route::post('register', function () {
+            return redirect()->route('login');
+        });
+    } else {
+        Route::get('register', [RegisteredUserController::class, 'create'])
+            ->name('register');
+
+        Route::post('register', [RegisteredUserController::class, 'store']);
+    }
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
