@@ -8,12 +8,6 @@ import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
 
 const user = usePage().props.auth.user;
-const props = defineProps({
-    importedDbrItems: {
-        type: Array,
-        default: () => [],
-    },
-});
 
 // List Bagian Kimia Farma
 const departemenOptions = [
@@ -69,7 +63,8 @@ const currentDateTime = new Date().toLocaleString('id-ID', {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
+    second: '2-digit',
+    timeZone: 'Asia/Jakarta',
 });
 
 const form = useForm({
@@ -82,10 +77,6 @@ const form = useForm({
     latitude: null,
     longitude: null,
     list_barang_ringkas: [],
-});
-
-const importForm = useForm({
-    excel_file: null,
 });
 
 // (Toggle) tampilan kartu "Daftar Barang Ringkas (DBR)" tanpa menghapus logika form-nya
@@ -144,10 +135,6 @@ const getLocation = () => {
 // Ambil lokasi otomatis saat komponen dimuat
 onMounted(() => {
     getLocation();
-
-    if (Array.isArray(props.importedDbrItems) && props.importedDbrItems.length > 0) {
-        form.list_barang_ringkas = [...props.importedDbrItems];
-    }
 });
 
 const triggerCamera = () => {
@@ -234,21 +221,6 @@ const addBarang = () => {
 // Fungsi untuk menghapus item DBR
 const removeBarang = (index) => {
     form.list_barang_ringkas.splice(index, 1);
-};
-
-const importDbrFromExcel = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    importForm.excel_file = file;
-    importForm.post(route('go_action.import_dbr'), {
-        forceFormData: true,
-        preserveScroll: true,
-        onFinish: () => {
-            importForm.reset('excel_file');
-            event.target.value = '';
-        },
-    });
 };
 
 const submit = () => {
@@ -553,9 +525,6 @@ const submit = () => {
                                 <div>
                                     <h4 class="text-lg font-semibold text-gray-900">Daftar Barang Ringkas (DBR)</h4>
                                     <p class="text-sm text-gray-500">Opsional: Catat setiap barang yang ditemukan dalam aksi ringkas ini.</p>
-                                    <p class="mt-1 text-xs text-gray-500">
-                                        Import dari Excel: simpan file sebagai <span class="font-semibold">CSV (UTF-8)</span>, lalu upload di bawah.
-                                    </p>
                                 </div>
                                 <button
                                     type="button"
@@ -568,20 +537,6 @@ const submit = () => {
                                     </svg>
                                     <span>Tambah Barang</span>
                                 </button>
-                            </div>
-
-                            <div class="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                                <label class="mb-2 block text-sm font-semibold text-gray-700">Import DBR dari Excel/CSV</label>
-                                <input
-                                    type="file"
-                                    accept=".csv,.txt"
-                                    class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
-                                    @change="importDbrFromExcel"
-                                />
-                                <p class="mt-2 text-xs text-gray-500">
-                                    Header disarankan: nama_barang, jumlah, satuan, distribution_type, no_aktiva_sap, kondisi_barang, status_tps, tindakan_barang.
-                                </p>
-                                <InputError class="mt-2" :message="importForm.errors.excel_file" />
                             </div>
 
                             <div v-if="form.list_barang_ringkas.length === 0" class="rounded-lg bg-gray-50 border border-gray-200 px-4 py-6 text-center text-sm text-gray-500">

@@ -147,6 +147,15 @@ const submit = () => {
         errorMessageAfter.value = `Maksimal ${maxFiles} foto diperbolehkan.`;
         return;
     }
+
+    if (form.photo_before.length === 0) {
+        errorMessageBefore.value = 'Foto before wajib diupload minimal 1.';
+        return;
+    }
+    if (form.photo_after.length === 0) {
+        errorMessageAfter.value = 'Foto after wajib diupload minimal 1.';
+        return;
+    }
     
     form.post(route('go_care.store'), {
         forceFormData: true,

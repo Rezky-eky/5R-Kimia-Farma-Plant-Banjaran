@@ -5,6 +5,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GoActionController;
 use App\Http\Controllers\GoBoostController;
 use App\Http\Controllers\GoCareController;
+use App\Http\Controllers\GoCheckController;
+use App\Http\Controllers\GoCheckManagementController;
 use App\Http\Controllers\GoOfferController;
 use App\Http\Controllers\GoSaleController;
 use App\Http\Controllers\NotificationController;
@@ -32,7 +34,6 @@ Route::middleware('auth')->group(function () {
     
     // GO ACTION Routes
     Route::get('/go-action/create', [GoActionController::class, 'create'])->name('go_action.create');
-    Route::post('/go-action/import-dbr', [GoActionController::class, 'importDbr'])->name('go_action.import_dbr');
     Route::post('/go-action', [GoActionController::class, 'store'])->name('go_action.store');
     Route::get('/go-action/dbr', [GoActionController::class, 'dbrIndex'])->name('go_action.dbr_index');
     
@@ -53,6 +54,13 @@ Route::middleware('auth')->group(function () {
     
     // GO BOOST Perbaikan Routes
     Route::post('/go-boost/{id}/perbaikan', [GoBoostController::class, 'submitPerbaikan'])->name('go_boost.submitPerbaikan');
+
+    // Go Check — tim 5R (finder)
+    Route::middleware('five_r.team')->group(function () {
+        Route::get('/go-check/create', [GoCheckController::class, 'create'])->name('go_check.create');
+        Route::post('/go-check', [GoCheckController::class, 'store'])->name('go_check.store');
+    });
+    Route::post('/go-check/{id}/perbaikan', [GoCheckController::class, 'submitPerbaikan'])->name('go_check.submitPerbaikan');
 
     // Go Offer (tawaran barang DBR ke departemen lain)
     Route::get('/go-offer', [GoOfferController::class, 'index'])->name('go_offer.index');
@@ -79,8 +87,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/audit', [AdminController::class, 'auditIndex'])->name('audit.index');
     Route::get('/audit/{id}', [AdminController::class, 'auditDetail'])->name('audit.detail');
     Route::post('/audit/{id}', [AdminController::class, 'storeAudit'])->name('audit.store');
-    Route::post('/audit/{id}/approve', [AdminController::class, 'auditApprove'])->name('audit.approve');
-    Route::post('/audit/{id}/reject', [AdminController::class, 'auditReject'])->name('audit.reject');
     
     // Reward Routes
     Route::get('/reward', [AdminController::class, 'rewardIndex'])->name('reward.index');
@@ -90,16 +96,37 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Data Management Routes
     Route::get('/go-action', [AdminController::class, 'goActionIndex'])->name('go_action.index');
+    Route::get('/go-action/realisasi-mingguan', [AdminController::class, 'goActionWeeklyRealization'])->name('go_action.weekly_realization');
+    Route::get('/go-action/realisasi-mingguan-export.xlsx', [AdminController::class, 'goActionWeeklyRealizationExport'])->name('go_action.weekly_realization_export');
+    Route::get('/go-action/dbr-import', [AdminController::class, 'goActionDbrImport'])->name('go_action.dbr_import');
+    Route::post('/go-action/dbr-import', [AdminController::class, 'goActionDbrImportStore'])->name('go_action.dbr_import_store');
+    Route::get('/go-action/dbr-template.xlsx', [AdminController::class, 'goActionDbrTemplate'])->name('go_action.dbr_template');
+    Route::get('/go-action/dbr-export.xlsx', [AdminController::class, 'goActionDbrExport'])->name('go_action.dbr_export');
     Route::get('/go-boost', [AdminController::class, 'goBoostIndex'])->name('go_boost.index');
     Route::get('/go-boost/{id}', [AdminController::class, 'goBoostDetail'])->name('go_boost.detail');
+    Route::post('/go-boost/{id}/approve', [AdminController::class, 'goBoostApprove'])->name('go_boost.approve');
+    Route::post('/go-boost/{id}/reject', [AdminController::class, 'goBoostReject'])->name('go_boost.reject');
     Route::get('/go-care', [AdminController::class, 'goCareIndex'])->name('go_care.index');
     Route::get('/go-care/{id}', [AdminController::class, 'goCareDetail'])->name('go_care.detail');
+    Route::post('/go-care/{id}/approve', [AdminController::class, 'goCareApprove'])->name('go_care.approve');
+    Route::post('/go-care/{id}/reject', [AdminController::class, 'goCareReject'])->name('go_care.reject');
 
     // Laporan 5R Keseluruhan (dulu Kelola Audit)
     // audit.index, audit.detail, audit.store tetap dipakai
 
     // Go Reward - Dashboard pemenang (ganti Kelola Reward)
     Route::get('/go-reward', [AdminController::class, 'goReward'])->name('go_reward');
+});
+
+// Kelola Go Check — Admin, Ketua 5R, Sekretaris 5R
+Route::middleware(['auth', 'go_check.management'])->prefix('kelola-go-check')->name('go_check.management.')->group(function () {
+    Route::get('/', [GoCheckManagementController::class, 'dashboard'])->name('dashboard');
+    Route::get('/tim-5r', [GoCheckManagementController::class, 'teamIndex'])->name('team');
+    Route::post('/tim-5r/role', [GoCheckManagementController::class, 'updateMemberRole'])->name('team.role');
+    Route::post('/tim-5r/penugasan', [GoCheckManagementController::class, 'syncAssignments'])->name('team.assignments');
+    Route::get('/data', [GoCheckManagementController::class, 'goCheckIndex'])->name('index');
+    Route::post('/{id}/approve', [GoCheckManagementController::class, 'approve'])->name('approve');
+    Route::post('/{id}/reject', [GoCheckManagementController::class, 'reject'])->name('reject');
 });
 
 require __DIR__.'/auth.php';

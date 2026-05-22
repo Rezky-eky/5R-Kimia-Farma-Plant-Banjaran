@@ -2,43 +2,39 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
 
-class GoCare extends Model
+class GoCheck extends Model
 {
-    use HasFactory;
-
-    /**
-     * Nama tabel yang digunakan oleh model.
-     *
-     * @var string
-     */
-    protected $table = 'go_cares';
-
-    /**
-     * Properti yang boleh diisi secara massal (mass assignable).
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'user_id',
-        'nama_karyawan',
-        'npp_karyawan',
+        'finder_user_id',
+        'solver_user_id',
         'bagian',
-        'bagian_temuan',
         'area_temuan',
+        'ruangan_temuan',
         'penjelasan_temuan',
-        'photo_before',
-        'penjelasan_capa',
-        'photo_after',
+        'pic_terkait',
+        'photo_temuan',
+        'status',
+        'keterangan_perbaikan',
+        'foto_perbaikan',
+        'status_perbaikan',
+        'tanggal_perbaikan',
         'approval_status',
         'approved_by',
         'approved_at',
         'rejected_by',
         'rejected_at',
         'reject_comment',
+    ];
+
+    protected $casts = [
+        'tanggal_perbaikan' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public static function hasApprovalWorkflow(): bool
@@ -58,7 +54,14 @@ class GoCare extends Model
             return [];
         }
 
-        return ['approval_status' => 'PENDING'];
+        return [
+            'approval_status' => 'PENDING',
+            'approved_by' => null,
+            'approved_at' => null,
+            'rejected_by' => null,
+            'rejected_at' => null,
+            'reject_comment' => null,
+        ];
     }
 
     public static function approvedAttributes(int|string $approvedBy): array
@@ -93,11 +96,18 @@ class GoCare extends Model
         ];
     }
 
-    /**
-     * Relasi dengan model User.
-     */
-    public function user()
+    public function finder(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'finder_user_id');
+    }
+
+    public function solver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'solver_user_id');
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
     }
 }

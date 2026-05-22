@@ -11,9 +11,9 @@ import { Link, usePage } from '@inertiajs/vue3';
 const page = usePage();
 
 // Computed untuk cek apakah user adalah admin
-const isAdmin = computed(() => {
-    return page.props.auth?.user?.role === 'admin';
-});
+const isAdmin = computed(() => page.props.auth?.user?.role === 'admin');
+const canManageGoCheck = computed(() => !!page.props.auth?.user?.can_manage_go_check);
+const canGoCheckFinder = computed(() => !!page.props.auth?.user?.can_go_check_finder);
 
 // State untuk Hamburger Menu
 const showingNavigationDropdown = ref(false);
@@ -249,21 +249,21 @@ const closeErrorNotification = () => {
 
                 <!-- Sidebar: desktop (in-flow + sticky), mobile (fixed drawer) -->
                 <aside
-                    class="z-30 bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/80 shadow-sm
+                    class="z-30 flex flex-col bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/80 shadow-sm
                            fixed lg:sticky top-14 lg:top-14 left-0
-                           h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-3.5rem)]
+                           h-[calc(100dvh-3.5rem)] lg:h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)]
                            w-72 sm:w-80 lg:w-60
                            transform transition-transform duration-200
                            lg:translate-x-0"
                     :class="showAdminSidebar ? 'translate-x-0' : '-translate-x-full'"
                     aria-label="Sidebar navigasi"
                 >
-                    <nav class="py-5 px-3 space-y-1 flex flex-col w-full">
+                    <nav class="flex-1 min-h-0 overflow-y-auto overscroll-contain py-4 px-3 space-y-1 pb-6 w-full">
                         <NavLink v-if="isAdmin" :href="route('admin.dashboard')" :active="route().current('admin.dashboard')">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                             Admin Dashboard
                         </NavLink>
-                        <NavLink :href="route('dashboard')" :active="route().current('dashboard') && !route().current('admin.*')">
+                        <NavLink :href="route('dashboard')" :active="route().current('dashboard') && !route().current('admin.*') && !route().current('go_check.management.*')">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                             Ringkasan 5R
                         </NavLink>
@@ -274,6 +274,10 @@ const closeErrorNotification = () => {
                         >
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                             Data Barang Ringkas (DBR)
+                        </NavLink>
+                        <NavLink v-if="canManageGoCheck" :href="route('go_check.management.dashboard')" :active="route().current('go_check.management.*')">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                            Kelola Go Check
                         </NavLink>
                         <NavLink :href="route('go_action.create')" :active="route().current('go_action.create')">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -286,6 +290,10 @@ const closeErrorNotification = () => {
                         <NavLink :href="route('go_care.create')" :active="route().current('go_care.create')">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
                             Go Care
+                        </NavLink>
+                        <NavLink v-if="canGoCheckFinder" :href="route('go_check.create')" :active="route().current('go_check.create')">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                            Go Check
                         </NavLink>
                         <NavLink :href="route('go_offer.index')" :active="route().current('go_offer.*')">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>

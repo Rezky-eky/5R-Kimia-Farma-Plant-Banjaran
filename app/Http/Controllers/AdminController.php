@@ -6,10 +6,14 @@ use App\Models\Audit;
 use App\Models\GoAction;
 use App\Models\GoBoost;
 use App\Models\GoCare;
+use App\Models\GoCheck;
 use App\Models\GoOffer;
 use App\Models\GoSale;
 use App\Models\Reward;
 use App\Models\User;
+use App\Services\DbrImportService;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -127,7 +131,7 @@ class AdminController extends Controller
     {
         $query = GoAction::with(['user', 'audit.auditor'])->latest();
         $statusFilter = $request->input('status');
-        if ($statusFilter === 'audited') {
+        if ($statusFilter === 'approved') {
             $query->whereHas('audit', fn ($q) => $q->where('score', '>', 0));
         }
         if ($statusFilter === 'pending') {
@@ -170,10 +174,10 @@ class AdminController extends Controller
                 'penjelasan_aksi' => $goAction->penjelasan_aksi,
                 'foto_url' => $fotoUrl,
                 'jenis_aksi' => 'GO ACTION',
-                'status' => $goAction->audit ? ($goAction->audit->score === 0 ? 'Rejected' : 'Audited') : 'Pending',
+                'status' => $goAction->audit ? ($goAction->audit->score === 0 ? 'Rejected' : 'Approved') : 'Pending',
                 'created_at' => $goAction->created_at->format('d/m/Y H:i'),
                 'created_at_raw' => $goAction->created_at,
-                'can_approve_reject' => true,
+                'can_approve_reject' => false,
                 'detail_route' => 'admin.audit.detail',
                 'detail_id' => $goAction->id,
             ];
@@ -263,8 +267,8 @@ class AdminController extends Controller
             return [
                 'id' => $row->id,
                 'type' => 'go_care',
-                'nama_karyawan' => $row->nama_karyawan,
-                'npp_karyawan' => $row->npp_karyawan,
+                'nama_karyawan' => $row->nama_karyawan ?: ($row->user->name ?? null),
+                'npp_karyawan' => $row->npp_karyawan ?: ($row->user->npp ?? null),
                 'bagian' => $row->bagian,
                 'nama_ruangan' => $row->area_temuan ?? $row->bagian_temuan ?? '-',
                 'penjelasan_aksi' => $row->penjelasan_temuan ?? $row->penjelasan_capa,
@@ -448,67 +452,6 @@ class AdminController extends Controller
     }
 
     /**
-     * Approve laporan Go Action - Hanya menyetujui, tanpa memberi poin.
-     * Poin untuk: Go Boost (saat solver selesai perbaikan, finder + solver masing-masing 10),
-     * Go Care (10 poin saat submit laporan).
-     */
-    public function auditApprove($id)
-    {
-        $goAction = GoAction::findOrFail($id);
-
-        $audit = Audit::where('go_action_id', $id)->first();
-
-        if ($audit) {
-            if ($audit->score === 0) {
-                $audit->update([
-                    'score' => 10,
-                    'notes' => $audit->notes ?: 'Disetujui',
-                    'auditor_id' => Auth::user()->id,
-                ]);
-            }
-            return redirect()
-                ->route('admin.audit.index')
-                ->with('success', 'Laporan sudah diaudit sebelumnya.');
-        }
-
-        Audit::create([
-            'go_action_id' => $id,
-            'score' => 10,
-            'notes' => 'Disetujui',
-            'auditor_id' => Auth::user()->id,
-        ]);
-
-        return redirect()
-            ->route('admin.audit.index')
-            ->with('success', 'Laporan berhasil disetujui.');
-    }
-
-    /**
-     * Reject laporan - Menolak laporan dengan menyimpan audit skor 0 (tanpa poin).
-     */
-    public function auditReject(Request $request, $id)
-    {
-        $goAction = GoAction::findOrFail($id);
-
-        if (Audit::where('go_action_id', $id)->exists()) {
-            return redirect()
-                ->route('admin.audit.index')
-                ->with('error', 'Laporan ini sudah diaudit.');
-        }
-
-        Audit::create([
-            'go_action_id' => $id,
-            'score' => 0,
-            'notes' => $request->input('notes', 'Ditolak'),
-            'auditor_id' => Auth::user()->id,
-        ]);
-
-        return redirect()
-            ->route('admin.audit.index')
-            ->with('success', 'Laporan berhasil ditolak.');
-    }
-
-    /**
      * Index Rewards - Menampilkan daftar rewards.
      */
     public function rewardIndex()
@@ -622,8 +565,16 @@ class AdminController extends Controller
      */
     public function goReward()
     {
-        // Pemenang Go Boost terbanyak (yang membuat temuan)
-        $topGoBoostCreators = GoBoost::select('user_id', DB::raw('count(*) as total'))
+        $goBoostApproved = function ($query) {
+            if (GoBoost::hasApprovalWorkflow()) {
+                $query->where('approval_status', 'APPROVED');
+            }
+        };
+
+        // Reward Go Boost: Finder terbanyak (yang membuat temuan) - hanya yang APPROVED
+        $topGoBoostCreators = GoBoost::query()
+            ->tap($goBoostApproved)
+            ->select('user_id', DB::raw('count(*) as total'))
             ->groupBy('user_id')
             ->orderBy('total', 'desc')
             ->limit(10)
@@ -638,9 +589,11 @@ class AdminController extends Controller
                 ];
             });
 
-        // Pemenang Go Solver terbanyak (yang menyelesaikan perbaikan / mentioned_user yang submit perbaikan)
-        $topGoSolvers = GoBoost::whereNotNull('mentioned_user_id')
-            ->where('status', 'CLOSED')
+        // Reward Go Boost: Solver terbanyak (yang menyelesaikan perbaikan) - hanya yang APPROVED
+        $topGoSolvers = GoBoost::query()
+            ->tap($goBoostApproved)
+            ->whereNotNull('mentioned_user_id')
+            ->where('status_perbaikan', 'selesai')
             ->select('mentioned_user_id', DB::raw('count(*) as total'))
             ->groupBy('mentioned_user_id')
             ->orderBy('total', 'desc')
@@ -657,6 +610,44 @@ class AdminController extends Controller
                 'total' => $row->total,
             ];
         });
+
+        $goCheckApproved = function ($query) {
+            if (GoCheck::hasApprovalWorkflow()) {
+                $query->where('approval_status', 'APPROVED');
+            }
+        };
+
+        $topGoCheckFinders = GoCheck::query()
+            ->tap($goCheckApproved)
+            ->select('finder_user_id', DB::raw('count(*) as total'))
+            ->groupBy('finder_user_id')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->with('finder:id,name,npp')
+            ->get()
+            ->map(fn ($row) => [
+                'user_id' => $row->finder_user_id,
+                'name' => $row->finder?->name,
+                'npp' => $row->finder?->npp,
+                'total' => $row->total,
+            ]);
+
+        $topGoCheckClosers = GoCheck::query()
+            ->tap($goCheckApproved)
+            ->whereNotNull('solver_user_id')
+            ->where('status_perbaikan', 'selesai')
+            ->select('solver_user_id', DB::raw('count(*) as total'))
+            ->groupBy('solver_user_id')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->with('solver:id,name,npp')
+            ->get()
+            ->map(fn ($row) => [
+                'user_id' => $row->solver_user_id,
+                'name' => $row->solver?->name,
+                'npp' => $row->solver?->npp,
+                'total' => $row->total,
+            ]);
 
         // Pemenang Go Care terbanyak
         $topGoCares = GoCare::select('user_id', DB::raw('count(*) as total'))
@@ -681,9 +672,12 @@ class AdminController extends Controller
         $bagianGoCare = GoCare::select('bagian_temuan', DB::raw('count(*) as total'))
             ->groupBy('bagian_temuan')
             ->pluck('total', 'bagian_temuan');
-        $allBagian = $bagianGoAction->keys()->merge($bagianGoBoost->keys())->merge($bagianGoCare->keys())->unique()->filter();
-        $departementStats = $allBagian->map(function ($bagian) use ($bagianGoAction, $bagianGoBoost, $bagianGoCare) {
-            $total = ($bagianGoAction[$bagian] ?? 0) + ($bagianGoBoost[$bagian] ?? 0) + ($bagianGoCare[$bagian] ?? 0);
+        $bagianGoCheck = GoCheck::select('bagian', DB::raw('count(*) as total'))
+            ->groupBy('bagian')
+            ->pluck('total', 'bagian');
+        $allBagian = $bagianGoAction->keys()->merge($bagianGoBoost->keys())->merge($bagianGoCare->keys())->merge($bagianGoCheck->keys())->unique()->filter();
+        $departementStats = $allBagian->map(function ($bagian) use ($bagianGoAction, $bagianGoBoost, $bagianGoCare, $bagianGoCheck) {
+            $total = ($bagianGoAction[$bagian] ?? 0) + ($bagianGoBoost[$bagian] ?? 0) + ($bagianGoCare[$bagian] ?? 0) + ($bagianGoCheck[$bagian] ?? 0);
             return ['bagian' => $bagian, 'total' => $total];
         })->sortByDesc('total')->take(10)->values();
 
@@ -707,6 +701,8 @@ class AdminController extends Controller
             'topGoBoostCreators' => $topGoBoostCreators,
             'topGoSolvers' => $topGoSolversList,
             'topGoCares' => $topGoCares,
+            'topGoCheckFinders' => $topGoCheckFinders,
+            'topGoCheckClosers' => $topGoCheckClosers,
             'departementStats' => $departementStats,
             'topUsersByPoints' => $topUsersByPoints,
         ]);
@@ -777,7 +773,7 @@ class AdminController extends Controller
             });
         }
 
-        $goActions = $query->paginate(20)->through(function ($goAction) {
+        $goActions = $query->paginate(10)->through(function ($goAction) {
             // Parse foto jika berupa JSON array
             $fotos = [];
             if ($goAction->foto_kegiatan_path) {
@@ -823,6 +819,115 @@ class AdminController extends Controller
         ]);
     }
 
+    public function goActionWeeklyRealization(Request $request)
+    {
+        $month = $request->input('month', now()->format('Y-m')); // YYYY-MM
+        [$year, $m] = array_pad(explode('-', (string) $month), 2, null);
+        $year = (int) $year;
+        $m = (int) $m;
+
+        $start = \Carbon\Carbon::create($year, $m, 1, 0, 0, 0);
+        $end = $start->copy()->endOfMonth();
+
+        $bagianList = GoAction::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->distinct()
+            ->pluck('bagian')
+            ->filter()
+            ->sort()
+            ->values();
+
+        $weekRanges = [
+            'week1' => [$start->copy()->day(1)->startOfDay(), $start->copy()->day(7)->endOfDay()],
+            'week2' => [$start->copy()->day(8)->startOfDay(), $start->copy()->day(14)->endOfDay()],
+            'week3' => [$start->copy()->day(15)->startOfDay(), $start->copy()->day(21)->endOfDay()],
+            'week4' => [$start->copy()->day(22)->startOfDay(), $end->copy()->endOfDay()],
+        ];
+
+        $rows = $bagianList->map(function ($bagian, $idx) use ($weekRanges) {
+            $has = function (\Carbon\Carbon $from, \Carbon\Carbon $to) use ($bagian) {
+                return GoAction::where('bagian', $bagian)
+                    ->whereBetween('created_at', [$from, $to])
+                    ->exists();
+            };
+
+            return [
+                'no' => $idx + 1,
+                'bagian' => $bagian,
+                'week1' => $has(...$weekRanges['week1']),
+                'week2' => $has(...$weekRanges['week2']),
+                'week3' => $has(...$weekRanges['week3']),
+                'week4' => $has(...$weekRanges['week4']),
+            ];
+        });
+
+        return Inertia::render('Admin/GoActionWeeklyRealization', [
+            'month' => $month,
+            'rows' => $rows,
+        ]);
+    }
+
+    public function goActionWeeklyRealizationExport(Request $request)
+    {
+        $month = $request->input('month', now()->format('Y-m'));
+        [$year, $m] = array_pad(explode('-', (string) $month), 2, null);
+        $year = (int) $year;
+        $m = (int) $m;
+
+        $start = \Carbon\Carbon::create($year, $m, 1, 0, 0, 0);
+        $end = $start->copy()->endOfMonth();
+
+        $bagianList = GoAction::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->distinct()
+            ->pluck('bagian')
+            ->filter()
+            ->sort()
+            ->values();
+
+        $weekRanges = [
+            'Week 1' => [$start->copy()->day(1)->startOfDay(), $start->copy()->day(7)->endOfDay()],
+            'Week 2' => [$start->copy()->day(8)->startOfDay(), $start->copy()->day(14)->endOfDay()],
+            'Week 3' => [$start->copy()->day(15)->startOfDay(), $start->copy()->day(21)->endOfDay()],
+            'Week 4' => [$start->copy()->day(22)->startOfDay(), $end->copy()->endOfDay()],
+        ];
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['No', 'Nama Bagian', 'Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $rowIndex = 2;
+        foreach ($bagianList as $i => $bagian) {
+            $has = function (\Carbon\Carbon $from, \Carbon\Carbon $to) use ($bagian) {
+                return GoAction::where('bagian', $bagian)
+                    ->whereBetween('created_at', [$from, $to])
+                    ->exists();
+            };
+
+            $sheet->fromArray([[
+                $i + 1,
+                $bagian,
+                $has(...$weekRanges['Week 1']) ? '✓' : '',
+                $has(...$weekRanges['Week 2']) ? '✓' : '',
+                $has(...$weekRanges['Week 3']) ? '✓' : '',
+                $has(...$weekRanges['Week 4']) ? '✓' : '',
+            ]], null, 'A' . $rowIndex);
+
+            $rowIndex++;
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'realisasi-go-action-' . $month . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
     /**
      * Index Go Boost - Menampilkan semua GO BOOST dengan detail lengkap.
      */
@@ -854,7 +959,7 @@ class AdminController extends Controller
             });
         }
 
-        $goBoosts = $query->paginate(20)->through(function ($goBoost) {
+        $goBoosts = $query->paginate(10)->through(function ($goBoost) {
             // Parse foto temuan jika berupa JSON array
             $fotoTemuan = [];
             if ($goBoost->photo_temuan) {
@@ -890,6 +995,8 @@ class AdminController extends Controller
                 'pic_terkait' => $goBoost->pic_terkait,
                 'foto_temuan' => $fotoTemuan,
                 'status' => $goBoost->status ?? 'OPEN',
+                'approval_status' => $goBoost->approval_status,
+                'reject_comment' => $goBoost->reject_comment,
                 'mentioned_user_id' => $goBoost->mentioned_user_id,
                 'mentioned_user_name' => $goBoost->mentionedUser->name ?? null,
                 'keterangan_perbaikan' => $goBoost->keterangan_perbaikan,
@@ -972,6 +1079,11 @@ class AdminController extends Controller
         $query = GoCare::with(['user'])
             ->latest();
 
+        // Filter approval status
+        if (GoCare::hasApprovalWorkflow() && $request->filled('approval_status')) {
+            $query->where('approval_status', $request->input('approval_status'));
+        }
+
         // Pencarian
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -990,7 +1102,7 @@ class AdminController extends Controller
             });
         }
 
-        $goCares = $query->paginate(20)->through(function ($goCare) {
+        $goCares = $query->paginate(10)->through(function ($goCare) {
             // Parse foto before jika berupa JSON array
             $fotoBefore = [];
             if ($goCare->photo_before) {
@@ -1019,8 +1131,8 @@ class AdminController extends Controller
 
             return [
                 'id' => $goCare->id,
-                'nama_karyawan' => $goCare->nama_karyawan,
-                'npp_karyawan' => $goCare->npp_karyawan,
+                'nama_karyawan' => $goCare->nama_karyawan ?: ($goCare->user->name ?? null),
+                'npp_karyawan' => $goCare->npp_karyawan ?: ($goCare->user->npp ?? null),
                 'bagian' => $goCare->bagian,
                 'bagian_temuan' => $goCare->bagian_temuan,
                 'area_temuan' => $goCare->area_temuan,
@@ -1028,9 +1140,11 @@ class AdminController extends Controller
                 'foto_before' => $fotoBefore,
                 'penjelasan_capa' => $goCare->penjelasan_capa,
                 'foto_after' => $fotoAfter,
+                'approval_status' => $goCare->approval_status ?? 'PENDING',
+                'reject_comment' => $goCare->reject_comment,
                 'created_at' => $goCare->created_at->format('d/m/Y H:i'),
-                'user_name' => $goCare->user->name ?? 'N/A',
-                'user_npp' => $goCare->user->npp ?? null,
+                'user_name' => $goCare->user->name ?? $goCare->nama_karyawan ?? '-',
+                'user_npp' => $goCare->user->npp ?? $goCare->npp_karyawan ?? null,
             ];
         });
 
@@ -1038,6 +1152,7 @@ class AdminController extends Controller
             'goCares' => $goCares,
             'filters' => [
                 'search' => $request->search ?? '',
+                'approval_status' => $request->approval_status ?? '',
             ],
         ]);
     }
@@ -1070,8 +1185,8 @@ class AdminController extends Controller
 
         $item = [
             'id' => $goCare->id,
-            'nama_karyawan' => $goCare->nama_karyawan,
-            'npp_karyawan' => $goCare->npp_karyawan,
+            'nama_karyawan' => $goCare->nama_karyawan ?: ($goCare->user->name ?? null),
+            'npp_karyawan' => $goCare->npp_karyawan ?: ($goCare->user->npp ?? null),
             'bagian' => $goCare->bagian ?? $goCare->bagian_temuan,
             'bagian_temuan' => $goCare->bagian_temuan,
             'area_temuan' => $goCare->area_temuan,
@@ -1080,10 +1195,356 @@ class AdminController extends Controller
             'penjelasan_capa' => $goCare->penjelasan_capa,
             'foto_after' => $fotoAfter,
             'created_at' => $goCare->created_at->format('d/m/Y H:i'),
-            'user_name' => $goCare->user->name ?? 'N/A',
-            'user_npp' => $goCare->user->npp ?? null,
+            'user_name' => $goCare->user->name ?? $goCare->nama_karyawan ?? '-',
+            'user_npp' => $goCare->user->npp ?? $goCare->npp_karyawan ?? null,
         ];
 
         return Inertia::render('Admin/GoCareDetail', ['goCare' => $item]);
+    }
+
+    public function goCareApprove($id)
+    {
+        $goCare = GoCare::with('user')->findOrFail($id);
+
+        if (($goCare->approval_status ?? 'PENDING') === 'APPROVED') {
+            return back()->with('success', 'GO CARE ini sudah di-approve.');
+        }
+
+        if (! GoCare::hasApprovalWorkflow()) {
+            return back()->with('error', 'Kolom approval belum tersedia. Jalankan migrasi database: php artisan migrate');
+        }
+
+        if (($goCare->approval_status ?? 'PENDING') !== 'PENDING') {
+            $goCare->update(['approval_status' => 'PENDING']);
+        }
+
+        $goCare->update(GoCare::approvedAttributes(Auth::user()->id));
+
+        if ($goCare->user) {
+            $goCare->user->increment('points_balance', 10);
+
+            \App\Models\Notification::create([
+                'user_id' => $goCare->user_id,
+                'go_care_id' => $goCare->id,
+                'type' => 'go_care_approved',
+                'title' => 'GO CARE Anda sudah close',
+                'message' => 'Aksi GO CARE Anda sudah di-approve admin dan mendapatkan 10 poin.',
+            ]);
+        }
+
+        return back()->with('success', 'GO CARE berhasil di-approve. Poin diberikan ke user.');
+    }
+
+    public function goCareReject(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'reject_comment' => 'required|string|max:1000',
+        ]);
+
+        $goCare = GoCare::with('user')->findOrFail($id);
+
+        if (! GoCare::hasApprovalWorkflow()) {
+            return back()->with('error', 'Kolom approval belum tersedia. Jalankan migrasi database: php artisan migrate');
+        }
+
+        $goCare->update(GoCare::rejectedAttributes(Auth::user()->id, $validated['reject_comment']));
+
+        if ($goCare->user) {
+            \App\Models\Notification::create([
+                'user_id' => $goCare->user_id,
+                'go_care_id' => $goCare->id,
+                'type' => 'go_care_rejected',
+                'title' => 'GO CARE Anda tidak di-approve',
+                'message' => 'GO CARE Anda tidak di-approve admin. Catatan: ' . $validated['reject_comment'],
+            ]);
+        }
+
+        return back()->with('success', 'GO CARE berhasil di-reject. Notifikasi terkirim ke user.');
+    }
+
+    public function goBoostApprove($id)
+    {
+        $goBoost = GoBoost::with(['user', 'mentionedUser'])->findOrFail($id);
+
+        if (($goBoost->approval_status ?? null) === 'APPROVED') {
+            return back()->with('success', 'GO BOOST ini sudah di-approve.');
+        }
+
+        if (($goBoost->status_perbaikan ?? 'pending') !== 'selesai') {
+            return back()->with('error', 'Perbaikan belum selesai. Approval hanya untuk GO BOOST yang sudah submit perbaikan.');
+        }
+
+        if (! GoBoost::hasApprovalWorkflow()) {
+            return back()->with('error', 'Kolom approval belum tersedia. Jalankan migrasi database: php artisan migrate');
+        }
+
+        $goBoost->update(GoBoost::approvedAttributes(Auth::user()->id));
+
+        // Finder (pembuat GoBoost) +10 poin
+        if ($goBoost->user) {
+            $goBoost->user->increment('points_balance', 10);
+            \App\Models\Notification::create([
+                'user_id' => $goBoost->user_id,
+                'go_boost_id' => $goBoost->id,
+                'type' => 'go_boost_approved_finder',
+                'title' => 'GO BOOST Anda sudah close',
+                'message' => 'GO BOOST Anda sudah di-approve admin. Anda mendapatkan 10 poin sebagai Finder.',
+            ]);
+        }
+
+        // Solver (mentioned user) +10 poin
+        if ($goBoost->mentionedUser) {
+            $goBoost->mentionedUser->increment('points_balance', 10);
+            \App\Models\Notification::create([
+                'user_id' => $goBoost->mentioned_user_id,
+                'go_boost_id' => $goBoost->id,
+                'type' => 'go_boost_approved_solver',
+                'title' => 'Perbaikan GO BOOST Anda sudah di-approve',
+                'message' => 'Perbaikan GO BOOST sudah di-approve admin. Anda mendapatkan 10 poin sebagai Solver.',
+            ]);
+        }
+
+        return back()->with('success', 'GO BOOST berhasil di-approve. Poin Finder & Solver diberikan.');
+    }
+
+    public function goBoostReject(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'reject_comment' => 'required|string|max:1000',
+        ]);
+
+        $goBoost = GoBoost::with(['user', 'mentionedUser'])->findOrFail($id);
+
+        if (! GoBoost::hasApprovalWorkflow()) {
+            return back()->with('error', 'Kolom approval belum tersedia. Jalankan migrasi database: php artisan migrate');
+        }
+
+        $goBoost->update(GoBoost::rejectedAttributes(Auth::user()->id, $validated['reject_comment']));
+
+        // Notif ke Finder
+        if ($goBoost->user) {
+            \App\Models\Notification::create([
+                'user_id' => $goBoost->user_id,
+                'go_boost_id' => $goBoost->id,
+                'type' => 'go_boost_rejected_finder',
+                'title' => 'GO BOOST belum di-approve',
+                'message' => 'GO BOOST Anda belum di-approve admin. Catatan: ' . $validated['reject_comment'],
+            ]);
+        }
+
+        // Notif ke Solver (jika ada)
+        if ($goBoost->mentionedUser) {
+            \App\Models\Notification::create([
+                'user_id' => $goBoost->mentioned_user_id,
+                'go_boost_id' => $goBoost->id,
+                'type' => 'go_boost_rejected_solver',
+                'title' => 'Perbaikan GO BOOST tidak di-approve',
+                'message' => 'Perbaikan GO BOOST tidak di-approve admin. Catatan: ' . $validated['reject_comment'],
+            ]);
+        }
+
+        return back()->with('success', 'GO BOOST berhasil di-reject. Notifikasi terkirim.');
+    }
+
+    /**
+     * Form impor DBR dari Excel (hanya admin).
+     */
+    public function goActionDbrImport()
+    {
+        $users = User::orderBy('name')
+            ->get(['id', 'name', 'npp', 'bagian'])
+            ->map(fn ($u) => [
+                'id' => $u->id,
+                'name' => $u->name,
+                'npp' => $u->npp,
+                'bagian' => $u->bagian,
+                'label' => $u->name.' ('.$u->npp.')',
+            ]);
+
+        return Inertia::render('Admin/GoActionDbrImport', [
+            'users' => $users,
+            'departemenOptions' => $this->departemenKimiaFarmaOptions(),
+        ]);
+    }
+
+    /**
+     * Simpan GO ACTION hasil impor Excel (hanya admin).
+     */
+    public function goActionDbrImportStore(Request $request, DbrImportService $dbrImportService)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'bagian' => 'required|string|max:255',
+            'nama_ruangan' => 'nullable|string|max:255',
+            'penjelasan_aksi' => 'nullable|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'excel_file' => 'required|file|mimes:xlsx,xls,xlsm,csv,txt|max:10240',
+        ]);
+
+        $result = $dbrImportService->parseUploadedFile($validated['excel_file']);
+
+        if (count($result['errors']) > 0) {
+            $msg = implode(' | ', array_slice($result['errors'], 0, 5));
+            if (count($result['errors']) > 5) {
+                $msg .= ' ...';
+            }
+
+            return back()->with('error', 'Validasi baris gagal: '.$msg);
+        }
+
+        if (count($result['items']) === 0) {
+            return back()->with('error', 'Tidak ada baris data DBR yang valid di file.');
+        }
+
+        $targetUser = User::findOrFail($validated['user_id']);
+
+        GoAction::create([
+            'user_id' => $targetUser->id,
+            'npp_karyawan' => $targetUser->npp,
+            'nama_karyawan' => $targetUser->name,
+            'metode' => 'GO ACTION',
+            'bagian' => $validated['bagian'],
+            'nama_ruangan' => $validated['nama_ruangan'] ?? null,
+            'kode_ruangan' => null,
+            'penjelasan_aksi' => $validated['penjelasan_aksi'] ?? null,
+            'foto_kegiatan_path' => null,
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+            'list_barang_ringkas' => $result['items'],
+        ]);
+
+        return redirect()->route('admin.go_action.index')->with('success', 'Berhasil mengimpor '.count($result['items']).' baris DBR ke GO ACTION.');
+    }
+
+    /**
+     * Unduh template Excel DBR (hanya admin).
+     */
+    public function goActionDbrTemplate()
+    {
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $headers = [
+            'nama_barang',
+            'jumlah',
+            'satuan',
+            'distribution_type',
+            'no_aktiva_sap',
+            'kondisi_barang',
+            'status_tps',
+            'tindakan_barang',
+        ];
+        $sheet->fromArray([$headers], null, 'A1');
+        $sheet->fromArray([[
+            'Contoh Barang',
+            1,
+            'Unit',
+            'offer',
+            '',
+            'baik',
+            'Diperlukan',
+            '',
+        ]], null, 'A2');
+
+        $writer = new Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, 'template-dbr.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * Ekspor seluruh data DBR ke Excel (hanya admin).
+     */
+    public function goActionDbrExport()
+    {
+        $goActions = GoAction::with('user')
+            ->whereNotNull('list_barang_ringkas')
+            ->latest()
+            ->get();
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $headers = [
+            'go_action_id',
+            'tanggal',
+            'pelapor',
+            'bagian_go_action',
+            'nama_ruangan',
+            'nama_barang',
+            'jumlah',
+            'satuan',
+            'distribution_type',
+            'no_aktiva_sap',
+            'kondisi_barang',
+            'status_tps',
+            'tindakan_barang',
+        ];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $rowIndex = 2;
+        foreach ($goActions as $goAction) {
+            $list = $goAction->list_barang_ringkas;
+            if (!is_array($list)) {
+                continue;
+            }
+            foreach ($list as $barang) {
+                $sheet->fromArray([[
+                    $goAction->id,
+                    $goAction->created_at->format('Y-m-d H:i:s'),
+                    $goAction->user->name ?? '',
+                    $goAction->bagian,
+                    $goAction->nama_ruangan ?? '',
+                    $barang['nama_barang'] ?? '',
+                    $barang['jumlah'] ?? '',
+                    $barang['satuan'] ?? '',
+                    $barang['distribution_type'] ?? '',
+                    $barang['no_aktiva_sap'] ?? '',
+                    $barang['kondisi_barang'] ?? '',
+                    $barang['status_tps'] ?? '',
+                    $barang['tindakan_barang'] ?? '',
+                ]], null, 'A'.$rowIndex);
+                $rowIndex++;
+            }
+        }
+
+        $writer = new Xlsx($spreadsheet);
+
+        $filename = 'export-dbr-'.now()->format('Y-m-d_His').'.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function departemenKimiaFarmaOptions(): array
+    {
+        return [
+            'Bagian Mekanik & Electrical',
+            'Bagian Pemastian Operasional',
+            'Bagian Pemenuhan Regulasi',
+            'Bagian Pendukung Teknis',
+            'Bagian Pengadaan Barang Operasional',
+            'Bagian Pengawasan Mutu',
+            'Bagian Pengemasan Farma',
+            'Bagian Pengendalian Proses Produksi',
+            'Bagian Pengendalian Sistem',
+            'Bagian Penyimpanan',
+            'Bagian Produksi I',
+            'Bagian Produksi II',
+            'Bagian Produksi III',
+            'Bagian SDM & Akuntansi',
+            'Bagian Umum dan K3L',
+            'Bagian Utility',
+            'IT Support Plant',
+            'Lainnya',
+        ];
     }
 }

@@ -18,8 +18,12 @@ class DashboardController extends Controller
     {
         // Jika user adalah admin, arahkan langsung ke Admin Dashboard
         $user = auth()->user();
-        if ($user && $user->role === 'admin') {
+        if ($user && $user->isAdmin()) {
             return redirect()->route('admin.dashboard');
+        }
+
+        if ($user && ($user->isFiveRKetua() || $user->isFiveRSekretaris())) {
+            return redirect()->route('go_check.management.dashboard');
         }
 
         // Statistik total

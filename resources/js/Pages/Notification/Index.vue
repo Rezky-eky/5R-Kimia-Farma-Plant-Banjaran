@@ -39,6 +39,11 @@ const getNotificationIcon = (type) => {
         case 'go_boost_mention':
             return 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z';
         case 'go_boost_perbaikan':
+        case 'go_check_solver_needed':
+        case 'go_check_perbaikan':
+            return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
+        case 'go_check_approved_finder':
+        case 'go_check_approved_solver':
             return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
         default:
             return 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9';
@@ -160,6 +165,36 @@ const submitPerbaikan = (goBoostId) => {
         onSuccess: () => {
             showPerbaikanForm.value[goBoostId] = false;
             fotoPerbaikanPreviews.value[goBoostId] = [];
+        },
+    });
+};
+
+const gcKey = (id) => `gc_${id}`;
+
+const toggleGoCheckPerbaikanForm = (goCheckId) => {
+    const key = gcKey(goCheckId);
+    if (!showPerbaikanForm.value[key]) {
+        showPerbaikanForm.value[key] = true;
+        perbaikanForms.value[key] = useForm({
+            keterangan_perbaikan: '',
+            foto_perbaikan: [],
+        });
+    } else {
+        showPerbaikanForm.value[key] = false;
+    }
+};
+
+const submitGoCheckPerbaikan = (goCheckId) => {
+    const key = gcKey(goCheckId);
+    const form = perbaikanForms.value[key];
+    if (!form) return;
+
+    form.post(route('go_check.submitPerbaikan', goCheckId), {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => {
+            showPerbaikanForm.value[key] = false;
+            fotoPerbaikanPreviews.value[key] = [];
         },
     });
 };
@@ -419,6 +454,52 @@ class="w-full h-24 object-cover rounded-lg border border-blue-200"
                                                 Lihat Detail GO BOOST →
                                             </Link>
                                         </div>
+
+                                        <div
+                                            v-if="notification.go_check"
+                                            class="mt-3 rounded-lg bg-teal-50 p-3 border border-teal-100"
+                                        >
+                                            <p class="text-xs font-medium text-teal-900 mb-1">GO CHECK — Bagian {{ notification.go_check.bagian }}</p>
+                                            <p class="text-xs text-teal-800">
+                                                {{ notification.go_check.area_temuan }} / {{ notification.go_check.ruangan_temuan }}
+                                                · Finder: {{ notification.go_check.finder_name }}
+                                            </p>
+                                            <p class="text-xs text-teal-700 mt-1">{{ notification.go_check.penjelasan_temuan }}</p>
+                                            <div v-if="notification.go_check.has_perbaikan" class="mt-2 text-xs text-teal-800">
+                                                <strong>Solver:</strong> {{ notification.go_check.keterangan_perbaikan }}
+                                            </div>
+                                            <div v-else-if="notification.go_check.can_submit_solver" class="mt-3">
+                                                <button
+                                                    v-if="!showPerbaikanForm[gcKey(notification.go_check.id)]"
+                                                    type="button"
+                                                    class="w-full rounded-lg bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+                                                    @click="toggleGoCheckPerbaikanForm(notification.go_check.id)"
+                                                >
+                                                    Input Perbaikan (Solver)
+                                                </button>
+                                                <form
+                                                    v-if="showPerbaikanForm[gcKey(notification.go_check.id)]"
+                                                    class="mt-2 space-y-2"
+                                                    @submit.prevent="submitGoCheckPerbaikan(notification.go_check.id)"
+                                                >
+                                                    <textarea
+                                                        v-model="perbaikanForms[gcKey(notification.go_check.id)].keterangan_perbaikan"
+                                                        rows="3"
+                                                        required
+                                                        class="w-full rounded-lg text-sm border-gray-200"
+                                                        placeholder="Keterangan perbaikan bagian Anda..."
+                                                    />
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        multiple
+                                                        @change="handleFotoPerbaikanChange($event, gcKey(notification.go_check.id))"
+                                                    />
+                                                    <PrimaryButton type="submit" class="w-full">Submit Solver</PrimaryButton>
+                                                </form>
+                                            </div>
+                                        </div>
+
                                         <p class="mt-2 text-xs text-gray-500">
                                             {{ notification.created_at_human }}
                                         </p>

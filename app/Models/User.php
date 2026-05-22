@@ -132,8 +132,52 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function isFiveRKetua(): bool
+    {
+        return $this->role === 'five_r_ketua';
+    }
+
+    public function isFiveRSekretaris(): bool
+    {
+        return $this->role === 'five_r_sekretaris';
+    }
+
+    public function isFiveRTeam(): bool
+    {
+        return $this->role === 'five_r_team';
+    }
+
+    /** Ketua, sekretaris, atau admin — akses penuh kelola Go Check. */
+    public function canManageGoCheck(): bool
+    {
+        return $this->isAdmin() || $this->isFiveRKetua() || $this->isFiveRSekretaris();
+    }
+
+    /** Tim 5R yang boleh membuat temuan Go Check (finder). */
+    public function canActAsGoCheckFinder(): bool
+    {
+        return $this->isFiveRTeam();
+    }
+
+    public function fiveRBagianAssignments()
+    {
+        return $this->hasMany(FiveRBagianAssignment::class);
+    }
+
+    public function goChecksAsFinder()
+    {
+        return $this->hasMany(GoCheck::class, 'finder_user_id');
+    }
+
+    public function assignedBagianList(): array
+    {
+        return $this->fiveRBagianAssignments()->pluck('bagian')->all();
+    }
+
     /**
      * Get the name of the unique identifier for the user.
+     * Login memakai NPP — Auth::id() mengembalikan NPP, bukan primary key.
+     * Untuk foreign key (approved_by, user_id, dll.) gunakan $user->id.
      *
      * @return string
      */

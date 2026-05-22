@@ -7,20 +7,27 @@ const page = usePage();
 
 const props = defineProps({
     dbrItems: {
-        type: Array,
-        default: () => [],
+        type: Object,
+        required: true,
+    },
+    filters: {
+        type: Object,
+        default: () => ({ status_tps: 'Semua' }),
     },
 });
 
 const statusTpsOptions = ['Diperlukan', 'Ragu-Ragu', 'Tidak Diperlukan', 'Semua'];
-const selectedStatusFilter = ref('Semua');
+const selectedStatusFilter = ref(props.filters.status_tps ?? 'Semua');
 
-const filteredItems = computed(() => {
-    if (selectedStatusFilter.value === 'Semua') {
-        return props.dbrItems;
-    }
-    return props.dbrItems.filter(item => item.status_tps === selectedStatusFilter.value);
-});
+const tableRows = computed(() => props.dbrItems.data ?? []);
+
+const applyStatusFilter = () => {
+    router.get(
+        route('go_action.dbr_index'),
+        { status_tps: selectedStatusFilter.value, page: 1 },
+        { preserveState: true, preserveScroll: true }
+    );
+};
 
 const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -109,6 +116,7 @@ const rejectSale = (id) => {
                                     id="status_filter"
                                     v-model="selectedStatusFilter"
                                     class="rounded-xl border-0 bg-white/95 px-3 py-2 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                    @change="applyStatusFilter"
                                 >
                                     <option
                                         v-for="status in statusTpsOptions"
@@ -160,12 +168,12 @@ const rejectSale = (id) => {
                             </thead>
                             <tbody class="bg-white/95 divide-y divide-gray-100">
                                 <tr
-                                    v-for="(item, index) in filteredItems"
+                                    v-for="(item, index) in tableRows"
                                     :key="item.id"
                                     class="transition-colors hover:bg-gray-50/40"
                                 >
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-center">
-                                        {{ index + 1 }}
+                                        {{ (dbrItems.from ?? 1) + index }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {{ item.tanggal }}
@@ -257,7 +265,7 @@ const rejectSale = (id) => {
                                         </div>
                                     </td>
                                 </tr>
-                                <tr v-if="filteredItems.length === 0">
+                                <tr v-if="tableRows.length === 0">
                                     <td
                                         colspan="10"
                                         class="px-6 py-10 text-center text-sm text-gray-500"
@@ -267,6 +275,33 @@ const rejectSale = (id) => {
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div
+                        v-if="dbrItems.links?.length > 3"
+                        class="flex flex-col gap-3 border-t border-gray-100 px-8 py-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <p class="text-sm text-gray-600">
+                            Menampilkan {{ dbrItems.from ?? 0 }}–{{ dbrItems.to ?? 0 }} dari {{ dbrItems.total ?? 0 }} data
+                            <span v-if="dbrItems.last_page > 1"> · Halaman {{ dbrItems.current_page }} dari {{ dbrItems.last_page }}</span>
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <Link
+                                v-for="link in dbrItems.links"
+                                :key="link.label + String(link.url)"
+                                :href="link.url || '#'"
+                                :class="[
+                                    'px-3 py-1.5 rounded-lg text-sm font-medium transition',
+                                    link.active
+                                        ? 'bg-[#00529b] text-white'
+                                        : link.url
+                                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                          : 'bg-gray-50 text-gray-400 cursor-not-allowed pointer-events-none',
+                                ]"
+                                v-html="link.label"
+                                preserve-scroll
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

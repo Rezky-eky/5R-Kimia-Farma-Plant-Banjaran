@@ -35,10 +35,10 @@ class GoCareController extends Controller
             'bagian_temuan' => 'required|string|max:255',
             'area_temuan' => 'nullable|string|max:255',
             'penjelasan_temuan' => 'required|string',
-            'photo_before' => 'nullable|array|max:5',
+            'photo_before' => 'required|array|min:1|max:5',
             'photo_before.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
             'penjelasan_capa' => 'required|string',
-            'photo_after' => 'nullable|array|max:5',
+            'photo_after' => 'required|array|min:1|max:5',
             'photo_after.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
         ]);
 
@@ -62,14 +62,14 @@ class GoCareController extends Controller
         }
 
         // 5. Simpan data ke Database (hanya kolom yang ada di tabel go_cares)
-        $data = [
+        $data = array_merge([
             'user_id' => $user->id,
             'bagian_temuan' => $validatedData['bagian_temuan'],
             'penjelasan_temuan' => $validatedData['penjelasan_temuan'],
             'photo_before' => !empty($photoBeforePaths) ? json_encode($photoBeforePaths) : null,
             'penjelasan_capa' => $validatedData['penjelasan_capa'],
             'photo_after' => !empty($photoAfterPaths) ? json_encode($photoAfterPaths) : null,
-        ];
+        ], GoCare::pendingApprovalAttributes());
 
         if (Schema::hasColumn('go_cares', 'nama_karyawan')) {
             $data['nama_karyawan'] = $user->name;
@@ -85,10 +85,14 @@ class GoCareController extends Controller
         }
         GoCare::create($data);
 
-        // 6. Tambahkan poin untuk user yang melakukan GO CARE
-        $user->increment('points_balance', 10);
-
-        // 7. Redirect dengan Flash Message Sukses
-        return redirect()->route('dashboard')->with('success', 'Data GO CARE berhasil disimpan. Anda mendapat 10 poin.');
+        // 6. Redirect dengan Flash Message Sukses
+        return redirect()
+            ->route('dashboard')
+            ->with(
+                'success',
+                GoCare::hasApprovalWorkflow()
+                    ? 'Data GO CARE berhasil disimpan dan menunggu approval admin.'
+                    : 'Data GO CARE berhasil disimpan.'
+            );
     }
 }

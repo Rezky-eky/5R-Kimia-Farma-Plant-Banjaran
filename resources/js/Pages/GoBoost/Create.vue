@@ -37,25 +37,6 @@ const departemenOptions = [
     'Lainnya'
 ];
 
-// Data untuk dropdown/radio Area Temuan
-const areaOptions = [
-    'Produksi',
-    'Quality Control',
-    'Maintenance',
-    'HRD',
-    'Finance',
-    'IT',
-    'Logistik',
-    'Marketing',
-    'R&D',
-    'Administrasi',
-    'Warehouse',
-    'Security',
-    'Parkir',
-    'Kantin',
-    'Area Umum',
-];
-
 // Computed property for current date and time
 const currentDateTime = computed(() => {
     const now = new Date();
@@ -259,21 +240,14 @@ const submit = () => {
                             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div>
                                     <InputLabel for="area_temuan" value="Area Terjadinya Temuan *" />
-                                    <select
+                                    <TextInput
                                         id="area_temuan"
+                                        type="text"
+                                        class="mt-2 block w-full"
                                         v-model="form.area_temuan"
-                                        class="mt-2 block w-full rounded-xl border-0 bg-white/95 px-3 py-2 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
                                         required
-                                    >
-                                        <option value="">-- Pilih Area Temuan --</option>
-                                        <option
-                                            v-for="area in areaOptions"
-                                            :key="area"
-                                            :value="area"
-                                        >
-                                            {{ area }}
-                                        </option>
-                                    </select>
+                                        placeholder="Contoh: Area Produksi, Gudang A, Parkir, dll"
+                                    />
                                     <InputError class="mt-2" :message="form.errors.area_temuan" />
                                 </div>
 

@@ -6,9 +6,8 @@ use App\Models\GoAction;
 use App\Models\GoOffer;
 use App\Models\GoSale;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class GoActionController extends Controller
@@ -16,126 +15,9 @@ class GoActionController extends Controller
     /**
      * Tampilkan formulir pembuatan GO ACTION.
      */
-    public function create(Request $request)
+    public function create()
     {
-        return Inertia::render('GoAction/Create', [
-            'importedDbrItems' => $request->session()->pull('imported_dbr_items', []),
-        ]);
-    }
-
-    /**
-     * Import item DBR dari file CSV (hasil export/simpan dari Excel).
-     */
-    public function importDbr(Request $request)
-    {
-        $validated = $request->validate([
-            'excel_file' => 'required|file|mimes:csv,txt|max:5120',
-        ]);
-
-        $filePath = $validated['excel_file']->getRealPath();
-        if (!$filePath) {
-            return back()->with('error', 'File tidak dapat dibaca.');
-        }
-
-        $handle = fopen($filePath, 'r');
-        if (!$handle) {
-            return back()->with('error', 'Gagal membuka file CSV.');
-        }
-
-        $headers = fgetcsv($handle);
-        if (!is_array($headers) || count($headers) === 0) {
-            fclose($handle);
-
-            return back()->with('error', 'Header CSV tidak ditemukan.');
-        }
-
-        $normalizedHeaders = array_map(
-            fn ($h) => $this->normalizeCsvHeader((string) $h),
-            $headers
-        );
-
-        $items = [];
-        $errors = [];
-        $rowNumber = 1; // header
-
-        while (($row = fgetcsv($handle)) !== false) {
-            $rowNumber++;
-            if (!is_array($row)) {
-                continue;
-            }
-
-            $assoc = [];
-            foreach ($normalizedHeaders as $index => $header) {
-                $assoc[$header] = isset($row[$index]) ? trim((string) $row[$index]) : '';
-            }
-
-            if ($this->isCsvRowEmpty($assoc)) {
-                continue;
-            }
-
-            $namaBarang = $this->csvValue($assoc, ['nama_barang', 'barang', 'nama']);
-            $jumlahRaw = $this->csvValue($assoc, ['jumlah', 'qty', 'kuantitas']);
-            $satuan = $this->csvValue($assoc, ['satuan', 'unit']) ?: 'Unit';
-            $distributionType = strtolower($this->csvValue($assoc, ['distribution_type', 'jenis_distribusi', 'jenis']) ?: 'offer');
-            $noAktivaSap = $this->csvValue($assoc, ['no_aktiva_sap', 'no_aktiva', 'sap']);
-            $kondisiBarang = strtolower($this->csvValue($assoc, ['kondisi_barang', 'kondisi']) ?: 'baik');
-            $statusTps = $this->csvValue($assoc, ['status_tps', 'status_di_tps']) ?: 'Diperlukan';
-            $tindakanBarang = $this->csvValue($assoc, ['tindakan_barang', 'tindakan']);
-
-            $jumlah = (int) preg_replace('/[^0-9]/', '', (string) $jumlahRaw);
-            if ($jumlah <= 0) {
-                $errors[] = "Baris {$rowNumber}: jumlah harus angka minimal 1.";
-                continue;
-            }
-
-            if (!in_array($distributionType, ['offer', 'sale'], true)) {
-                $errors[] = "Baris {$rowNumber}: distribution_type harus offer atau sale.";
-                continue;
-            }
-
-            if (!in_array($kondisiBarang, ['baik', 'rusak', 'kadaluarsa', 'lainnya'], true)) {
-                $errors[] = "Baris {$rowNumber}: kondisi_barang tidak valid.";
-                continue;
-            }
-
-            if (!in_array($statusTps, ['Diperlukan', 'Ragu-Ragu', 'Tidak Diperlukan'], true)) {
-                $errors[] = "Baris {$rowNumber}: status_tps tidak valid.";
-                continue;
-            }
-
-            if ($namaBarang === '') {
-                $errors[] = "Baris {$rowNumber}: nama_barang wajib diisi.";
-                continue;
-            }
-
-            $items[] = [
-                'nama_barang' => $namaBarang,
-                'jumlah' => $jumlah,
-                'satuan' => $satuan,
-                'distribution_type' => $distributionType,
-                'no_aktiva_sap' => $noAktivaSap,
-                'kondisi_barang' => $kondisiBarang,
-                'status_tps' => $statusTps,
-                'tindakan_barang' => $tindakanBarang,
-            ];
-        }
-
-        fclose($handle);
-
-        if (count($errors) > 0) {
-            $firstErrors = implode(' | ', array_slice($errors, 0, 3));
-            $suffix = count($errors) > 3 ? ' ...' : '';
-
-            return back()->with('error', 'Import gagal. '.$firstErrors.$suffix);
-        }
-
-        if (count($items) === 0) {
-            return back()->with('error', 'Tidak ada data DBR valid yang bisa diimpor.');
-        }
-
-        $request->session()->put('imported_dbr_items', $items);
-
-        return redirect()->route('go_action.create')->with('success', count($items).' item DBR berhasil diimpor dari CSV.');
+        return Inertia::render('GoAction/Create');
     }
 
     /**
@@ -214,7 +96,7 @@ class GoActionController extends Controller
     /**
      * Tampilkan daftar semua DBR dari Go Action.
      */
-    public function dbrIndex()
+    public function dbrIndex(Request $request)
     {
         $goActions = GoAction::with('user')
             ->whereNotNull('list_barang_ringkas')
@@ -344,43 +226,33 @@ class GoActionController extends Controller
             }
         }
 
+        $statusFilter = $request->input('status_tps', 'Semua');
+        $collection = collect($dbrItems);
+
+        if ($statusFilter !== '' && $statusFilter !== 'Semua') {
+            $collection = $collection->filter(
+                fn ($item) => ($item['status_tps'] ?? '') === $statusFilter
+            )->values();
+        }
+
+        $perPage = 10;
+        $page = max(1, (int) $request->input('page', 1));
+        $slice = $collection->forPage($page, $perPage)->values();
+
+        $paginator = new LengthAwarePaginator(
+            $slice,
+            $collection->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
         return Inertia::render('GoAction/DBRIndex', [
-            'dbrItems' => $dbrItems,
+            'dbrItems' => $paginator,
+            'filters' => [
+                'status_tps' => $statusFilter,
+            ],
             'userBagian' => Auth::user()->bagian ?? null,
         ]);
-    }
-
-    private function normalizeCsvHeader(string $header): string
-    {
-        $normalized = Str::of($header)
-            ->lower()
-            ->trim()
-            ->replace(['.', '-', ' '], '_')
-            ->replaceMatches('/[^a-z0-9_]/', '')
-            ->toString();
-
-        return $normalized;
-    }
-
-    private function isCsvRowEmpty(array $assoc): bool
-    {
-        foreach ($assoc as $value) {
-            if (trim((string) $value) !== '') {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private function csvValue(array $assoc, array $aliases): string
-    {
-        foreach ($aliases as $key) {
-            if (array_key_exists($key, $assoc)) {
-                return trim((string) $assoc[$key]);
-            }
-        }
-
-        return '';
     }
 }

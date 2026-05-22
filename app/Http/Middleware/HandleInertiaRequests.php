@@ -43,6 +43,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user ? array_merge($user->only(['id', 'name', 'npp', 'role', 'bagian']), [
                     'points_balance' => (int) ($user->points_balance ?? 0),
+                    'can_manage_go_check' => $user->canManageGoCheck(),
+                    'can_go_check_finder' => $user->canActAsGoCheckFinder(),
                 ]) : null,
             ],
             'unreadNotificationsCount' => $unreadNotificationsCount,

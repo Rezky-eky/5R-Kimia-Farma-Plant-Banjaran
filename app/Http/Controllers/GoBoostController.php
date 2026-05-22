@@ -46,7 +46,7 @@ class GoBoostController extends Controller
     {
         // Ambil daftar semua user untuk dropdown mention
         $users = User::select('id', 'name', 'npp')
-            ->where('id', '!=', Auth::id()) // Exclude current user
+            ->where('id', '!=', Auth::user()->id) // Exclude current user (Auth::id() = NPP)
             ->orderBy('name')
             ->get()
             ->map(function ($user) {
@@ -177,32 +177,32 @@ class GoBoostController extends Controller
         }
 
         // Update GO BOOST dengan data perbaikan
-        $goBoost->update([
+        $goBoost->update(array_merge([
             'keterangan_perbaikan' => $validatedData['keterangan_perbaikan'],
             'foto_perbaikan' => !empty($photoPaths) ? json_encode($photoPaths) : null,
             'status_perbaikan' => 'selesai',
             'tanggal_perbaikan' => now(),
             'status' => 'CLOSED',
-        ]);
+        ], GoBoost::pendingApprovalAttributes()));
 
-        // Tambahkan poin untuk booster (pembuat GO BOOST) dan fixer (user yang melakukan perbaikan)
-        // Booster mendapatkan 10 poin ketika perbaikan selesai
-        if ($goBoost->user) {
-            $goBoost->user->increment('points_balance', 10);
-        }
-
-        // User yang melakukan perbaikan juga mendapatkan 10 poin
-        $user->increment('points_balance', 10);
+        $menungguApproval = GoBoost::hasApprovalWorkflow();
 
         // Buat notifikasi untuk user yang membuat GO BOOST
         Notification::create([
             'user_id' => $goBoost->user_id,
             'go_boost_id' => $goBoost->id,
             'type' => 'go_boost_perbaikan',
-            'title' => 'Perbaikan GO BOOST Selesai',
-            'message' => $user->name . ' telah menyelesaikan perbaikan untuk GO BOOST di area ' . $goBoost->area_temuan . '.',
+            'title' => $menungguApproval ? 'Perbaikan GO BOOST Selesai (Menunggu Approval)' : 'Perbaikan GO BOOST Selesai',
+            'message' => $menungguApproval
+                ? $user->name . ' telah menyelesaikan perbaikan untuk GO BOOST di area ' . $goBoost->area_temuan . '. Menunggu approval admin untuk penutupan dan poin.'
+                : $user->name . ' telah menyelesaikan perbaikan untuk GO BOOST di area ' . $goBoost->area_temuan . '.',
         ]);
 
-        return back()->with('success', 'Perbaikan berhasil disubmit. Terima kasih! Anda dan booster masing-masing mendapat 10 poin.');
+        return back()->with(
+            'success',
+            $menungguApproval
+                ? 'Perbaikan berhasil disubmit dan menunggu approval admin.'
+                : 'Perbaikan berhasil disubmit.'
+        );
     }
 }

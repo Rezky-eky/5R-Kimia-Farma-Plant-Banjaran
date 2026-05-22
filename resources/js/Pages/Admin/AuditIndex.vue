@@ -50,20 +50,6 @@ const detailUrl = (action) => {
     }
     return route(action.detail_route);
 };
-
-const rejectLaporan = (id) => {
-    if (!confirm('Yakin ingin menolak laporan ini?')) return;
-    router.post(route('admin.audit.reject', id), {}, {
-        preserveScroll: true,
-    });
-};
-
-const approveLaporan = (id) => {
-    if (!confirm('Setujui laporan Go Action ini?')) return;
-    router.post(route('admin.audit.approve', id), {}, {
-        preserveScroll: true,
-    });
-};
 </script>
 
 <template>
@@ -147,7 +133,7 @@ const approveLaporan = (id) => {
                             >
                                 <option value="">Semua</option>
                                 <option value="pending">Pending</option>
-                                <option value="audited">Audited</option>
+                                <option value="approved">Approved</option>
                                 <option value="rejected">Rejected</option>
                             </select>
                         </div>
@@ -256,10 +242,10 @@ const approveLaporan = (id) => {
                                             Pending
                                         </span>
                                         <span
-                                            v-else-if="action.type === 'go_action' && action.status === 'Audited'"
+                                            v-else-if="action.type === 'go_action' && action.status === 'Approved'"
                                             class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700"
                                         >
-                                            Audited
+                                            Approved
                                         </span>
                                         <span
                                             v-else-if="action.type === 'go_action' && action.status === 'Rejected'"
@@ -279,22 +265,6 @@ const approveLaporan = (id) => {
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex flex-wrap items-center gap-2">
-                                            <template v-if="action.can_approve_reject && action.status === 'Pending'">
-                                                <button
-                                                    type="button"
-                                                    @click="approveLaporan(action.id)"
-                                                    class="inline-flex items-center rounded-lg bg-[#00529b] px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#004080]"
-                                                >
-                                                    Approval
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    @click="rejectLaporan(action.id)"
-                                                    class="inline-flex items-center rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-red-700"
-                                                >
-                                                    Reject
-                                                </button>
-                                            </template>
                                             <Link
                                                 :href="detailUrl(action)"
                                                 class="text-blue-600 hover:text-blue-900 font-semibold"

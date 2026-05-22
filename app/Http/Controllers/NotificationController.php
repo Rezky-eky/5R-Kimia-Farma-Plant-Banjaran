@@ -17,13 +17,20 @@ class NotificationController extends Controller
         $user = Auth::user();
         
         $notifications = Notification::where('user_id', $user->id)
-            ->with('goBoost.user', 'goBoost.mentionedUser')
+            ->with('goBoost.user', 'goBoost.mentionedUser', 'goCare.user', 'goCheck.finder', 'goCheck.solver')
             ->latest()
             ->paginate(20)
             ->through(function ($notification) use ($user) {
                 $goBoost = $notification->goBoost;
-                $isMentioned = $goBoost && $goBoost->mentioned_user_id === $user->id;
+                $isMentioned = $goBoost && (int) $goBoost->mentioned_user_id === (int) $user->id;
+                $goCheck = $notification->goCheck;
+                $canSubmitGoCheckSolver = $goCheck
+                    && $notification->type === 'go_check_solver_needed'
+                    && ($goCheck->status_perbaikan ?? 'pending') !== 'selesai'
+                    && ($user->bagian ?? '') === $goCheck->bagian
+                    && (int) $goCheck->finder_user_id !== (int) $user->id;
                 $hasPerbaikan = $goBoost && !empty($goBoost->keterangan_perbaikan);
+                $goCare = $notification->goCare;
 
                 return [
                     'id' => $notification->id,
@@ -49,6 +56,33 @@ class NotificationController extends Controller
                             ? (is_string($goBoost->tanggal_perbaikan) 
                                 ? \Carbon\Carbon::parse($goBoost->tanggal_perbaikan)->format('d/m/Y H:i')
                                 : $goBoost->tanggal_perbaikan->format('d/m/Y H:i'))
+                            : null,
+                    ] : null,
+                    'go_care' => $goCare ? [
+                        'id' => $goCare->id,
+                        'bagian' => $goCare->bagian ?? $goCare->bagian_temuan,
+                        'bagian_temuan' => $goCare->bagian_temuan,
+                        'area_temuan' => $goCare->area_temuan ?? null,
+                        'user_name' => $goCare->user->name ?? ($goCare->nama_karyawan ?? 'N/A'),
+                        'approval_status' => $goCare->approval_status ?? 'PENDING',
+                        'created_at' => $goCare->created_at->format('d/m/Y H:i'),
+                    ] : null,
+                    'go_check' => $goCheck ? [
+                        'id' => $goCheck->id,
+                        'bagian' => $goCheck->bagian,
+                        'area_temuan' => $goCheck->area_temuan,
+                        'ruangan_temuan' => $goCheck->ruangan_temuan,
+                        'penjelasan_temuan' => $goCheck->penjelasan_temuan,
+                        'finder_name' => $goCheck->finder?->name ?? 'N/A',
+                        'can_submit_solver' => $canSubmitGoCheckSolver,
+                        'has_perbaikan' => ! empty($goCheck->keterangan_perbaikan),
+                        'keterangan_perbaikan' => $goCheck->keterangan_perbaikan,
+                        'foto_perbaikan' => $goCheck->foto_perbaikan ? json_decode($goCheck->foto_perbaikan, true) : null,
+                        'status_perbaikan' => $goCheck->status_perbaikan ?? 'pending',
+                        'tanggal_perbaikan' => $goCheck->tanggal_perbaikan
+                            ? (is_string($goCheck->tanggal_perbaikan)
+                                ? \Carbon\Carbon::parse($goCheck->tanggal_perbaikan)->format('d/m/Y H:i')
+                                : $goCheck->tanggal_perbaikan->format('d/m/Y H:i'))
                             : null,
                     ] : null,
                 ];
