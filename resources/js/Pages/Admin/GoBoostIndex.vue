@@ -1,5 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
+import PhotoGallery from '@/Components/PhotoGallery.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -65,12 +68,7 @@ const reject = (id) => {
                 <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
                     Data GO BOOST
                 </h2>
-                <Link
-                    :href="route('admin.dashboard')"
-                    class="inline-flex items-center justify-center rounded-xl bg-gray-800 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-gray-900"
-                >
-                    Kembali ke Admin
-                </Link>
+                <BackToDashboard admin />
             </div>
         </template>
 
@@ -306,39 +304,16 @@ const reject = (id) => {
 
                                                 <!-- Right Column -->
                                                 <div class="space-y-4">
-                                                    <div v-if="goBoost.foto_temuan && goBoost.foto_temuan.length > 0">
-                                                        <h4 class="text-sm font-semibold text-gray-900 mb-2">Foto Temuan ({{ goBoost.foto_temuan.length }})</h4>
-                                                        <div class="grid grid-cols-2 gap-2">
-                                                            <div
-                                                                v-for="(foto, index) in goBoost.foto_temuan"
-                                                                :key="index"
-                                                                class="relative"
-                                                            >
-                                                                <img
-                                                                    :src="foto"
-                                                                    :alt="`Foto temuan ${index + 1}`"
-                                                                    class="w-full h-32 object-cover rounded-lg border border-gray-200"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div v-if="goBoost.foto_perbaikan && goBoost.foto_perbaikan.length > 0">
-                                                        <h4 class="text-sm font-semibold text-blue-900 mb-2">Foto Perbaikan ({{ goBoost.foto_perbaikan.length }})</h4>
-                                                        <div class="grid grid-cols-2 gap-2">
-                                                            <div
-                                                                v-for="(foto, index) in goBoost.foto_perbaikan"
-                                                                :key="index"
-                                                                class="relative"
-                                                            >
-                                                                <img
-                                                                    :src="foto"
-                                                                    :alt="`Foto perbaikan ${index + 1}`"
-                                                                    class="w-full h-32 object-cover rounded-lg border border-blue-200"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    <PhotoGallery
+                                                        :images="goBoost.foto_temuan"
+                                                        title="Foto Temuan"
+                                                        grid-class="grid-cols-2"
+                                                    />
+                                                    <PhotoGallery
+                                                        :images="goBoost.foto_perbaikan"
+                                                        title="Foto Perbaikan"
+                                                        grid-class="grid-cols-2"
+                                                    />
                                                 </div>
                                             </div>
                                         </td>
@@ -348,44 +323,7 @@ const reject = (id) => {
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div
-                        v-if="goBoosts.links && goBoosts.links.length > 3"
-                        class="border-t border-gray-200 bg-gray-50 px-6 py-4 flex items-center justify-between"
-                    >
-                        <div class="text-sm text-gray-700">
-                            Menampilkan {{ goBoosts.from }} sampai {{ goBoosts.to }} dari {{ goBoosts.total }} data
-                        </div>
-                        <div class="flex gap-2">
-                            <Link
-                                v-if="goBoosts.prev_page_url"
-                                :href="goBoosts.prev_page_url"
-                                class="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-                            >
-                                Previous
-                            </Link>
-                            <span
-                                v-else
-                                class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-gray-400 cursor-not-allowed"
-                            >
-                                Previous
-                            </span>
-
-                            <Link
-                                v-if="goBoosts.next_page_url"
-                                :href="goBoosts.next_page_url"
-                                class="px-4 py-2 rounded-lg text-sm font-semibold bg-purple-600 text-white hover:bg-purple-700"
-                            >
-                                Next
-                            </Link>
-                            <span
-                                v-else
-                                class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-gray-400 cursor-not-allowed"
-                            >
-                                Next
-                            </span>
-                        </div>
-                    </div>
+                    <PaginationBar :paginator="goBoosts" />
                 </div>
             </div>
         </div>

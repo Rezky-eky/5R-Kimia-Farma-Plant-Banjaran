@@ -6,6 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
+import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
 
 const user = usePage().props.auth.user;
 
@@ -82,11 +83,8 @@ const form = useForm({
 // (Toggle) tampilan kartu "Daftar Barang Ringkas (DBR)" tanpa menghapus logika form-nya
 const showDaftarBarangRingkas = ref(true);
 
-const fotoPreviews = ref([]);
 const maxFiles = 5;
-const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
 const errorMessage = ref('');
-const fileInputRef = ref(null);
 const locationError = ref('');
 const isGettingLocation = ref(false);
 
@@ -137,73 +135,6 @@ onMounted(() => {
     getLocation();
 });
 
-const triggerCamera = () => {
-    // Ambil lokasi saat tombol kamera ditekan (jika belum ada)
-    if (!form.latitude || !form.longitude) {
-        getLocation();
-    }
-    
-    if (fileInputRef.value) {
-        fileInputRef.value.click();
-    }
-};
-
-const handleFileChange = (event) => {
-    errorMessage.value = '';
-    const files = Array.from(event.target.files || []);
-    
-    // Validasi jumlah file
-    const currentCount = form.foto_kegiatan.length;
-    const newFilesCount = files.length;
-    const totalCount = currentCount + newFilesCount;
-    
-    if (totalCount > maxFiles) {
-        errorMessage.value = `Maksimal ${maxFiles} foto. Anda telah memilih ${totalCount} foto.`;
-        event.target.value = '';
-        return;
-    }
-    
-    // Validasi ukuran file dan filter
-    const validFiles = [];
-    for (const file of files) {
-        if (file.size > maxFileSize) {
-            errorMessage.value = `File "${file.name}" melebihi 10MB. File diabaikan.`;
-            continue;
-        }
-        validFiles.push(file);
-    }
-    
-    // Tambahkan file valid ke form
-    form.foto_kegiatan = [...form.foto_kegiatan, ...validFiles];
-    
-    // Generate preview untuk file baru
-    validFiles.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            fotoPreviews.value.push({
-                id: Date.now() + Math.random(),
-                url: e.target.result,
-                file: file,
-            });
-        };
-        reader.readAsDataURL(file);
-    });
-    
-    // Reset input untuk memungkinkan memilih file yang sama lagi
-    event.target.value = '';
-};
-
-const removePhoto = (previewId) => {
-    const index = fotoPreviews.value.findIndex((p) => p.id === previewId);
-    if (index !== -1) {
-        const preview = fotoPreviews.value[index];
-        // Hapus dari form
-        form.foto_kegiatan = form.foto_kegiatan.filter((f) => f !== preview.file);
-        // Hapus dari preview
-        fotoPreviews.value.splice(index, 1);
-    }
-};
-
 // Fungsi untuk menambahkan item DBR baru
 const addBarang = () => {
     form.list_barang_ringkas.push({
@@ -224,10 +155,8 @@ const removeBarang = (index) => {
 };
 
 const submit = () => {
-    // Validasi final sebelum submit
-    if (form.foto_kegiatan.length > maxFiles) {
-        errorMessage.value = `Maksimal ${maxFiles} foto diperbolehkan.`;
-        return;
+    if (!form.latitude || !form.longitude) {
+        getLocation();
     }
 
     if (!form.latitude || !form.longitude) {
@@ -243,13 +172,14 @@ const submit = () => {
         errorMessage.value = 'Minimal salah satu harus diisi: Foto/Aksi ATAU Daftar Barang Ringkas.';
         return;
     }
+
+    errorMessage.value = '';
     
     form.post(route('go_action.store'), {
         forceFormData: true,
         onSuccess: () => {
             form.reset();
             form.list_barang_ringkas = [];
-            fotoPreviews.value = [];
             errorMessage.value = '';
             locationError.value = '';
             // Ambil lokasi lagi setelah reset
@@ -445,73 +375,18 @@ const submit = () => {
                                 <!-- Foto Kegiatan -->
                                 <div>
                                     <InputLabel for="foto_kegiatan" value="Foto Kegiatan" />
-                                    
-                                    <!-- Input File Tersembunyi -->
-                                    <input
-                                        id="foto_kegiatan"
-                                        ref="fileInputRef"
-                                        type="file"
-                                        accept="image/*"
-                                        capture="environment"
-                                        multiple
-                                        @change="handleFileChange"
-                                        class="hidden"
-                                    />
-                                    
-                                    <!-- Tombol Pemicu Kamera -->
-                                    <button
-                                        type="button"
-                                        @click="triggerCamera"
-                                        :disabled="fotoPreviews.length >= maxFiles"
-                                        class="mt-2 w-full inline-flex items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[#00529b]/40 bg-gradient-to-br from-blue-50 via-white to-blue-50/60 px-6 py-4 text-sm font-semibold shadow-lg transition-all duration-200 hover:border-[#00529b]/60 focus:outline-none focus:ring-2 focus:ring-[#00529b] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-lg"
+                                    <PhotoImagePicker
+                                        v-model="form.foto_kegiatan"
+                                        input-id="go-action-foto-kegiatan"
+                                        :max-files="maxFiles"
+                                        label=""
+                                        hint="Maksimal 5 foto @ 10MB. Ambil foto atau pilih dari galeri."
                                     >
-                                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        </svg>
-                                        <span>📷 Ambil Foto Langsung</span>
-                                    </button>
-                                    
-                                    <p class="mt-3 text-xs font-medium" style="color: #00529b;">
-                                        Maksimal 5 Foto @ 10MB per Foto
-                                    </p>
-                                    <p class="mt-1 text-xs text-gray-500">
-                                        Format: JPG, PNG, atau GIF. Klik tombol di atas untuk membuka kamera.
-                                    </p>
-                                    <div v-if="errorMessage" class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
-                                        {{ errorMessage }}
-                                    </div>
-                                    <div v-if="fotoPreviews.length > 0" class="mt-2 text-xs text-gray-600">
-                                        Foto terpilih: <span class="font-semibold">{{ fotoPreviews.length }}/{{ maxFiles }}</span>
-                                    </div>
-                                    <InputError class="mt-2" :message="form.errors.foto_kegiatan" />
-                                </div>
-
-                                <div v-if="fotoPreviews.length > 0" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                    <div
-                                        v-for="preview in fotoPreviews"
-                                        :key="preview.id"
-                                        class="group relative rounded-xl border border-blue-100 bg-blue-50/50 p-3 shadow-lg"
-                                    >
-                                        <button
-                                            type="button"
-                                            @click="removePhoto(preview.id)"
-                                            class="absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
-                                            aria-label="Hapus foto"
-                                        >
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                            </svg>
-                                        </button>
-                                        <img
-                                            :src="preview.url"
-                                            :alt="`Preview foto kegiatan ${fotoPreviews.indexOf(preview) + 1}`"
-                                            class="h-40 w-full rounded-lg object-cover"
-                                        />
-                                        <p class="mt-2 text-center text-xs font-medium text-gray-600">
-                                            Foto {{ fotoPreviews.indexOf(preview) + 1 }}
-                                        </p>
-                                    </div>
+                                        <div v-if="errorMessage" class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                                            {{ errorMessage }}
+                                        </div>
+                                        <InputError class="mt-2" :message="form.errors.foto_kegiatan" />
+                                    </PhotoImagePicker>
                                 </div>
                             </div>
                         </section>

@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -108,10 +110,12 @@ const deleteReward = (id) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
                     Kelola Katalog Rewards
                 </h2>
+                <div class="flex flex-wrap items-center gap-3">
+                    <BackToDashboard admin />
                 <div v-if="!showForm" class="flex gap-3">
                     <button
                         @click="openCreateForm"
@@ -123,6 +127,7 @@ const deleteReward = (id) => {
                         </svg>
                         Tambah Reward
                     </button>
+                </div>
                 </div>
             </div>
         </template>
@@ -296,28 +301,7 @@ const deleteReward = (id) => {
                         </div>
                     </div>
 
-                    <!-- Pagination -->
-                    <div v-if="rewards.links && rewards.links.length > 3" class="px-8 py-4 border-t border-gray-200 flex items-center justify-between">
-                        <div class="text-sm text-gray-700">
-                            Menampilkan {{ rewards.from }} sampai {{ rewards.to }} dari {{ rewards.total }} hasil
-                        </div>
-                        <div class="flex gap-2">
-                            <Link
-                                v-for="link in rewards.links"
-                                :key="link.label"
-                                :href="link.url || '#'"
-                                :class="[
-                                    'px-4 py-2 rounded-lg text-sm font-medium transition',
-                                    link.active
-                                        ? 'bg-blue-600 text-white'
-                                        : link.url
-                                        ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                ]"
-                                v-html="link.label"
-                            />
-                        </div>
-                    </div>
+                    <PaginationBar :paginator="rewards" item-label="hasil" />
                 </div>
             </div>
         </div>

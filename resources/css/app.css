@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+
+    html,
+    body {
+        overflow-x: hidden;
+        height: auto;
+        min-height: 100%;
+    }
+
+    body {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}

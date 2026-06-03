@@ -1,5 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
+import ReportStatusBadge from '@/Components/ReportStatusBadge.vue';
+import PhotoGallery from '@/Components/PhotoGallery.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -19,6 +23,10 @@ const props = defineProps({
             status: '',
             jenis: '',
         }),
+    },
+    filterLabel: {
+        type: String,
+        default: null,
     },
 });
 
@@ -57,13 +65,35 @@ const detailUrl = (action) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
-                Laporan 5R Keseluruhan
-            </h2>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
+                        Laporan 5R Keseluruhan
+                    </h2>
+                    <p v-if="filterLabel" class="mt-1 text-sm text-[#00529b] font-medium">
+                        Filter aktif: {{ filterLabel }}
+                    </p>
+                </div>
+                <BackToDashboard admin />
+            </div>
         </template>
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div
+                    v-if="filterLabel"
+                    class="mb-6 rounded-xl border border-[#00529b]/20 bg-blue-50 px-4 py-3 text-sm text-[#00529b]"
+                >
+                    {{ filterLabel }}.
+                    <button
+                        type="button"
+                        class="ml-2 font-semibold underline hover:no-underline"
+                        @click="clearFilters"
+                    >
+                        Tampilkan semua laporan
+                    </button>
+                </div>
+
                 <!-- Filter & Search -->
                 <div class="mb-6 rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60">
                     <form @submit.prevent="performSearch" class="space-y-4 md:space-y-0 md:flex md:items-end md:gap-4">
@@ -121,20 +151,20 @@ const detailUrl = (action) => {
                             </select>
                         </div>
 
-                        <!-- Status Filter (untuk Go Action) -->
-                        <div class="md:w-48">
+                        <!-- Status Filter -->
+                        <div class="md:w-52">
                             <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
-                                Status
+                                Status audit / approval
                             </label>
                             <select
                                 id="status"
                                 v-model="searchForm.status"
                                 class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
                             >
-                                <option value="">Semua</option>
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
+                                <option value="">Semua laporan</option>
+                                <option value="pending">Pending — menunggu audit/approve</option>
+                                <option value="audited">Audited — sudah diaudit/diseteujui</option>
+                                <option value="rejected">Rejected — ditolak</option>
                             </select>
                         </div>
 
@@ -215,16 +245,12 @@ const detailUrl = (action) => {
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center gap-2">
-                                            <div
+                                            <PhotoGallery
                                                 v-if="action.foto_url"
-                                                class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-gray-100"
-                                            >
-                                                <img
-                                                    :src="action.foto_url"
-                                                    :alt="action.jenis_aksi"
-                                                    class="h-full w-full object-cover"
-                                                />
-                                            </div>
+                                                :images="[action.foto_url]"
+                                                :title="action.jenis_aksi"
+                                                compact
+                                            />
                                             <span
                                                 v-else
                                                 class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-xs font-medium text-gray-500"
@@ -235,30 +261,7 @@ const detailUrl = (action) => {
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                            v-if="action.type === 'go_action' && action.status === 'Pending'"
-                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"
-                                        >
-                                            Pending
-                                        </span>
-                                        <span
-                                            v-else-if="action.type === 'go_action' && action.status === 'Approved'"
-                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700"
-                                        >
-                                            Approved
-                                        </span>
-                                        <span
-                                            v-else-if="action.type === 'go_action' && action.status === 'Rejected'"
-                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700"
-                                        >
-                                            Rejected
-                                        </span>
-                                        <span
-                                            v-else
-                                            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700"
-                                        >
-                                            {{ action.status }}
-                                        </span>
+                                        <ReportStatusBadge :type="action.type" :status="action.status" />
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {{ action.created_at }}
@@ -286,32 +289,7 @@ const detailUrl = (action) => {
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div v-if="laporan.last_page > 1" class="px-8 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
-                        <div class="text-sm text-gray-700">
-                            Menampilkan {{ laporan.from ?? 0 }} sampai {{ laporan.to ?? 0 }} dari {{ laporan.total }} hasil
-                        </div>
-                        <div class="flex gap-2">
-                            <template v-for="(link, i) in laporan.links" :key="i">
-                                <Link
-                                    v-if="link.url"
-                                    :href="link.url"
-                                    :class="[
-                                        'px-4 py-2 rounded-lg text-sm font-medium transition',
-                                        link.active
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                    ]"
-                                    v-html="link.label"
-                                />
-                                <span
-                                    v-else
-                                    class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
-                                    v-html="link.label"
-                                />
-                            </template>
-                        </div>
-                    </div>
+                    <PaginationBar :paginator="laporan" item-label="hasil" />
                 </div>
             </div>
         </div>

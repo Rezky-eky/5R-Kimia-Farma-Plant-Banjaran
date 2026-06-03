@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -41,9 +43,12 @@ const clearFilter = () => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
-                Riwayat Poin Pengguna
-            </h2>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
+                    Riwayat Poin Pengguna
+                </h2>
+                <BackToDashboard admin />
+            </div>
         </template>
 
         <div class="py-12">
@@ -170,35 +175,7 @@ const clearFilter = () => {
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div
-                        v-if="transactions.links && transactions.links.length > 3"
-                        class="border-t border-gray-200 bg-gray-50 px-6 py-4 flex items-center justify-between"
-                    >
-                        <div class="text-sm text-gray-700">
-                            Menampilkan {{ transactions.from }} sampai {{ transactions.to }} dari {{ transactions.total }} transaksi
-                        </div>
-                        <div class="flex gap-2">
-                            <template v-for="(link, index) in transactions.links" :key="index">
-                                <Link
-                                    v-if="link.url"
-                                    :href="link.url"
-                                    :class="[
-                                        'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                                        link.active
-                                            ? 'bg-slate-700 text-white'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200',
-                                    ]"
-                                    v-html="link.label"
-                                />
-                                <span
-                                    v-else
-                                    class="px-3 py-2 text-sm text-gray-400"
-                                    v-html="link.label"
-                                />
-                            </template>
-                        </div>
-                    </div>
+                    <PaginationBar :paginator="transactions" item-label="transaksi" />
                 </div>
             </div>
         </div>

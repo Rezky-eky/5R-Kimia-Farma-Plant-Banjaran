@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PhotoGallery from '@/Components/PhotoGallery.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({
@@ -19,12 +21,7 @@ defineProps({
                 <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
                     Detail Laporan GO BOOST
                 </h2>
-                <Link
-                    :href="route('admin.audit.index')"
-                    class="inline-flex items-center rounded-xl bg-gray-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:bg-gray-600"
-                >
-                    ← Kembali ke Laporan 5R
-                </Link>
+                <BackToDashboard admin />
             </div>
         </template>
 
@@ -82,42 +79,16 @@ defineProps({
                                 </div>
                             </div>
                             <div class="space-y-4">
-                                <div v-if="goBoost.foto_temuan && goBoost.foto_temuan.length > 0">
-                                    <h4 class="text-sm font-semibold text-gray-900 mb-2">Foto Temuan</h4>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <a
-                                            v-for="(foto, index) in goBoost.foto_temuan"
-                                            :key="index"
-                                            :href="foto"
-                                            target="_blank"
-                                            class="block"
-                                        >
-                                            <img
-                                                :src="foto"
-                                                :alt="`Foto temuan ${index + 1}`"
-                                                class="w-full h-32 object-cover rounded-lg border border-gray-200 hover:opacity-90"
-                                            />
-                                        </a>
-                                    </div>
-                                </div>
-                                <div v-if="goBoost.foto_perbaikan && goBoost.foto_perbaikan.length > 0">
-                                    <h4 class="text-sm font-semibold text-gray-900 mb-2">Foto Perbaikan</h4>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <a
-                                            v-for="(foto, index) in goBoost.foto_perbaikan"
-                                            :key="index"
-                                            :href="foto"
-                                            target="_blank"
-                                            class="block"
-                                        >
-                                            <img
-                                                :src="foto"
-                                                :alt="`Foto perbaikan ${index + 1}`"
-                                                class="w-full h-32 object-cover rounded-lg border border-gray-200 hover:opacity-90"
-                                            />
-                                        </a>
-                                    </div>
-                                </div>
+                                <PhotoGallery
+                                    :images="goBoost.foto_temuan"
+                                    title="Foto Temuan"
+                                    grid-class="grid-cols-2"
+                                />
+                                <PhotoGallery
+                                    :images="goBoost.foto_perbaikan"
+                                    title="Foto Perbaikan"
+                                    grid-class="grid-cols-2"
+                                />
                             </div>
                         </div>
                     </div>

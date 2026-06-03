@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({
@@ -11,7 +12,10 @@ defineProps({
     <Head title="Manajemen Go Check" />
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-2xl font-bold text-gray-900">Manajemen Go Check (5R)</h2>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-2xl font-bold text-gray-900">Manajemen Go Check (5R)</h2>
+                <BackToDashboard />
+            </div>
         </template>
 
         <div class="py-10 max-w-5xl mx-auto px-4 space-y-6">
@@ -57,13 +61,7 @@ defineProps({
                 >
                     Data Go Check (Approve/Reject)
                 </Link>
-                <Link
-                    v-if="$page.props.auth?.user?.role === 'admin'"
-                    :href="route('admin.dashboard')"
-                    class="rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-800 hover:bg-gray-200"
-                >
-                    Admin Dashboard
-                </Link>
+                <BackToDashboard v-if="$page.props.auth?.user?.role === 'admin'" admin />
             </div>
         </div>
     </AuthenticatedLayout>

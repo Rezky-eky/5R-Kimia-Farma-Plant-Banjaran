@@ -84,21 +84,27 @@ class GoCheckManagementController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'npp', 'role', 'bagian']);
 
-        $assignments = FiveRBagianAssignment::with('user:id,name,npp')
-            ->get()
-            ->groupBy('user_id')
-            ->map(fn ($rows, $userId) => [
-                'user_id' => (int) $userId,
-                'bagian' => $rows->pluck('bagian')->values(),
-            ])
-            ->values();
+        try {
+            $assignments = FiveRBagianAssignment::query()
+                ->get()
+                ->groupBy('user_id')
+                ->map(fn ($rows, $userId) => [
+                    'user_id' => (int) $userId,
+                    'bagian' => $rows->pluck('bagian')->values()->all(),
+                ])
+                ->values()
+                ->all();
+        } catch (\Throwable $e) {
+            report($e);
 
-        $allUsers = User::orderBy('name')->get(['id', 'name', 'npp', 'role', 'bagian']);
+            return redirect()
+                ->route('go_check.management.dashboard')
+                ->with('error', 'Tabel penugasan tim belum tersedia. Jalankan migrasi database (php artisan migrate) di server.');
+        }
 
         return Inertia::render('GoCheck/Management/Team', [
             'teamMembers' => $teamMembers,
             'assignments' => $assignments,
-            'allUsers' => $allUsers,
             'bagianOptions' => self::BAGIAN_OPTIONS,
             'roleOptions' => [
                 ['value' => 'five_r_team', 'label' => 'Tim 5R (Finder)'],

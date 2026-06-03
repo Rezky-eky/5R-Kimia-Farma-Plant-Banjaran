@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PhotoGallery from '@/Components/PhotoGallery.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({
@@ -19,12 +21,7 @@ defineProps({
                 <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
                     Detail Laporan GO CARE
                 </h2>
-                <Link
-                    :href="route('admin.audit.index')"
-                    class="inline-flex items-center rounded-xl bg-gray-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:bg-gray-600"
-                >
-                    ← Kembali ke Laporan 5R
-                </Link>
+                <BackToDashboard admin />
             </div>
         </template>
 
@@ -62,42 +59,16 @@ defineProps({
                                 </div>
                             </div>
                             <div class="space-y-4">
-                                <div v-if="goCare.foto_before && goCare.foto_before.length > 0">
-                                    <h4 class="text-sm font-semibold text-gray-900 mb-2">Foto Before</h4>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <a
-                                            v-for="(foto, index) in goCare.foto_before"
-                                            :key="index"
-                                            :href="foto"
-                                            target="_blank"
-                                            class="block"
-                                        >
-                                            <img
-                                                :src="foto"
-                                                :alt="`Before ${index + 1}`"
-                                                class="w-full h-32 object-cover rounded-lg border border-gray-200 hover:opacity-90"
-                                            />
-                                        </a>
-                                    </div>
-                                </div>
-                                <div v-if="goCare.foto_after && goCare.foto_after.length > 0">
-                                    <h4 class="text-sm font-semibold text-gray-900 mb-2">Foto After</h4>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <a
-                                            v-for="(foto, index) in goCare.foto_after"
-                                            :key="index"
-                                            :href="foto"
-                                            target="_blank"
-                                            class="block"
-                                        >
-                                            <img
-                                                :src="foto"
-                                                :alt="`After ${index + 1}`"
-                                                class="w-full h-32 object-cover rounded-lg border border-gray-200 hover:opacity-90"
-                                            />
-                                        </a>
-                                    </div>
-                                </div>
+                                <PhotoGallery
+                                    :images="goCare.foto_before"
+                                    title="Foto Before"
+                                    grid-class="grid-cols-2"
+                                />
+                                <PhotoGallery
+                                    :images="goCare.foto_after"
+                                    title="Foto After"
+                                    grid-class="grid-cols-2"
+                                />
                             </div>
                         </div>
                     </div>

@@ -1,5 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
+import PhotoGallery from '@/Components/PhotoGallery.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -53,9 +56,17 @@ const statusLabel = (status) => {
     <Head title="Data Go Check" />
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex justify-between items-center">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 class="text-2xl font-bold text-gray-900">Data Go Check</h2>
-                <Link :href="route('go_check.management.dashboard')" class="text-sm text-[#00529b]">← Manajemen</Link>
+                <div class="flex flex-wrap gap-2">
+                    <Link
+                        :href="route('go_check.management.dashboard')"
+                        class="inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                    >
+                        Panel Manajemen
+                    </Link>
+                    <BackToDashboard />
+                </div>
             </div>
         </template>
 
@@ -128,21 +139,13 @@ const statusLabel = (status) => {
                             <p v-if="row.pic_terkait" class="mt-1"><strong>PIC:</strong> {{ row.pic_terkait }}</p>
                         </div>
 
-                        <div v-if="row.photo_temuan_urls?.length">
-                            <p class="font-semibold text-gray-900 mb-2">Foto temuan (Finder / Tim 5R)</p>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                <a
-                                    v-for="(url, i) in row.photo_temuan_urls"
-                                    :key="'t-' + row.id + '-' + i"
-                                    :href="url"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="block"
-                                >
-                                    <img :src="url" :alt="`Foto temuan ${i + 1}`" class="h-28 w-full rounded-lg object-cover border border-gray-200 hover:opacity-90" />
-                                </a>
-                            </div>
-                        </div>
+                        <PhotoGallery
+                            v-if="row.photo_temuan_urls?.length"
+                            :images="row.photo_temuan_urls"
+                            title="Foto temuan (Finder / Tim 5R)"
+                            grid-class="grid-cols-2 sm:grid-cols-3 md:grid-cols-4"
+                            thumbnail-height-class="h-28"
+                        />
                         <p v-else class="text-gray-400 italic">Tidak ada foto temuan.</p>
 
                         <div v-if="row.keterangan_perbaikan">
@@ -150,21 +153,13 @@ const statusLabel = (status) => {
                             <p class="mt-1">{{ row.keterangan_perbaikan }}</p>
                         </div>
 
-                        <div v-if="row.foto_perbaikan_urls?.length">
-                            <p class="font-semibold text-gray-900 mb-2">Foto perbaikan (Solver)</p>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                <a
-                                    v-for="(url, i) in row.foto_perbaikan_urls"
-                                    :key="'p-' + row.id + '-' + i"
-                                    :href="url"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="block"
-                                >
-                                    <img :src="url" :alt="`Foto perbaikan ${i + 1}`" class="h-28 w-full rounded-lg object-cover border border-gray-200" />
-                                </a>
-                            </div>
-                        </div>
+                        <PhotoGallery
+                            v-if="row.foto_perbaikan_urls?.length"
+                            :images="row.foto_perbaikan_urls"
+                            title="Foto perbaikan (Solver)"
+                            grid-class="grid-cols-2 sm:grid-cols-3 md:grid-cols-4"
+                            thumbnail-height-class="h-28"
+                        />
 
                         <p v-if="row.reject_comment" class="text-red-700 bg-red-50 p-3 rounded-lg">
                             <strong>Catatan reject:</strong> {{ row.reject_comment }}
@@ -175,16 +170,8 @@ const statusLabel = (status) => {
                 <p v-if="!goChecks.data?.length" class="text-center text-gray-500 py-10">Belum ada data Go Check.</p>
             </div>
 
-            <div v-if="goChecks.links?.length > 3" class="mt-6 flex flex-wrap justify-center gap-2">
-                <Link
-                    v-for="link in goChecks.links"
-                    :key="String(link.label)"
-                    :href="link.url || '#'"
-                    class="px-3 py-1.5 rounded-lg text-sm"
-                    :class="link.active ? 'bg-[#00529b] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-                    v-html="link.label"
-                    preserve-scroll
-                />
+            <div class="mt-6 overflow-hidden rounded-xl bg-white shadow ring-1 ring-gray-100">
+                <PaginationBar :paginator="goChecks" />
             </div>
         </div>
     </AuthenticatedLayout>

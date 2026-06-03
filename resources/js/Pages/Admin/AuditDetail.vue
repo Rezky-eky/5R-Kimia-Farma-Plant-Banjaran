@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import PhotoGallery from '@/Components/PhotoGallery.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
 import { Head } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -15,9 +17,12 @@ const props = defineProps({
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
-                Laporan 5R Keseluruhan – Detail
-            </h2>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
+                    Laporan 5R Keseluruhan – Detail
+                </h2>
+                <BackToDashboard admin />
+            </div>
         </template>
 
         <div class="py-12">
@@ -55,29 +60,12 @@ const props = defineProps({
 
                 <!-- Foto Kegiatan -->
                 <div v-if="goAction.fotos && goAction.fotos.length > 0" class="rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Foto Kegiatan</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div
-                            v-for="(foto, index) in goAction.fotos"
-                            :key="index"
-                            class="relative group rounded-lg overflow-hidden border border-gray-200"
-                        >
-                            <img
-                                :src="foto"
-                                :alt="`Foto kegiatan ${index + 1}`"
-                                class="w-full h-48 object-cover transition-transform group-hover:scale-105"
-                            />
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity flex items-center justify-center">
-                                <a
-                                    :href="foto"
-                                    target="_blank"
-                                    class="opacity-0 group-hover:opacity-100 text-white font-semibold bg-blue-600 px-4 py-2 rounded-lg transition-opacity"
-                                >
-                                    Lihat Full Size
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    <PhotoGallery
+                        :images="goAction.fotos"
+                        title="Foto Kegiatan"
+                        grid-class="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                        thumbnail-height-class="h-48"
+                    />
                 </div>
 
                 <!-- Daftar Barang Ringkas (DBR) -->

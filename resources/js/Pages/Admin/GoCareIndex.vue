@@ -1,5 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
+import PhotoGallery from '@/Components/PhotoGallery.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -62,12 +65,7 @@ const reject = (id) => {
                 <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
                     Data GO CARE
                 </h2>
-                <Link
-                    :href="route('admin.dashboard')"
-                    class="inline-flex items-center justify-center rounded-xl bg-gray-800 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-gray-900"
-                >
-                    Kembali ke Admin
-                </Link>
+                <BackToDashboard admin />
             </div>
         </template>
 
@@ -245,42 +243,20 @@ const reject = (id) => {
                                                         </p>
                                                     </div>
 
-                                                    <div v-if="goCare.foto_before && goCare.foto_before.length > 0">
-                                                        <h4 class="text-sm font-semibold text-gray-900 mb-2">Foto Before ({{ goCare.foto_before.length }})</h4>
-                                                        <div class="grid grid-cols-2 gap-2">
-                                                            <div
-                                                                v-for="(foto, index) in goCare.foto_before"
-                                                                :key="index"
-                                                                class="relative"
-                                                            >
-                                                                <img
-                                                                    :src="foto"
-                                                                    :alt="`Foto before ${index + 1}`"
-                                                                    class="w-full h-32 object-cover rounded-lg border border-gray-200"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    <PhotoGallery
+                                                        :images="goCare.foto_before"
+                                                        title="Foto Before"
+                                                        grid-class="grid-cols-2"
+                                                    />
                                                 </div>
 
                                                 <!-- Right Column -->
                                                 <div class="space-y-4">
-                                                    <div v-if="goCare.foto_after && goCare.foto_after.length > 0">
-                                                        <h4 class="text-sm font-semibold text-blue-900 mb-2">Foto After ({{ goCare.foto_after.length }})</h4>
-                                                        <div class="grid grid-cols-2 gap-2">
-                                                            <div
-                                                                v-for="(foto, index) in goCare.foto_after"
-                                                                :key="index"
-                                                                class="relative"
-                                                            >
-                                                                <img
-                                                                    :src="foto"
-                                                                    :alt="`Foto after ${index + 1}`"
-                                                                    class="w-full h-32 object-cover rounded-lg border border-blue-200"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    <PhotoGallery
+                                                        :images="goCare.foto_after"
+                                                        title="Foto After"
+                                                        grid-class="grid-cols-2"
+                                                    />
                                                 </div>
                                             </div>
                                         </td>
@@ -290,44 +266,7 @@ const reject = (id) => {
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    <div
-                        v-if="goCares.links && goCares.links.length > 3"
-                        class="border-t border-gray-200 bg-gray-50 px-6 py-4 flex items-center justify-between"
-                    >
-                        <div class="text-sm text-gray-700">
-                            Menampilkan {{ goCares.from }} sampai {{ goCares.to }} dari {{ goCares.total }} data
-                        </div>
-                        <div class="flex gap-2">
-                            <Link
-                                v-if="goCares.prev_page_url"
-                                :href="goCares.prev_page_url"
-                                class="px-4 py-2 rounded-lg text-sm font-semibold bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-                            >
-                                Previous
-                            </Link>
-                            <span
-                                v-else
-                                class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-gray-400 cursor-not-allowed"
-                            >
-                                Previous
-                            </span>
-
-                            <Link
-                                v-if="goCares.next_page_url"
-                                :href="goCares.next_page_url"
-                                class="px-4 py-2 rounded-lg text-sm font-semibold bg-amber-600 text-white hover:bg-amber-700"
-                            >
-                                Next
-                            </Link>
-                            <span
-                                v-else
-                                class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-100 text-gray-400 cursor-not-allowed"
-                            >
-                                Next
-                            </span>
-                        </div>
-                    </div>
+                    <PaginationBar :paginator="goCares" />
                 </div>
             </div>
         </div>

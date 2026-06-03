@@ -245,6 +245,25 @@ const gridLines = computed(() => {
                         <p class="mt-2 text-xs font-medium" style="color: #00529b;">Klik untuk detail →</p>
                     </Link>
 
+                    <!-- Total Laporan 5R Keseluruhan -->
+                    <Link
+                        :href="route('admin.audit.index')"
+                        class="rounded-2xl bg-gradient-to-br from-teal-50 via-white to-teal-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60 cursor-pointer block"
+                    >
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Semua Jenis</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Laporan 5R Keseluruhan</h4>
+                            </div>
+                            <span class="text-xl">📋</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-2">
+                            <span class="text-4xl font-bold text-teal-700">{{ stats.total_laporan_keseluruhan }}</span>
+                            <span class="text-xs text-gray-500">laporan</span>
+                        </div>
+                        <p class="mt-2 text-xs font-medium text-teal-700">Klik untuk detail →</p>
+                    </Link>
+
                     <!-- Sudah Diaudit -->
                     <Link
                         :href="route('admin.audit.index', { status: 'audited' })"
@@ -252,7 +271,7 @@ const gridLines = computed(() => {
                     >
                         <div class="flex items-start justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Sudah Diaudit</p>
+                                <p class="text-sm font-medium text-gray-600">Sudah diproses</p>
                                 <h4 class="mt-1 text-base font-semibold text-gray-800">Audited</h4>
                             </div>
                             <span class="text-xl">✅</span>
@@ -271,7 +290,7 @@ const gridLines = computed(() => {
                     >
                         <div class="flex items-start justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Menunggu Audit</p>
+                                <p class="text-sm font-medium text-gray-600">Menunggu audit/approve</p>
                                 <h4 class="mt-1 text-base font-semibold text-gray-800">Pending</h4>
                             </div>
                             <span class="text-xl">⏳</span>

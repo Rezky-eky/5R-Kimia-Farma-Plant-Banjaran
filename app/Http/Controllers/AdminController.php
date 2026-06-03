@@ -33,8 +33,10 @@ class AdminController extends Controller
         $totalGoActions = GoAction::count();
         $totalGoBoosts = GoBoost::count();
         $totalGoCares = GoCare::count();
-        $totalAudited = Audit::count();
-        $totalPending = GoAction::whereDoesntHave('audit')->count();
+        $totalLaporanKeseluruhan = $totalGoActions + $totalGoBoosts + $totalGoCares
+            + GoOffer::count() + GoSale::count();
+        $totalAudited = $this->countAuditedLaporan();
+        $totalPending = $this->countPendingLaporan();
 
         // Grafik tren 5R (6 bulan terakhir)
         $trendData = $this->getTrendData();
@@ -47,6 +49,7 @@ class AdminController extends Controller
                 'total_go_actions' => $totalGoActions,
                 'total_go_boosts' => $totalGoBoosts,
                 'total_go_cares' => $totalGoCares,
+                'total_laporan_keseluruhan' => $totalLaporanKeseluruhan,
                 'total_audited' => $totalAudited,
                 'total_pending' => $totalPending,
             ],
@@ -79,14 +82,22 @@ class AdminController extends Controller
         } elseif ($jenis === 'go_sale') {
             $items = $this->buildGoSaleRows($request);
         } else {
-            // Semua: gabung semua jenis
-            $items = $this->buildGoActionRows($request)
-                ->concat($this->buildGoBoostRows($request))
-                ->concat($this->buildGoCareRows($request))
-                ->concat($this->buildGoOfferRows($request))
-                ->concat($this->buildGoSaleRows($request))
-                ->sortByDesc('created_at_raw')
-                ->values();
+            // Filter status audit/approval: hanya Go Action, Go Boost, Go Care
+            if ($this->isLaporanApprovalStatusFilter($status)) {
+                $items = $this->buildGoActionRows($request)
+                    ->concat($this->buildGoBoostRows($request))
+                    ->concat($this->buildGoCareRows($request))
+                    ->sortByDesc('created_at_raw')
+                    ->values();
+            } else {
+                $items = $this->buildGoActionRows($request)
+                    ->concat($this->buildGoBoostRows($request))
+                    ->concat($this->buildGoCareRows($request))
+                    ->concat($this->buildGoOfferRows($request))
+                    ->concat($this->buildGoSaleRows($request))
+                    ->sortByDesc('created_at_raw')
+                    ->values();
+            }
         }
 
         $total = $items->count();
@@ -109,7 +120,112 @@ class AdminController extends Controller
                 'status' => $status,
                 'jenis' => $jenis,
             ],
+            'filterLabel' => $this->laporanFilterLabel($status),
         ]);
+    }
+
+    private function isLaporanApprovalStatusFilter(?string $status): bool
+    {
+        return in_array($status, ['pending', 'audited', 'approved', 'rejected'], true);
+    }
+
+    private function laporanFilterLabel(?string $status): ?string
+    {
+        return match ($status) {
+            'pending' => 'Menunggu audit / persetujuan (Go Action, Go Boost, Go Care)',
+            'audited', 'approved' => 'Sudah diaudit / disetujui (Go Action, Go Boost, Go Care)',
+            'rejected' => 'Ditolak (Go Action, Go Boost, Go Care)',
+            default => null,
+        };
+    }
+
+    private function countPendingLaporan(): int
+    {
+        $count = GoAction::whereDoesntHave('audit')->count();
+
+        if (GoBoost::hasApprovalWorkflow()) {
+            $count += GoBoost::query()
+                ->where('status_perbaikan', 'selesai')
+                ->where(function ($q) {
+                    $q->whereNull('approval_status')
+                        ->orWhere('approval_status', 'PENDING');
+                })
+                ->count();
+        }
+
+        if (GoCare::hasApprovalWorkflow()) {
+            $count += GoCare::query()
+                ->where(function ($q) {
+                    $q->whereNull('approval_status')
+                        ->orWhere('approval_status', 'PENDING');
+                })
+                ->count();
+        }
+
+        return $count;
+    }
+
+    private function countAuditedLaporan(): int
+    {
+        $count = GoAction::whereHas('audit')->count();
+
+        if (GoBoost::hasApprovalWorkflow()) {
+            $count += GoBoost::whereIn('approval_status', ['APPROVED', 'REJECTED'])->count();
+        }
+
+        if (GoCare::hasApprovalWorkflow()) {
+            $count += GoCare::whereIn('approval_status', ['APPROVED', 'REJECTED'])->count();
+        }
+
+        return $count;
+    }
+
+    private function applyGoActionStatusFilter($query, ?string $status): void
+    {
+        if ($status === 'pending') {
+            $query->whereDoesntHave('audit');
+        } elseif (in_array($status, ['audited', 'approved'], true)) {
+            $query->whereHas('audit');
+        } elseif ($status === 'rejected') {
+            $query->whereHas('audit', fn ($q) => $q->where('score', 0));
+        }
+    }
+
+    private function applyGoBoostStatusFilter($query, ?string $status): void
+    {
+        if (! GoBoost::hasApprovalWorkflow() || ! $status) {
+            return;
+        }
+
+        if ($status === 'pending') {
+            $query->where('status_perbaikan', 'selesai')
+                ->where(function ($q) {
+                    $q->whereNull('approval_status')
+                        ->orWhere('approval_status', 'PENDING');
+                });
+        } elseif (in_array($status, ['audited', 'approved'], true)) {
+            $query->whereIn('approval_status', ['APPROVED', 'REJECTED']);
+        } elseif ($status === 'rejected') {
+            $query->where('approval_status', 'REJECTED');
+        }
+    }
+
+    private function applyGoCareStatusFilter($query, ?string $status): void
+    {
+        if (! GoCare::hasApprovalWorkflow() || ! $status) {
+            return;
+        }
+
+        if ($status === 'pending') {
+            $query->where(function ($q) {
+                $q->whereNull('approval_status')
+                    ->orWhere('approval_status', 'PENDING');
+            });
+        } elseif (in_array($status, ['audited', 'approved'], true)) {
+            $query->whereIn('approval_status', ['APPROVED', 'REJECTED']);
+        } elseif ($status === 'rejected') {
+            $query->where('approval_status', 'REJECTED');
+        }
     }
 
     private function getAuditIndexDepartements(): \Illuminate\Support\Collection
@@ -131,15 +247,7 @@ class AdminController extends Controller
     {
         $query = GoAction::with(['user', 'audit.auditor'])->latest();
         $statusFilter = $request->input('status');
-        if ($statusFilter === 'approved') {
-            $query->whereHas('audit', fn ($q) => $q->where('score', '>', 0));
-        }
-        if ($statusFilter === 'pending') {
-            $query->whereDoesntHave('audit');
-        }
-        if ($statusFilter === 'rejected') {
-            $query->whereHas('audit', fn ($q) => $q->where('score', 0));
-        }
+        $this->applyGoActionStatusFilter($query, $statusFilter);
         if ($request->input('departemen')) {
             $query->where('bagian', $request->input('departemen'));
         }
@@ -174,7 +282,7 @@ class AdminController extends Controller
                 'penjelasan_aksi' => $goAction->penjelasan_aksi,
                 'foto_url' => $fotoUrl,
                 'jenis_aksi' => 'GO ACTION',
-                'status' => $goAction->audit ? ($goAction->audit->score === 0 ? 'Rejected' : 'Approved') : 'Pending',
+                'status' => $goAction->audit ? 'Audited' : '-',
                 'created_at' => $goAction->created_at->format('d/m/Y H:i'),
                 'created_at_raw' => $goAction->created_at,
                 'can_approve_reject' => false,
@@ -187,6 +295,7 @@ class AdminController extends Controller
     private function buildGoBoostRows(Request $request): \Illuminate\Support\Collection
     {
         $query = GoBoost::with(['user'])->latest();
+        $this->applyGoBoostStatusFilter($query, $request->input('status'));
         if ($request->input('departemen')) {
             $query->where('bagian', $request->input('departemen'));
         }
@@ -221,7 +330,9 @@ class AdminController extends Controller
                 'penjelasan_aksi' => $row->penjelasan_temuan,
                 'foto_url' => $fotoUrl,
                 'jenis_aksi' => 'GO BOOST',
-                'status' => $row->status ?? 'OPEN',
+                'status' => GoBoost::hasApprovalWorkflow()
+                    ? ($row->approval_status ?? 'PENDING')
+                    : ($row->status ?? 'OPEN'),
                 'created_at' => $row->created_at->format('d/m/Y H:i'),
                 'created_at_raw' => $row->created_at,
                 'can_approve_reject' => false,
@@ -234,6 +345,7 @@ class AdminController extends Controller
     private function buildGoCareRows(Request $request): \Illuminate\Support\Collection
     {
         $query = GoCare::with(['user'])->latest();
+        $this->applyGoCareStatusFilter($query, $request->input('status'));
         if ($request->input('departemen')) {
             $dept = $request->input('departemen');
             if (Schema::hasColumn('go_cares', 'bagian')) {
@@ -274,7 +386,9 @@ class AdminController extends Controller
                 'penjelasan_aksi' => $row->penjelasan_temuan ?? $row->penjelasan_capa,
                 'foto_url' => $fotoUrl,
                 'jenis_aksi' => 'GO CARE',
-                'status' => '-',
+                'status' => GoCare::hasApprovalWorkflow()
+                    ? ($row->approval_status ?? 'PENDING')
+                    : '-',
                 'created_at' => $row->created_at->format('d/m/Y H:i'),
                 'created_at_raw' => $row->created_at,
                 'can_approve_reject' => false,
@@ -800,7 +914,7 @@ class AdminController extends Controller
                 'longitude' => $goAction->longitude,
                 'created_at' => $goAction->created_at->format('d/m/Y H:i'),
                 'user_name' => $goAction->user->name ?? 'N/A',
-                'status' => $goAction->audit ? 'Audited' : 'Pending',
+                'status' => $goAction->audit ? 'Audited' : '-',
                 'score' => $goAction->audit?->score,
                 'auditor_name' => $goAction->audit?->auditor?->name,
             ];

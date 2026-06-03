@@ -6,6 +6,10 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import TextInput from '@/Components/TextInput.vue';
+import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
+import PhotoGallery from '@/Components/PhotoGallery.vue';
 
 const props = defineProps({
     notifications: {
@@ -88,72 +92,7 @@ const togglePerbaikanForm = (goBoostId) => {
     }
 };
 
-const fotoPerbaikanPreviews = ref({});
 const maxFiles = 5;
-const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
-const fileInputRefs = ref({});
-
-const handleFotoPerbaikanChange = (event, goBoostId) => {
-    const files = Array.from(event.target.files || []);
-    const currentCount = perbaikanForms.value[goBoostId]?.foto_perbaikan?.length || 0;
-    const totalCount = currentCount + files.length;
-
-    if (totalCount > maxFiles) {
-        alert(`Maksimal ${maxFiles} foto. Anda telah memilih ${totalCount} foto.`);
-        event.target.value = '';
-        return;
-    }
-
-    const validFiles = [];
-    for (const file of files) {
-        if (file.size > maxFileSize) {
-            alert(`File "${file.name}" melebihi 10MB. File diabaikan.`);
-            continue;
-        }
-        validFiles.push(file);
-    }
-
-    if (!perbaikanForms.value[goBoostId]) {
-        perbaikanForms.value[goBoostId] = useForm({
-            keterangan_perbaikan: '',
-            foto_perbaikan: [],
-        });
-    }
-
-    perbaikanForms.value[goBoostId].foto_perbaikan = [
-        ...(perbaikanForms.value[goBoostId].foto_perbaikan || []),
-        ...validFiles,
-    ];
-
-    if (!fotoPerbaikanPreviews.value[goBoostId]) {
-        fotoPerbaikanPreviews.value[goBoostId] = [];
-    }
-
-    validFiles.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            fotoPerbaikanPreviews.value[goBoostId].push({
-                id: Date.now() + Math.random(),
-                url: e.target.result,
-                file: file,
-            });
-        };
-        reader.readAsDataURL(file);
-    });
-
-    event.target.value = '';
-};
-
-const removeFotoPerbaikan = (goBoostId, previewId) => {
-    const index = fotoPerbaikanPreviews.value[goBoostId]?.findIndex((p) => p.id === previewId);
-    if (index !== -1) {
-        const preview = fotoPerbaikanPreviews.value[goBoostId][index];
-        perbaikanForms.value[goBoostId].foto_perbaikan = perbaikanForms.value[goBoostId].foto_perbaikan.filter(
-            (f) => f !== preview.file
-        );
-        fotoPerbaikanPreviews.value[goBoostId].splice(index, 1);
-    }
-};
 
 const submitPerbaikan = (goBoostId) => {
     const form = perbaikanForms.value[goBoostId];
@@ -164,7 +103,6 @@ const submitPerbaikan = (goBoostId) => {
         preserveScroll: true,
         onSuccess: () => {
             showPerbaikanForm.value[goBoostId] = false;
-            fotoPerbaikanPreviews.value[goBoostId] = [];
         },
     });
 };
@@ -194,7 +132,6 @@ const submitGoCheckPerbaikan = (goCheckId) => {
         preserveScroll: true,
         onSuccess: () => {
             showPerbaikanForm.value[key] = false;
-            fotoPerbaikanPreviews.value[key] = [];
         },
     });
 };
@@ -209,7 +146,8 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                 <h2 class="text-2xl font-bold leading-tight text-gray-900">
                     Notifikasi
                 </h2>
-                <div class="flex items-center gap-3">
+                <div class="flex flex-wrap items-center gap-3">
+                    <BackToDashboard />
                     <PrimaryButton
                         v-if="notifications.data.some(n => !n.is_read)"
                         @click="markAllAsRead"
@@ -325,18 +263,13 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                 <p class="text-xs text-blue-600 mb-2" v-if="notification.go_boost.tanggal_perbaikan">
                                                     Selesai pada: {{ notification.go_boost.tanggal_perbaikan }}
                                                 </p>
-                                                <div v-if="notification.go_boost.foto_perbaikan && notification.go_boost.foto_perbaikan.length > 0" class="grid grid-cols-2 gap-2 mt-2">
-                                                    <div
-                                                        v-for="(foto, index) in notification.go_boost.foto_perbaikan"
-                                                        :key="index"
-                                                        class="relative"
-                                                    >
-                                                        <img
-                                                            :src="'/storage/' + foto"
-                                                            :alt="`Foto perbaikan ${index + 1}`"
-                                                            class="w-full h-24 object-cover rounded-lg border border-blue-200"
-                                                        />
-                                                    </div>
+                                                <div v-if="notification.go_boost.foto_perbaikan?.length" class="mt-2">
+                                                    <PhotoGallery
+                                                        :images="notification.go_boost.foto_perbaikan.map((f) => (String(f).startsWith('http') ? f : `/storage/${f}`))"
+                                                        title="Foto perbaikan"
+                                                        grid-class="grid-cols-2"
+                                                        thumbnail-height-class="h-24"
+                                                    />
                                                 </div>
                                             </div>
                                             
@@ -375,54 +308,17 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                         </div>
                                                         
                                                         <!-- Upload Foto Perbaikan -->
-                                                        <div class="mb-4">
-                                                            <InputLabel for="foto_perbaikan" value="Foto Perbaikan (Opsional)" />
-                                                            <input
-                                                                :id="`foto_perbaikan_${notification.go_boost.id}`"
-                                                                :ref="el => fileInputRefs[notification.go_boost.id] = el"
-                                                                type="file"
-                                                                accept="image/*"
-                                                                capture="environment"
-                                                                multiple
-                                                                @change="handleFotoPerbaikanChange($event, notification.go_boost.id)"
-                                                                class="hidden"
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                @click="fileInputRefs[notification.go_boost.id]?.click()"
-                                                                :disabled="(fotoPerbaikanPreviews[notification.go_boost.id]?.length || 0) >= maxFiles"
-                                                                class="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#00529b]/40 bg-blue-50 px-4 py-3 text-sm font-semibold text-[#00529b] hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-[#00529b] focus:ring-offset-2"
+                                                        <div v-if="perbaikanForms[notification.go_boost.id]" class="mb-4">
+                                                            <InputLabel value="Foto Perbaikan (Opsional)" />
+                                                            <PhotoImagePicker
+                                                                v-model="perbaikanForms[notification.go_boost.id].foto_perbaikan"
+                                                                :input-id="`foto-perbaikan-${notification.go_boost.id}`"
+                                                                :max-files="maxFiles"
+                                                                label=""
+                                                                hint="Maksimal 5 foto @ 10MB. Ambil foto atau pilih dari galeri."
                                                             >
-                                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                                </svg>
-                                                                📷 Ambil Foto Perbaikan
-                                                            </button>
-                                                            <p class="mt-2 text-xs text-gray-500">
-                                                                Maksimal {{ maxFiles }} foto @ 10MB per foto
-                                                            </p>
-                                                            <div v-if="fotoPerbaikanPreviews[notification.go_boost.id]?.length > 0" class="mt-2 grid grid-cols-2 gap-2">
-                                                                <div
-                                                                    v-for="preview in fotoPerbaikanPreviews[notification.go_boost.id]"
-                                                                    :key="preview.id"
-                                                                    class="relative"
-                                                                >
-                                                                    <button
-                                                                        type="button"
-                                                                        @click="removeFotoPerbaikan(notification.go_boost.id, preview.id)"
-                                                                        class="absolute -right-2 -top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-xs hover:bg-red-600"
-                                                                    >
-                                                                        ×
-                                                                    </button>
-                                                                    <img
-                                                                        :src="preview.url"
-                                                                        :alt="`Preview foto perbaikan`"
-class="w-full h-24 object-cover rounded-lg border border-blue-200"
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                            <InputError class="mt-2" :message="perbaikanForms[notification.go_boost.id]?.errors?.foto_perbaikan" />
+                                                                <InputError class="mt-2" :message="perbaikanForms[notification.go_boost.id]?.errors?.foto_perbaikan" />
+                                                            </PhotoImagePicker>
                                                         </div>
                                                         
                                                         <!-- Action Buttons -->
@@ -489,11 +385,13 @@ class="w-full h-24 object-cover rounded-lg border border-blue-200"
                                                         class="w-full rounded-lg text-sm border-gray-200"
                                                         placeholder="Keterangan perbaikan bagian Anda..."
                                                     />
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        multiple
-                                                        @change="handleFotoPerbaikanChange($event, gcKey(notification.go_check.id))"
+                                                    <PhotoImagePicker
+                                                        v-if="perbaikanForms[gcKey(notification.go_check.id)]"
+                                                        v-model="perbaikanForms[gcKey(notification.go_check.id)].foto_perbaikan"
+                                                        :input-id="`gc-foto-${notification.go_check.id}`"
+                                                        :max-files="maxFiles"
+                                                        label="Foto perbaikan (opsional)"
+                                                        hint="Maksimal 5 foto @ 10MB. Ambil foto atau pilih dari galeri."
                                                     />
                                                     <PrimaryButton type="submit" class="w-full">Submit Solver</PrimaryButton>
                                                 </form>
@@ -529,29 +427,8 @@ class="w-full h-24 object-cover rounded-lg border border-blue-200"
                     </div>
                 </div>
 
-                <!-- Pagination -->
-                <div
-                    v-if="notifications.links && notifications.links.length > 3"
-                    class="mt-6 flex items-center justify-center gap-2"
-                >
-                    <template v-for="(link, index) in notifications.links" :key="index">
-                        <Link
-                            v-if="link.url"
-                            :href="link.url"
-                            :class="[
-                                'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                                link.active
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-white text-gray-700 hover:bg-gray-50',
-                            ]"
-                            v-html="link.label"
-                        />
-                        <span
-                            v-else
-                            class="px-4 py-2 text-sm text-gray-400"
-                            v-html="link.label"
-                        />
-                    </template>
+                <div class="mt-6 overflow-hidden rounded-xl bg-white shadow ring-1 ring-gray-100">
+                    <PaginationBar :paginator="notifications" item-label="notifikasi" />
                 </div>
             </div>
         </div>

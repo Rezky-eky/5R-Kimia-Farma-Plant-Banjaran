@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({
@@ -15,16 +16,19 @@ defineProps({
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
                     Daftar GO BOOST
                 </h2>
-                <Link
-                    :href="route('go_boost.create')"
-                    class="inline-flex items-center rounded-xl bg-[#00529b] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200/70 transition hover:bg-[#004080] focus:outline-none focus:ring-2 focus:ring-[#00529b] focus:ring-offset-2"
-                >
-                    + Tambah Temuan Baru
-                </Link>
+                <div class="flex flex-wrap items-center gap-2">
+                    <BackToDashboard />
+                    <Link
+                        :href="route('go_boost.create')"
+                        class="inline-flex items-center rounded-xl bg-[#00529b] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-200/70 transition hover:bg-[#004080] focus:outline-none focus:ring-2 focus:ring-[#00529b] focus:ring-offset-2"
+                    >
+                        + Tambah Temuan Baru
+                    </Link>
+                </div>
             </div>
         </template>
 

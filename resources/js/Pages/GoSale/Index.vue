@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -54,9 +56,12 @@ const getRingkasStatusLabel = (status) => {
     <Head title="Go Sale - Ajukan Beli & Approval" />
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
-                Go Sale – Penjualan Barang DBR
-            </h2>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
+                    Go Sale – Penjualan Barang DBR
+                </h2>
+                <BackToDashboard :admin="isAdmin" />
+            </div>
         </template>
 
         <div class="py-8">
@@ -152,18 +157,7 @@ const getRingkasStatusLabel = (status) => {
                             </tbody>
                         </table>
                     </div>
-                    <div v-if="items.links?.length > 3" class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-                        <span class="text-sm text-gray-600">Hal {{ items.current_page }} dari {{ items.last_page }}</span>
-                        <div class="flex gap-2">
-                            <Link
-                                v-for="link in items.links"
-                                :key="link.label"
-                                :href="link.url || '#'"
-                                :class="['px-3 py-1 rounded text-sm', link.active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']"
-                                v-html="link.label"
-                            />
-                        </div>
-                    </div>
+                    <PaginationBar :paginator="items" />
                 </div>
             </div>
         </div>

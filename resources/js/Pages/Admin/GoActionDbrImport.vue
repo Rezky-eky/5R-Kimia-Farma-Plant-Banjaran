@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -64,10 +65,11 @@ const onFile = (e) => {
                     </a>
                     <Link
                         :href="route('admin.go_action.index')"
-                        class="inline-flex items-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50"
+                        class="inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                     >
-                        ← Kembali ke data GO ACTION
+                        Data GO ACTION
                     </Link>
+                    <BackToDashboard admin />
                 </div>
             </div>
         </template>

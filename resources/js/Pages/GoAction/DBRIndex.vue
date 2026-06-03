@@ -1,5 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import BackToDashboard from '@/Components/BackToDashboard.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
@@ -88,9 +90,12 @@ const rejectSale = (id) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
-                Daftar Barang Ringkas (DBR)
-            </h2>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
+                    Daftar Barang Ringkas (DBR)
+                </h2>
+                <BackToDashboard />
+            </div>
         </template>
 
         <div class="py-12">
@@ -277,32 +282,7 @@ const rejectSale = (id) => {
                         </table>
                     </div>
 
-                    <div
-                        v-if="dbrItems.links?.length > 3"
-                        class="flex flex-col gap-3 border-t border-gray-100 px-8 py-4 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                        <p class="text-sm text-gray-600">
-                            Menampilkan {{ dbrItems.from ?? 0 }}–{{ dbrItems.to ?? 0 }} dari {{ dbrItems.total ?? 0 }} data
-                            <span v-if="dbrItems.last_page > 1"> · Halaman {{ dbrItems.current_page }} dari {{ dbrItems.last_page }}</span>
-                        </p>
-                        <div class="flex flex-wrap gap-2">
-                            <Link
-                                v-for="link in dbrItems.links"
-                                :key="link.label + String(link.url)"
-                                :href="link.url || '#'"
-                                :class="[
-                                    'px-3 py-1.5 rounded-lg text-sm font-medium transition',
-                                    link.active
-                                        ? 'bg-[#00529b] text-white'
-                                        : link.url
-                                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                          : 'bg-gray-50 text-gray-400 cursor-not-allowed pointer-events-none',
-                                ]"
-                                v-html="link.label"
-                                preserve-scroll
-                            />
-                        </div>
-                    </div>
+                    <PaginationBar :paginator="dbrItems" />
                 </div>
             </div>
         </div>

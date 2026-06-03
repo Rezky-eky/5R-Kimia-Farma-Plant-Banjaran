@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
+import { router } from '@inertiajs/vue3';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
@@ -56,11 +57,29 @@ watch(flashError, (newValue) => {
     }
 }, { immediate: true });
 
-// Saat sidebar drawer terbuka di mobile, kunci scroll background
+// Kunci scroll body hanya saat drawer mobile terbuka; selalu reset saat navigasi/unmount
+const unlockBodyScroll = () => {
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+};
+
 watch(showAdminSidebar, (isOpen) => {
     if (typeof document === 'undefined') return;
-    document.body.style.overflow = isOpen ? 'hidden' : '';
+    if (isOpen && window.innerWidth < 1024) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        unlockBodyScroll();
+    }
 });
+
+router.on('finish', () => {
+    showAdminSidebar.value = false;
+    unlockBodyScroll();
+});
+
+onUnmounted(unlockBodyScroll);
 
 // Fungsi untuk menutup notifikasi secara manual
 const closeNotification = () => {
@@ -316,12 +335,12 @@ const closeErrorNotification = () => {
 
                 <div
                     class="flex-1 min-w-0 transition-[transform,filter,opacity] duration-200 lg:transition-none"
-                    :class="showAdminSidebar ? 'lg:opacity-100 lg:scale-100 lg:filter-none opacity-70 scale-[0.985] brightness-75 pointer-events-none' : ''"
+                    :class="showAdminSidebar ? 'max-lg:opacity-70 max-lg:scale-[0.985] max-lg:brightness-75 max-lg:pointer-events-none' : ''"
                 >
                     <header v-if="$slots.header" class="bg-white border-b border-gray-200">
                         <div class="px-4 py-2 sm:px-6 lg:px-8"><slot name="header" /></div>
                     </header>
-                    <main class="pb-4 pt-2 bg-slate-50 min-h-[calc(100vh-8rem)]">
+                    <main class="pb-4 pt-2 bg-slate-50 min-h-[calc(100vh-8rem)] overflow-x-hidden touch-pan-y">
                         <div class="px-4 sm:px-6 lg:px-8"><slot /></div>
                     </main>
                     <footer class="border-t border-gray-200 bg-white py-3">
