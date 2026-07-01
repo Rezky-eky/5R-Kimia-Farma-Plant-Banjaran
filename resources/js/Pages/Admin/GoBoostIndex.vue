@@ -3,8 +3,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import PhotoGallery from '@/Components/PhotoGallery.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
     goBoosts: {
@@ -21,23 +21,34 @@ const props = defineProps({
     },
 });
 
-const searchForm = useForm({
+const searchForm = ref({
     search: props.filters.search || '',
     status: props.filters.status || '',
     status_perbaikan: props.filters.status_perbaikan || '',
 });
 
+// Sync searchForm ketika props berubah (e.g. setelah navigasi paginasi)
+watch(() => props.filters, (newFilters) => {
+    searchForm.value.search = newFilters.search || '';
+    searchForm.value.status = newFilters.status || '';
+    searchForm.value.status_perbaikan = newFilters.status_perbaikan || '';
+}, { deep: true });
+
 const performSearch = () => {
-    router.get(route('admin.go_boost.index'), searchForm, {
+    router.get(route('admin.go_boost.index'), {
+        search: searchForm.value.search,
+        status: searchForm.value.status,
+        status_perbaikan: searchForm.value.status_perbaikan,
+    }, {
         preserveState: true,
         preserveScroll: true,
     });
 };
 
 const clearFilters = () => {
-    searchForm.search = '';
-    searchForm.status = '';
-    searchForm.status_perbaikan = '';
+    searchForm.value.search = '';
+    searchForm.value.status = '';
+    searchForm.value.status_perbaikan = '';
     performSearch();
 };
 

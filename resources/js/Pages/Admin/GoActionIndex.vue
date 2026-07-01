@@ -4,8 +4,8 @@ import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import ReportStatusBadge from '@/Components/ReportStatusBadge.vue';
 import PhotoGallery from '@/Components/PhotoGallery.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
     goActions: {
@@ -25,21 +25,30 @@ const props = defineProps({
     },
 });
 
-const searchForm = useForm({
+const searchForm = ref({
     search: props.filters.search || '',
     departemen: props.filters.departemen || '',
 });
 
+// Sync searchForm ketika props berubah (e.g. setelah navigasi paginasi)
+watch(() => props.filters, (newFilters) => {
+    searchForm.value.search = newFilters.search || '';
+    searchForm.value.departemen = newFilters.departemen || '';
+}, { deep: true });
+
 const performSearch = () => {
-    router.get(route('admin.go_action.index'), searchForm, {
+    router.get(route('admin.go_action.index'), {
+        search: searchForm.value.search,
+        departemen: searchForm.value.departemen,
+    }, {
         preserveState: true,
         preserveScroll: true,
     });
 };
 
 const clearFilters = () => {
-    searchForm.search = '';
-    searchForm.departemen = '';
+    searchForm.value.search = '';
+    searchForm.value.departemen = '';
     performSearch();
 };
 

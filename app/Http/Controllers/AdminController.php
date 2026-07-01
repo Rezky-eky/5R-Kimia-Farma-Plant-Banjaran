@@ -1074,6 +1074,8 @@ class AdminController extends Controller
         }
 
         $goBoosts = $query->paginate(10)->through(function ($goBoost) {
+            $mentionedUser = $goBoost->mentionedUser ?: ($goBoost->mentioned_user_id ? User::find($goBoost->mentioned_user_id) : null);
+
             // Parse foto temuan jika berupa JSON array
             $fotoTemuan = [];
             if ($goBoost->photo_temuan) {
@@ -1112,12 +1114,12 @@ class AdminController extends Controller
                 'approval_status' => $goBoost->approval_status,
                 'reject_comment' => $goBoost->reject_comment,
                 'mentioned_user_id' => $goBoost->mentioned_user_id,
-                'mentioned_user_name' => $goBoost->mentionedUser->name ?? null,
+                'mentioned_user_name' => $mentionedUser?->name,
                 'keterangan_perbaikan' => $goBoost->keterangan_perbaikan,
                 'foto_perbaikan' => $fotoPerbaikan,
                 'status_perbaikan' => $goBoost->status_perbaikan ?? 'pending',
-                'tanggal_perbaikan' => $goBoost->tanggal_perbaikan 
-                    ? (is_string($goBoost->tanggal_perbaikan) 
+                'tanggal_perbaikan' => $goBoost->tanggal_perbaikan
+                    ? (is_string($goBoost->tanggal_perbaikan)
                         ? \Carbon\Carbon::parse($goBoost->tanggal_perbaikan)->format('d/m/Y H:i')
                         : $goBoost->tanggal_perbaikan->format('d/m/Y H:i'))
                     : null,
@@ -1142,6 +1144,7 @@ class AdminController extends Controller
     public function goBoostDetail($id)
     {
         $goBoost = GoBoost::with(['user', 'mentionedUser'])->findOrFail($id);
+        $mentionedUser = $goBoost->mentionedUser ?: ($goBoost->mentioned_user_id ? User::find($goBoost->mentioned_user_id) : null);
 
         $fotoTemuan = [];
         if ($goBoost->photo_temuan) {
@@ -1171,7 +1174,7 @@ class AdminController extends Controller
             'pic_terkait' => $goBoost->pic_terkait,
             'foto_temuan' => $fotoTemuan,
             'status' => $goBoost->status ?? 'OPEN',
-            'mentioned_user_name' => $goBoost->mentionedUser->name ?? null,
+            'mentioned_user_name' => $mentionedUser?->name,
             'keterangan_perbaikan' => $goBoost->keterangan_perbaikan,
             'foto_perbaikan' => $fotoPerbaikan,
             'status_perbaikan' => $goBoost->status_perbaikan ?? 'pending',

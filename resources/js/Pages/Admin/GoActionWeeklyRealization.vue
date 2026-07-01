@@ -1,23 +1,27 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
     month: { type: String, required: true },
     rows: { type: Array, default: () => [] },
 });
 
-const form = useForm({
-    month: props.month,
+const selectedMonth = ref(props.month);
+
+// Sync selectedMonth ketika props berubah setelah navigasi
+watch(() => props.month, (newMonth) => {
+    selectedMonth.value = newMonth;
 });
 
 const apply = () => {
-    router.get(route('admin.go_action.weekly_realization'), { month: form.month }, { preserveState: true, preserveScroll: true });
+    router.get(route('admin.go_action.weekly_realization'), { month: selectedMonth.value }, { preserveState: true, preserveScroll: true });
 };
 
 const exportExcel = () => {
-    const url = route('admin.go_action.weekly_realization_export', { month: form.month });
+    const url = route('admin.go_action.weekly_realization_export', { month: selectedMonth.value });
     window.location.href = url;
 };
 </script>
@@ -53,7 +57,7 @@ const exportExcel = () => {
                             </label>
                             <input
                                 type="month"
-                                v-model="form.month"
+                                v-model="selectedMonth"
                                 class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0"
                             />
                         </div>
