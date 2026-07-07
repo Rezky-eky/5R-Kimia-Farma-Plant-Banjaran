@@ -7,7 +7,6 @@
 # Laravel
 /vendor
 /node_modules
-/public/build
 /public/hot
 /storage/*.key
 /storage/logs
@@ -49,7 +48,6 @@ yarn-error.log.phpunit.result.cache
 /.zed
 /auth.json
 /node_modules
-/public/build
 /public/hot
 /public/storage
 /storage/*.key

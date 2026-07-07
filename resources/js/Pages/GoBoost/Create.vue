@@ -231,7 +231,7 @@ const submit = () => {
                                     <InputLabel for="mentioned_user_id" value="Mention User (Opsional)" />
                                     <select
                                         id="mentioned_user_id"
-                                        v-model="form.mentioned_user_id"
+                                        v-model.number="form.mentioned_user_id"
                                         class="mt-2 block w-full rounded-xl border-0 bg-white/95 px-3 py-2 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
                                     >
                                         <option :value="null">-- Pilih User untuk di-mention --</option>
@@ -240,7 +240,7 @@ const submit = () => {
                                             :key="userOption.id"
                                             :value="userOption.id"
                                         >
-                                            {{ userOption.label }}
+                                            {{ userOption.label || `${userOption.name} (${userOption.npp})` }}
                                         </option>
                                     </select>
                                     <p class="mt-2 text-xs text-gray-500">

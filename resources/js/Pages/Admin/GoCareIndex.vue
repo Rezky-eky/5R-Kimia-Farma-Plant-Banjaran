@@ -3,9 +3,14 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import PhotoGallery from '@/Components/PhotoGallery.vue';
+<<<<<<< HEAD
 import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
+=======
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+>>>>>>> 2c0a385462210724212168efee04285568c04831
 
 const props = defineProps({
     goCares: {
@@ -21,21 +26,30 @@ const props = defineProps({
     },
 });
 
-const searchForm = useForm({
+const searchForm = ref({
     search: props.filters.search || '',
     approval_status: props.filters.approval_status || '',
 });
 
+// Sync searchForm ketika props berubah (e.g. setelah navigasi paginasi)
+watch(() => props.filters, (newFilters) => {
+    searchForm.value.search = newFilters.search || '';
+    searchForm.value.approval_status = newFilters.approval_status || '';
+}, { deep: true });
+
 const performSearch = () => {
-    router.get(route('admin.go_care.index'), searchForm, {
+    router.get(route('admin.go_care.index'), {
+        search: searchForm.value.search,
+        approval_status: searchForm.value.approval_status,
+    }, {
         preserveState: true,
         preserveScroll: true,
     });
 };
 
 const clearFilters = () => {
-    searchForm.search = '';
-    searchForm.approval_status = '';
+    searchForm.value.search = '';
+    searchForm.value.approval_status = '';
     performSearch();
 };
 

@@ -10,6 +10,9 @@ import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
 
 const user = usePage().props.auth.user;
 
+// Key untuk memaksa remount form setelah sukses
+const formKey = ref(0);
+
 // Data statis untuk dropdown Bagian Kimia Farma
 const departemenOptions = [
     'Bagian Mekanik & Electrical',
@@ -70,10 +73,22 @@ const submit = () => {
     
     form.post(route('go_care.store'), {
         forceFormData: true,
+        preserveScroll: false,
         onSuccess: () => {
             form.reset();
             errorMessageBefore.value = '';
             errorMessageAfter.value = '';
+            // Increment formKey untuk memaksa remount form dan PhotoImagePicker
+            formKey.value++;
+        },
+        onError: (errors) => {
+            // Jika ada error foto setelah submit, tampilkan pesan yang relevan
+            if (errors.photo_before) {
+                errorMessageBefore.value = errors.photo_before;
+            }
+            if (errors.photo_after) {
+                errorMessageAfter.value = errors.photo_after;
+            }
         },
     });
 };
@@ -101,7 +116,7 @@ const submit = () => {
                         </p>
                     </div>
 
-                    <form @submit.prevent="submit" enctype="multipart/form-data" class="space-y-8 px-8 py-8">
+                    <form :key="formKey" @submit.prevent="submit" enctype="multipart/form-data" class="space-y-8 px-8 py-8">
                         <!-- Card 1: Identitas & Waktu (Wajib) -->
                         <section class="rounded-2xl bg-white/95 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/40">
                             <div class="mb-6">
