@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
+import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -66,6 +67,12 @@ const getRingkasStatusLabel = (status) => {
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="mb-6 rounded-2xl bg-white p-6 shadow-xl ring-1 ring-gray-100">
+                    <MonthlyExcelExport
+                        :export-route="isAdmin ? 'admin.reports.go_sale.export' : 'reports.go_sale.export'"
+                    />
+                </div>
+
                 <div class="rounded-2xl bg-white shadow-xl ring-1 ring-gray-100 overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <p class="text-sm text-gray-600">

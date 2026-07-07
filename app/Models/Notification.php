@@ -12,6 +12,7 @@ class Notification extends Model
         'go_boost_id',
         'go_care_id',
         'go_check_id',
+        'go_check_schedule_id',
         'type',
         'title',
         'message',
@@ -46,5 +47,10 @@ class Notification extends Model
     public function goCheck(): BelongsTo
     {
         return $this->belongsTo(GoCheck::class);
+    }
+
+    public function goCheckSchedule(): BelongsTo
+    {
+        return $this->belongsTo(GoCheckSchedule::class);
     }
 }

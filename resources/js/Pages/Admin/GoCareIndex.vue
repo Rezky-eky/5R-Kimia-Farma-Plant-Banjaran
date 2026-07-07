@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import PhotoGallery from '@/Components/PhotoGallery.vue';
+import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -119,12 +120,15 @@ const reject = (id) => {
                             </button>
                         </div>
                     </form>
+                    <div class="mt-4 border-t border-gray-100 pt-4">
+                        <MonthlyExcelExport export-route="admin.reports.go_care.export" />
+                    </div>
                 </div>
 
                 <!-- Data Table -->
                 <div class="rounded-2xl bg-white/90 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60 overflow-hidden">
-                    <div class="overflow-x-hidden">
-                        <table class="min-w-full divide-y divide-gray-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full table-fixed divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -139,10 +143,10 @@ const reject = (id) => {
                                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                         Bagian Temuan
                                     </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                    <th class="w-48 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                         Approval
                                     </th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                    <th class="w-40 px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                                         Aksi
                                     </th>
                                 </tr>
@@ -169,10 +173,10 @@ const reject = (id) => {
                                         <td class="px-6 py-4 text-sm text-gray-900">
                                             {{ goCare.bagian_temuan }}
                                         </td>
-                                        <td class="whitespace-nowrap px-6 py-4 text-sm">
+                                        <td class="min-w-0 px-6 py-4 text-sm">
                                             <span
                                                 :class="[
-                                                    'inline-flex rounded-full px-2 py-1 text-xs font-semibold',
+                                                    'inline-flex rounded-full px-2 py-1 text-xs font-semibold whitespace-nowrap',
                                                     goCare.approval_status === 'APPROVED'
                                                         ? 'bg-blue-100 text-blue-800'
                                                         : goCare.approval_status === 'REJECTED'
@@ -182,7 +186,10 @@ const reject = (id) => {
                                             >
                                                 {{ goCare.approval_status || 'PENDING' }}
                                             </span>
-                                            <div v-if="goCare.approval_status === 'REJECTED' && goCare.reject_comment" class="mt-1 text-xs text-red-700 line-clamp-2">
+                                            <div
+                                                v-if="goCare.approval_status === 'REJECTED' && goCare.reject_comment"
+                                                class="mt-1 text-xs text-red-700 break-words break-all whitespace-pre-wrap"
+                                            >
                                                 {{ goCare.reject_comment }}
                                             </div>
                                         </td>
@@ -214,32 +221,39 @@ const reject = (id) => {
                                         </td>
                                     </tr>
                                     <tr v-if="showDetail[goCare.id]" class="bg-gray-50">
-                                        <td colspan="6" class="border-t border-gray-200 p-6">
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <td colspan="6" class="border-t border-gray-200 p-6 overflow-hidden">
+                                            <div class="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-6">
                                                 <!-- Left Column -->
-                                                <div class="space-y-4">
+                                                <div class="min-w-0 space-y-4">
                                                     <div>
                                                         <h4 class="text-sm font-semibold text-gray-900 mb-2">Karyawan</h4>
-                                                        <p class="text-sm text-gray-700 bg-white p-3 rounded-lg">
+                                                        <p class="text-sm text-gray-700 bg-white p-3 rounded-lg break-words">
                                                             {{ goCare.nama_karyawan || goCare.user_name }} (NPP:
                                                             {{ goCare.npp_karyawan || goCare.user_npp || '-' }})
                                                         </p>
                                                     </div>
                                                     <div v-if="goCare.area_temuan">
                                                         <h4 class="text-sm font-semibold text-gray-900 mb-2">Area Temuan</h4>
-                                                        <p class="text-sm text-gray-700 bg-white p-3 rounded-lg">{{ goCare.area_temuan }}</p>
+                                                        <p class="text-sm text-gray-700 bg-white p-3 rounded-lg break-words">{{ goCare.area_temuan }}</p>
                                                     </div>
                                                     <div>
                                                         <h4 class="text-sm font-semibold text-gray-900 mb-2">Penjelasan Temuan</h4>
-                                                        <p class="text-sm text-gray-700 bg-white p-3 rounded-lg">
+                                                        <p class="text-sm text-gray-700 bg-white p-3 rounded-lg break-words whitespace-pre-wrap">
                                                             {{ goCare.penjelasan_temuan }}
                                                         </p>
                                                     </div>
 
                                                     <div>
                                                         <h4 class="text-sm font-semibold text-gray-900 mb-2">Penjelasan CAPA</h4>
-                                                        <p class="text-sm text-gray-700 bg-white p-3 rounded-lg">
+                                                        <p class="text-sm text-gray-700 bg-white p-3 rounded-lg break-words whitespace-pre-wrap">
                                                             {{ goCare.penjelasan_capa }}
+                                                        </p>
+                                                    </div>
+
+                                                    <div v-if="goCare.approval_status === 'REJECTED' && goCare.reject_comment">
+                                                        <h4 class="text-sm font-semibold text-gray-900 mb-2">Alasan Reject</h4>
+                                                        <p class="text-sm text-red-700 bg-red-50 p-3 rounded-lg break-words break-all whitespace-pre-wrap">
+                                                            {{ goCare.reject_comment }}
                                                         </p>
                                                     </div>
 

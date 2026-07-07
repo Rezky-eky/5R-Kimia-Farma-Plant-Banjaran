@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -24,6 +25,10 @@ const props = defineProps({
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10">
+                <div class="rounded-2xl bg-white/90 p-6 shadow-xl ring-1 ring-gray-100">
+                    <MonthlyExcelExport export-route="admin.reports.go_reward.export" />
+                </div>
+
                 <!-- 1. Bagian teraktif -->
                 <div class="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Bagian Teraktif</h3>
@@ -149,7 +154,7 @@ const props = defineProps({
                 <!-- 5. Go Care terbanyak -->
                 <div class="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Pemenang Go Care Terbanyak</h3>
-                    <p class="text-sm text-gray-600 mb-4">Karyawan dengan jumlah laporan GO CARE terbanyak.</p>
+                    <p class="text-sm text-gray-600 mb-4">Karyawan dengan poin GO CARE terbanyak (hanya laporan disetujui, 10 pt per approval).</p>
                     <div class="space-y-2">
                         <div
                             v-for="(item, index) in topGoCares"
@@ -164,7 +169,7 @@ const props = defineProps({
                                 <span class="font-medium text-gray-800">{{ item.name || 'N/A' }}</span>
                                 <span class="text-sm text-gray-500">NPP: {{ item.npp || '-' }}</span>
                             </div>
-                            <span class="font-semibold text-gray-900">{{ item.total }} laporan</span>
+                            <span class="font-semibold text-gray-900">{{ item.total }} pt</span>
                         </div>
                         <p v-if="topGoCares.length === 0" class="text-sm text-gray-500 py-4">Belum ada data.</p>
                     </div>

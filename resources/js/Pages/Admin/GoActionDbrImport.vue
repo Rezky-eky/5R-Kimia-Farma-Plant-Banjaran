@@ -5,6 +5,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
+import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -77,6 +78,13 @@ const onFile = (e) => {
         <div class="py-10">
             <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
                 <div class="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-gray-100">
+                    <div class="mb-6 pb-6 border-b border-gray-100">
+                        <p class="text-sm text-gray-600 mb-4">
+                            Unduh laporan DBR per bulan (filter berdasarkan tanggal GO ACTION).
+                        </p>
+                        <MonthlyExcelExport export-route="admin.reports.dbr.export" />
+                    </div>
+
                     <p class="text-sm text-gray-600 mb-6">
                         Upload file <strong>.xlsx</strong> (Excel) dengan header kolom seperti template. Hanya admin yang dapat mengisi DBR lewat Excel.
                         Data akan disimpan sebagai satu laporan GO ACTION untuk user yang Anda pilih.

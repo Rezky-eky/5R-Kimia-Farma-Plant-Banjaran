@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import PhotoGallery from '@/Components/PhotoGallery.vue';
+import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -88,6 +89,10 @@ const statusLabel = (status) => {
                 <button type="submit" class="rounded-lg bg-[#00529b] text-white px-4 py-2 text-sm font-semibold">Filter</button>
             </form>
 
+            <div class="mb-6 rounded-xl bg-white p-4 shadow ring-1 ring-gray-100">
+                <MonthlyExcelExport export-route="go_check.management.reports.go_check.export" />
+            </div>
+
             <div class="space-y-4">
                 <div v-for="row in goChecks.data" :key="row.id" class="rounded-xl bg-white p-5 shadow ring-1 ring-gray-100">
                     <div class="flex flex-wrap justify-between gap-3">
@@ -161,7 +166,7 @@ const statusLabel = (status) => {
                             thumbnail-height-class="h-28"
                         />
 
-                        <p v-if="row.reject_comment" class="text-red-700 bg-red-50 p-3 rounded-lg">
+                        <p v-if="row.reject_comment" class="text-red-700 bg-red-50 p-3 rounded-lg break-words break-all whitespace-pre-wrap">
                             <strong>Catatan reject:</strong> {{ row.reject_comment }}
                         </p>
                     </div>

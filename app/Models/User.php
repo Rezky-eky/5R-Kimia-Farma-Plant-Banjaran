@@ -156,7 +156,11 @@ class User extends Authenticatable
     /** Tim 5R yang boleh membuat temuan Go Check (finder). */
     public function canActAsGoCheckFinder(): bool
     {
-        return $this->isFiveRTeam();
+        if ($this->isFiveRTeam()) {
+            return true;
+        }
+
+        return FiveRTeamMember::where('user_id', $this->id)->exists();
     }
 
     public function fiveRBagianAssignments()
@@ -171,7 +175,20 @@ class User extends Authenticatable
 
     public function assignedBagianList(): array
     {
-        return $this->fiveRBagianAssignments()->pluck('bagian')->all();
+        $legacy = $this->fiveRBagianAssignments()->pluck('bagian')->all();
+
+        $fromTeams = FiveRTeamMember::query()
+            ->where('user_id', $this->id)
+            ->with('team.auditTargets')
+            ->get()
+            ->flatMap(function ($membership) {
+                return $membership->team?->auditTargets?->flatMap(
+                    fn ($t) => array_filter([$t->bagian, $t->target_area])
+                ) ?? collect();
+            })
+            ->all();
+
+        return array_values(array_unique(array_filter(array_merge($legacy, $fromTeams))));
     }
 
     /**

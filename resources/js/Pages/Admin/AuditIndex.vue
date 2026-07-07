@@ -4,6 +4,7 @@ import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import ReportStatusBadge from '@/Components/ReportStatusBadge.vue';
 import PhotoGallery from '@/Components/PhotoGallery.vue';
+import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -190,6 +191,12 @@ const detailUrl = (action) => {
                             </button>
                         </div>
                     </form>
+                    <div class="mt-4 border-t border-gray-100 pt-4">
+                        <MonthlyExcelExport
+                            export-route="admin.reports.overall.export"
+                            label="Unduh Laporan 5R Keseluruhan"
+                        />
+                    </div>
                 </div>
 
                 <!-- Table -->

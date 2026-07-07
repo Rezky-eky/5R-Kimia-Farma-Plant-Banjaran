@@ -10,6 +10,66 @@ use Inertia\Inertia;
 class NotificationController extends Controller
 {
     /**
+     * @return array{team_name: string|null, scheduled_date: string|null, target_area: string|null}|null
+     */
+    private function resolveGoCheckSchedulePayload(Notification $notification, $schedule): ?array
+    {
+        if ($schedule) {
+            return [
+                'id' => $schedule->id,
+                'team_name' => $schedule->team?->inspector_area,
+                'scheduled_date' => $schedule->scheduled_date->format('d/m/Y'),
+                'target_area' => $schedule->target_area,
+                'bagian' => $schedule->bagian,
+                'notes' => $schedule->notes,
+                'status' => $schedule->status,
+            ];
+        }
+
+        if ($notification->type !== 'go_check_schedule') {
+            return null;
+        }
+
+        return $this->parseScheduleFromMessage($notification->message);
+    }
+
+    /**
+     * @return array{team_name: string|null, scheduled_date: string|null, target_area: string|null}|null
+     */
+    private function parseScheduleFromMessage(?string $message): ?array
+    {
+        if (! $message) {
+            return null;
+        }
+
+        if (preg_match(
+            '/Anda dijadwalkan Go Check pada (\d{2}\/\d{2}\/\d{4}) untuk area (.+?) \(tim: (.+?)\)\.?$/u',
+            $message,
+            $m
+        )) {
+            return [
+                'team_name' => trim($m[3]),
+                'scheduled_date' => trim($m[1]),
+                'target_area' => trim($m[2]),
+            ];
+        }
+
+        if (preg_match(
+            '/Hari ini \((\d{2}\/\d{2}\/\d{4})\) tim Anda wajib melakukan Go Check di (.+?) \(area asal: (.+?)\)\.?$/u',
+            $message,
+            $m
+        )) {
+            return [
+                'team_name' => trim($m[3]),
+                'scheduled_date' => trim($m[1]),
+                'target_area' => trim($m[2]),
+            ];
+        }
+
+        return null;
+    }
+
+    /**
      * Tampilkan semua notifikasi user.
      */
     public function index()
@@ -17,7 +77,14 @@ class NotificationController extends Controller
         $user = Auth::user();
         
         $notifications = Notification::where('user_id', $user->id)
-            ->with('goBoost.user', 'goBoost.mentionedUser', 'goCare.user', 'goCheck.finder', 'goCheck.solver')
+            ->with([
+                'goBoost.user',
+                'goBoost.mentionedUser',
+                'goCare.user',
+                'goCheck.finder',
+                'goCheck.solver',
+                'goCheckSchedule.team:id,inspector_area',
+            ])
             ->latest()
             ->paginate(20)
             ->through(function ($notification) use ($user) {
@@ -27,10 +94,14 @@ class NotificationController extends Controller
                 $canSubmitGoCheckSolver = $goCheck
                     && $notification->type === 'go_check_solver_needed'
                     && ($goCheck->status_perbaikan ?? 'pending') !== 'selesai'
-                    && ($user->bagian ?? '') === $goCheck->bagian
-                    && (int) $goCheck->finder_user_id !== (int) $user->id;
+                    && (int) $goCheck->finder_user_id !== (int) $user->id
+                    && (
+                        ($goCheck->solver_user_id && (int) $goCheck->solver_user_id === (int) $user->id)
+                        || (! $goCheck->solver_user_id && ($user->bagian ?? '') === $goCheck->bagian)
+                    );
                 $hasPerbaikan = $goBoost && !empty($goBoost->keterangan_perbaikan);
                 $goCare = $notification->goCare;
+                $schedule = $notification->goCheckSchedule;
 
                 return [
                     'id' => $notification->id,
@@ -85,6 +156,7 @@ class NotificationController extends Controller
                                 : $goCheck->tanggal_perbaikan->format('d/m/Y H:i'))
                             : null,
                     ] : null,
+                    'go_check_schedule' => $this->resolveGoCheckSchedulePayload($notification, $schedule),
                 ];
             });
 

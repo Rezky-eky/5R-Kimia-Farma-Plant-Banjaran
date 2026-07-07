@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
+import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
@@ -132,6 +133,9 @@ const rejectSale = (id) => {
                                     </option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="mt-4 border-t border-gray-100 pt-4">
+                            <MonthlyExcelExport export-route="reports.dbr.export" />
                         </div>
                     </div>
 

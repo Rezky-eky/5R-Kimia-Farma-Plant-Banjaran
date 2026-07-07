@@ -49,6 +49,8 @@ const getNotificationIcon = (type) => {
         case 'go_check_approved_finder':
         case 'go_check_approved_solver':
             return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
+        case 'go_check_schedule':
+            return 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z';
         default:
             return 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9';
     }
@@ -70,7 +72,13 @@ const getNotificationColor = (type) => {
             return 'bg-green-100 text-green-800';
         case 'go_offer_rejected':
         case 'go_sale_rejected':
+        case 'go_care_rejected':
+        case 'go_boost_rejected_finder':
+        case 'go_boost_rejected_solver':
+        case 'go_check_rejected':
             return 'bg-red-100 text-red-800';
+        case 'go_check_schedule':
+            return 'bg-amber-100 text-amber-800';
         default:
             return 'bg-gray-100 text-gray-800';
     }
@@ -159,8 +167,8 @@ const submitGoCheckPerbaikan = (goCheckId) => {
             </div>
         </template>
 
-        <div class="py-8">
-            <div class="mx-auto max-w-4xl">
+        <div class="py-8 overflow-x-hidden">
+            <div class="mx-auto max-w-4xl min-w-0 px-4 sm:px-6">
                 <!-- Empty State -->
                 <div
                     v-if="notifications.data.length === 0"
@@ -193,12 +201,12 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                         v-for="notification in notifications.data"
                         :key="notification.id"
                         :class="[
-                            'rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60 transition duration-200 hover:shadow-2xl hover:shadow-gray-300/60',
+                            'min-w-0 overflow-hidden rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60 transition duration-200 hover:shadow-2xl hover:shadow-gray-300/60',
                             !notification.is_read ? 'border-l-4' : '',
                             !notification.is_read ? 'border-blue-500' : '',
                         ]"
                     >
-                        <div class="flex items-start gap-4">
+                        <div class="flex min-w-0 items-start gap-4">
                             <!-- Icon -->
                             <div
                                 :class="[
@@ -223,32 +231,70 @@ const submitGoCheckPerbaikan = (goCheckId) => {
 
                             <!-- Content -->
                             <div class="flex-1 min-w-0">
-                                <div class="flex items-start justify-between gap-4">
-                                    <div class="flex-1">
+                                <div class="flex min-w-0 items-start justify-between gap-4">
+                                    <div class="min-w-0 flex-1 overflow-hidden">
                                         <h3
                                             :class="[
-                                                'text-base font-semibold',
+                                                'text-base font-semibold break-words break-all',
                                                 !notification.is_read ? 'text-gray-900' : 'text-gray-700',
                                             ]"
                                         >
                                             {{ notification.title }}
                                         </h3>
-                                        <p class="mt-1 text-sm text-gray-600">
+                                        <p
+                                            v-if="notification.type !== 'go_check_schedule'"
+                                            class="mt-1 text-sm text-gray-600 break-words break-all whitespace-pre-wrap"
+                                        >
                                             {{ notification.message }}
                                         </p>
                                         <div
-                                            v-if="notification.go_boost"
-                                            class="mt-3 rounded-lg bg-blue-50 p-3 border border-blue-100"
+                                            v-if="notification.type === 'go_check_schedule'"
+                                            class="mt-3 min-w-0 overflow-hidden rounded-lg bg-amber-50 p-4 border border-amber-100"
                                         >
-                                            <p class="text-xs font-medium text-blue-900 mb-1">
+                                            <p class="text-sm font-semibold text-amber-900">
+                                                Anda dijadwalkan Go Check:
+                                            </p>
+                                            <dl class="mt-2 space-y-1.5 text-sm text-amber-800">
+                                                <div>
+                                                    <dt class="inline font-medium">Tim:</dt>
+                                                    <dd class="inline ml-1">
+                                                        {{ notification.go_check_schedule?.team_name || '—' }}
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt class="inline font-medium">Pada:</dt>
+                                                    <dd class="inline ml-1">
+                                                        {{ notification.go_check_schedule?.scheduled_date || '—' }}
+                                                    </dd>
+                                                </div>
+                                                <div>
+                                                    <dt class="inline font-medium">Area Go Check:</dt>
+                                                    <dd class="inline ml-1 break-words break-all">
+                                                        {{ notification.go_check_schedule?.target_area || '—' }}
+                                                    </dd>
+                                                </div>
+                                            </dl>
+                                            <Link
+                                                v-if="$page.props.auth?.user?.can_go_check_finder"
+                                                :href="route('go_check.create')"
+                                                class="mt-4 inline-flex items-center rounded-lg bg-[#00529b] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#004080] transition-colors"
+                                            >
+                                                Laporan Go Check
+                                            </Link>
+                                        </div>
+                                        <div
+                                            v-if="notification.go_boost"
+                                            class="mt-3 min-w-0 overflow-hidden rounded-lg bg-blue-50 p-3 border border-blue-100"
+                                        >
+                                            <p class="text-xs font-medium text-blue-900 mb-1 break-words">
                                                 GO BOOST Details:
                                             </p>
-                                            <p class="text-xs text-blue-700 mb-2">
+                                            <p class="text-xs text-blue-700 mb-2 break-words break-all">
                                                 Area: {{ notification.go_boost.area_temuan }} | 
                                                 Ruangan: {{ notification.go_boost.ruangan_temuan }} | 
                                                 Oleh: {{ notification.go_boost.user_name }}
                                             </p>
-                                            <p class="text-xs text-blue-700 mb-2">
+                                            <p class="text-xs text-blue-700 mb-2 break-words break-all whitespace-pre-wrap">
                                                 <strong>Temuan:</strong> {{ notification.go_boost.penjelasan_temuan }}
                                             </p>
                                             
@@ -257,7 +303,7 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                 <p class="text-xs font-medium text-blue-900 mb-1">
                                                     ✅ Perbaikan Selesai
                                                 </p>
-                                                <p class="text-xs text-blue-700 mb-2">
+                                                <p class="text-xs text-blue-700 mb-2 break-words break-all whitespace-pre-wrap">
                                                     <strong>Keterangan:</strong> {{ notification.go_boost.keterangan_perbaikan }}
                                                 </p>
                                                 <p class="text-xs text-blue-600 mb-2" v-if="notification.go_boost.tanggal_perbaikan">
@@ -353,17 +399,24 @@ const submitGoCheckPerbaikan = (goCheckId) => {
 
                                         <div
                                             v-if="notification.go_check"
-                                            class="mt-3 rounded-lg bg-teal-50 p-3 border border-teal-100"
+                                            class="mt-3 min-w-0 overflow-hidden rounded-lg bg-teal-50 p-3 border border-teal-100"
                                         >
-                                            <p class="text-xs font-medium text-teal-900 mb-1">GO CHECK — Bagian {{ notification.go_check.bagian }}</p>
-                                            <p class="text-xs text-teal-800">
+                                            <p class="text-xs font-medium text-teal-900 mb-1 break-words break-all">
+                                                GO CHECK — Bagian {{ notification.go_check.bagian }}
+                                            </p>
+                                            <p class="text-xs text-teal-800 break-words break-all">
                                                 {{ notification.go_check.area_temuan }} / {{ notification.go_check.ruangan_temuan }}
                                                 · Finder: {{ notification.go_check.finder_name }}
                                             </p>
-                                            <p class="text-xs text-teal-700 mt-1">{{ notification.go_check.penjelasan_temuan }}</p>
-                                            <div v-if="notification.go_check.has_perbaikan" class="mt-2 text-xs text-teal-800">
+                                            <p class="text-xs text-teal-700 mt-1 break-words break-all whitespace-pre-wrap">
+                                                {{ notification.go_check.penjelasan_temuan }}
+                                            </p>
+                                            <p
+                                                v-if="notification.go_check.has_perbaikan"
+                                                class="mt-2 text-xs text-teal-800 break-words break-all whitespace-pre-wrap"
+                                            >
                                                 <strong>Solver:</strong> {{ notification.go_check.keterangan_perbaikan }}
-                                            </div>
+                                            </p>
                                             <div v-else-if="notification.go_check.can_submit_solver" class="mt-3">
                                                 <button
                                                     v-if="!showPerbaikanForm[gcKey(notification.go_check.id)]"
@@ -404,7 +457,7 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                     </div>
 
                                     <!-- Actions -->
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex shrink-0 items-center gap-2">
                                         <button
                                             v-if="!notification.is_read"
                                             @click="markAsRead(notification.id)"
