@@ -53,6 +53,8 @@ class GoBoost extends Model
      */
     protected $casts = [
         'tanggal_perbaikan' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     /**

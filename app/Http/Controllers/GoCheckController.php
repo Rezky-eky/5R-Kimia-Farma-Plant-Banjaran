@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FiveRTeamAuditTarget;
+use App\Models\FiveRTeamMember;
 use App\Models\GoCheck;
 use App\Models\Notification;
 use App\Models\User;
@@ -23,9 +25,74 @@ class GoCheckController extends Controller
             );
         }
 
+        $allLeaders = $this->allInspectorTeamLeaders($user);
+
         return Inertia::render('GoCheck/Create', [
             'assignedBagian' => $assignedBagian,
+            'solverLeaders' => $allLeaders,
         ]);
+    }
+
+    /**
+     * @return list<array{id: int, name: string, npp: string, team_name: string|null}>
+     */
+    private function allInspectorTeamLeaders(User $finder): array
+    {
+        return FiveRTeamMember::query()
+            ->where('is_leader', true)
+            ->where('user_id', '!=', $finder->id)
+            ->with(['user:id,name,npp', 'team:id,inspector_area'])
+            ->orderBy('team_id')
+            ->get()
+            ->map(fn ($member) => [
+                'id' => $member->user->id,
+                'name' => $member->user->name,
+                'npp' => $member->user->npp,
+                'team_name' => $member->team?->inspector_area,
+            ])
+            ->unique('id')
+            ->values()
+            ->all();
+    }
+
+    private function solverAllowed(User $finder, int $solverId): bool
+    {
+        return collect($this->allInspectorTeamLeaders($finder))
+            ->contains(fn ($row) => (int) $row['id'] === $solverId);
+    }
+
+    /**
+     * @return array<string, array{solver_bagian: string|null, default_solver_id: int|null}>
+     */
+    private function assignmentMetaMap(User $user): array
+    {
+        $meta = [];
+
+        FiveRTeamMember::query()
+            ->where('user_id', $user->id)
+            ->with('team.auditTargets')
+            ->get()
+            ->each(function ($membership) use (&$meta) {
+                foreach ($membership->team?->auditTargets ?? [] as $target) {
+                    foreach (array_filter([$target->bagian, $target->target_area]) as $key) {
+                        $meta[$key] = [
+                            'solver_bagian' => $target->bagian ?: $key,
+                            'default_solver_id' => $target->pic_user_id,
+                        ];
+                    }
+                }
+            });
+
+        foreach ($user->fiveRBagianAssignments()->pluck('bagian') as $bagian) {
+            if ($bagian && ! isset($meta[$bagian])) {
+                $meta[$bagian] = [
+                    'solver_bagian' => $bagian,
+                    'default_solver_id' => null,
+                ];
+            }
+        }
+
+        return $meta;
     }
 
     public function store(Request $request)
@@ -35,6 +102,7 @@ class GoCheckController extends Controller
 
         $validated = $request->validate([
             'bagian' => 'required|string|max:255',
+            'solver_user_id' => 'required|exists:users,id',
             'area_temuan' => 'required|string|max:255',
             'ruangan_temuan' => 'required|string|max:255',
             'penjelasan_temuan' => 'required|string',
@@ -47,6 +115,19 @@ class GoCheckController extends Controller
             return back()->withErrors(['bagian' => 'Bagian tidak termasuk penugasan Anda.'])->withInput();
         }
 
+        $solver = User::findOrFail($validated['solver_user_id']);
+
+        if ((int) $solver->id === (int) $user->id) {
+            return back()->withErrors(['solver_user_id' => 'Finder tidak dapat menjadi Solver.'])->withInput();
+        }
+
+        if (! $this->solverAllowed($user, (int) $solver->id)) {
+            return back()->withErrors(['solver_user_id' => 'Solver harus ketua tim inspector yang terdaftar.'])->withInput();
+        }
+
+        $meta = $this->assignmentMetaMap($user);
+        $storeBagian = $meta[$validated['bagian']]['solver_bagian'] ?? $validated['bagian'];
+
         $photoPaths = [];
         if ($request->hasFile('photo_temuan')) {
             foreach ($request->file('photo_temuan') as $file) {
@@ -56,7 +137,8 @@ class GoCheckController extends Controller
 
         $goCheck = GoCheck::create([
             'finder_user_id' => $user->id,
-            'bagian' => $validated['bagian'],
+            'solver_user_id' => $solver->id,
+            'bagian' => $storeBagian,
             'area_temuan' => $validated['area_temuan'],
             'ruangan_temuan' => $validated['ruangan_temuan'],
             'penjelasan_temuan' => $validated['penjelasan_temuan'],
@@ -66,24 +148,17 @@ class GoCheckController extends Controller
             'status_perbaikan' => 'pending',
         ]);
 
-        $solvers = User::where('bagian', $validated['bagian'])
-            ->where('id', '!=', $user->id)
-            ->whereIn('role', ['user', 'five_r_team', 'five_r_ketua', 'five_r_sekretaris'])
-            ->get();
-
-        foreach ($solvers as $solver) {
-            Notification::create([
-                'user_id' => $solver->id,
-                'go_check_id' => $goCheck->id,
-                'type' => 'go_check_solver_needed',
-                'title' => 'Go Check — Perlu tindak lanjut (Solver)',
-                'message' => 'Tim 5R menemukan temuan di bagian Anda ('.$validated['bagian'].'). Silakan input perbaikan sebagai Solver.',
-            ]);
-        }
+        Notification::create([
+            'user_id' => $solver->id,
+            'go_check_id' => $goCheck->id,
+            'type' => 'go_check_solver_needed',
+            'title' => 'Go Check — Perlu tindak lanjut (Solver)',
+            'message' => 'Tim 5R menemukan temuan di bagian Anda ('.$storeBagian.'). Silakan input perbaikan sebagai Solver.',
+        ]);
 
         return redirect()->route('dashboard')->with(
             'success',
-            'Go Check berhasil dicatat. Menunggu Solver dari bagian '.$validated['bagian'].'.'
+            'Go Check berhasil dicatat. Menunggu Solver: '.$solver->name.'.'
         );
     }
 
@@ -96,7 +171,11 @@ class GoCheckController extends Controller
             return back()->withErrors(['error' => 'Perbaikan sudah disubmit.']);
         }
 
-        if (($user->bagian ?? '') !== $goCheck->bagian) {
+        if ($goCheck->solver_user_id && (int) $goCheck->solver_user_id !== (int) $user->id) {
+            return back()->withErrors(['error' => 'Hanya Solver yang ditunjuk yang dapat menginput perbaikan.']);
+        }
+
+        if (! $goCheck->solver_user_id && ($user->bagian ?? '') !== $goCheck->bagian) {
             return back()->withErrors(['error' => 'Hanya karyawan bagian '.$goCheck->bagian.' yang dapat menjadi Solver.']);
         }
 

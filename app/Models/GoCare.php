@@ -10,6 +10,8 @@ class GoCare extends Model
 {
     use HasFactory;
 
+    public const POINTS_PER_APPROVAL = 10;
+
     /**
      * Nama tabel yang digunakan oleh model.
      *
@@ -39,6 +41,11 @@ class GoCare extends Model
         'rejected_by',
         'rejected_at',
         'reject_comment',
+    ];
+
+    protected $casts = [
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
     ];
 
     public static function hasApprovalWorkflow(): bool

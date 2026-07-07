@@ -9,6 +9,7 @@ use App\Http\Controllers\GoCheckController;
 use App\Http\Controllers\GoCheckManagementController;
 use App\Http\Controllers\GoOfferController;
 use App\Http\Controllers\GoSaleController;
+use App\Http\Controllers\MonthlyReportExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
@@ -76,6 +77,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/go-sale/{id}/accept', [GoSaleController::class, 'accept'])->name('go_sale.accept');
     Route::post('/go-sale/{id}/reject', [GoSaleController::class, 'reject'])->name('go_sale.reject');
     Route::post('/go-sale/{id}/complete', [GoSaleController::class, 'complete'])->name('go_sale.complete');
+
+    // Laporan bulanan Excel (user)
+    Route::get('/laporan/go-boost.xlsx', [MonthlyReportExportController::class, 'goBoost'])->name('reports.go_boost.export');
+    Route::get('/laporan/barang-ringkas.xlsx', [MonthlyReportExportController::class, 'dbr'])->name('reports.dbr.export');
+    Route::get('/laporan/go-offer.xlsx', [MonthlyReportExportController::class, 'goOffer'])->name('reports.go_offer.export');
+    Route::get('/laporan/go-sale.xlsx', [MonthlyReportExportController::class, 'goSale'])->name('reports.go_sale.export');
 });
 
 // Admin Routes
@@ -116,15 +123,39 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Go Reward - Dashboard pemenang (ganti Kelola Reward)
     Route::get('/go-reward', [AdminController::class, 'goReward'])->name('go_reward');
+
+    // Laporan bulanan Excel (admin)
+    Route::get('/laporan/go-action.xlsx', [MonthlyReportExportController::class, 'goAction'])->name('reports.go_action.export');
+    Route::get('/laporan/go-boost.xlsx', [MonthlyReportExportController::class, 'goBoost'])->name('reports.go_boost.export');
+    Route::get('/laporan/go-care.xlsx', [MonthlyReportExportController::class, 'goCare'])->name('reports.go_care.export');
+    Route::get('/laporan/go-offer.xlsx', [MonthlyReportExportController::class, 'goOffer'])->name('reports.go_offer.export');
+    Route::get('/laporan/go-sale.xlsx', [MonthlyReportExportController::class, 'goSale'])->name('reports.go_sale.export');
+    Route::get('/laporan/barang-ringkas.xlsx', [MonthlyReportExportController::class, 'dbr'])->name('reports.dbr.export');
+    Route::get('/laporan/go-reward.xlsx', [MonthlyReportExportController::class, 'goReward'])->name('reports.go_reward.export');
+    Route::get('/laporan/5r-keseluruhan.xlsx', [MonthlyReportExportController::class, 'overall'])->name('reports.overall.export');
 });
 
 // Kelola Go Check — Admin, Ketua 5R, Sekretaris 5R
 Route::middleware(['auth', 'go_check.management'])->prefix('kelola-go-check')->name('go_check.management.')->group(function () {
     Route::get('/', [GoCheckManagementController::class, 'dashboard'])->name('dashboard');
     Route::get('/tim-5r', [GoCheckManagementController::class, 'teamIndex'])->name('team');
+    Route::get('/tim-5r/export', [GoCheckManagementController::class, 'exportTeams'])->name('team.export');
+    Route::post('/tim-5r', [GoCheckManagementController::class, 'storeTeam'])->name('team.store');
+    Route::put('/tim-5r/{team}', [GoCheckManagementController::class, 'updateTeam'])->name('team.update');
+    Route::delete('/tim-5r/{team}', [GoCheckManagementController::class, 'destroyTeam'])->name('team.destroy');
+    Route::post('/tim-5r/{team}/anggota', [GoCheckManagementController::class, 'addTeamMember'])->name('team.members.add');
+    Route::delete('/tim-5r/{team}/anggota/{user}', [GoCheckManagementController::class, 'removeTeamMember'])->name('team.members.remove');
+    Route::post('/tim-5r/{team}/penugasan', [GoCheckManagementController::class, 'syncTeamTargets'])->name('team.targets');
+    Route::put('/tim-5r/{team}/penugasan/{target}', [GoCheckManagementController::class, 'updateTeamTarget'])->name('team.targets.update');
+    Route::delete('/tim-5r/{team}/penugasan/{target}', [GoCheckManagementController::class, 'destroyTeamTarget'])->name('team.targets.destroy');
+    Route::post('/jadwal', [GoCheckManagementController::class, 'storeSchedule'])->name('schedules.store');
+    Route::put('/jadwal/{schedule}', [GoCheckManagementController::class, 'updateSchedule'])->name('schedules.update');
+    Route::delete('/jadwal/{schedule}', [GoCheckManagementController::class, 'destroySchedule'])->name('schedules.destroy');
+    Route::post('/jadwal/{schedule}/batal', [GoCheckManagementController::class, 'cancelSchedule'])->name('schedules.cancel');
     Route::post('/tim-5r/role', [GoCheckManagementController::class, 'updateMemberRole'])->name('team.role');
-    Route::post('/tim-5r/penugasan', [GoCheckManagementController::class, 'syncAssignments'])->name('team.assignments');
+    Route::post('/tim-5r/penugasan-legacy', [GoCheckManagementController::class, 'syncAssignments'])->name('team.assignments');
     Route::get('/data', [GoCheckManagementController::class, 'goCheckIndex'])->name('index');
+    Route::get('/laporan/go-check.xlsx', [MonthlyReportExportController::class, 'goCheck'])->name('reports.go_check.export');
     Route::post('/{id}/approve', [GoCheckManagementController::class, 'approve'])->name('approve');
     Route::post('/{id}/reject', [GoCheckManagementController::class, 'reject'])->name('reject');
 });

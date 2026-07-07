@@ -5,6 +5,7 @@ import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({
     stats: { type: Object, default: () => ({}) },
+    teamsMigrationPending: { type: Boolean, default: false },
 });
 </script>
 
@@ -23,7 +24,15 @@ defineProps({
                 Panel Ketua/Sekretaris/Admin — kelola tim 5R, penugasan bagian, approve/reject temuan audit.
             </p>
 
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div
+                v-if="teamsMigrationPending"
+                class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
+                <p class="font-semibold">Tabel tim 5R belum tersedia di database.</p>
+                <p class="mt-1">Jalankan migrasi di terminal project: <code class="rounded bg-amber-100 px-1.5 py-0.5 text-xs">php artisan migrate</code></p>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div class="rounded-xl bg-slate-50 p-5 ring-1 ring-slate-200">
                     <p class="text-xs text-slate-600 uppercase font-semibold">Total temuan</p>
                     <p class="text-3xl font-bold text-slate-900 mt-1">{{ stats.total ?? 0 }}</p>
@@ -46,6 +55,10 @@ defineProps({
                     <p class="text-xs text-violet-800 uppercase font-semibold">Anggota tim 5R</p>
                     <p class="text-3xl font-bold text-violet-900 mt-1">{{ stats.team_count ?? 0 }}</p>
                 </div>
+                <div class="rounded-xl bg-teal-50 p-5 ring-1 ring-teal-100">
+                    <p class="text-xs text-teal-800 uppercase font-semibold">Jadwal aktif</p>
+                    <p class="text-3xl font-bold text-teal-900 mt-1">{{ stats.upcoming_schedules ?? 0 }}</p>
+                </div>
             </div>
 
             <div class="flex flex-wrap gap-3">
@@ -53,7 +66,7 @@ defineProps({
                     :href="route('go_check.management.team')"
                     class="rounded-xl bg-[#00529b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#004080]"
                 >
-                    Kelola Tim & Penugasan Bagian
+                    Kelola Tim, Penugasan & Jadwal
                 </Link>
                 <Link
                     :href="route('go_check.management.index')"

@@ -3,15 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Models\FiveRBagianAssignment;
+use App\Models\FiveRTeam;
+use App\Models\FiveRTeamAuditTarget;
+use App\Models\FiveRTeamMember;
 use App\Models\GoCheck;
+use App\Models\GoCheckSchedule;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\GoCheckTeamService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class GoCheckManagementController extends Controller
 {
+    public function __construct(
+        private GoCheckTeamService $teamService,
+    ) {}
+
     /**
      * Decode kolom foto JSON (array path) atau path tunggal.
      */
@@ -52,7 +62,19 @@ class GoCheckManagementController extends Controller
 
     public function dashboard()
     {
+        $teamCount = 0;
+        $upcomingSchedules = 0;
+        $teamsMigrationPending = ! Schema::hasTable('five_r_teams');
+
+        if (! $teamsMigrationPending) {
+            $teamCount = FiveRTeamMember::query()->distinct()->count('user_id');
+            $upcomingSchedules = GoCheckSchedule::where('status', 'scheduled')
+                ->where('scheduled_date', '>=', now()->toDateString())
+                ->count();
+        }
+
         return Inertia::render('GoCheck/Management/Dashboard', [
+            'teamsMigrationPending' => $teamsMigrationPending,
             'stats' => [
                 // Temuan Finder sudah masuk, Solver belum input perbaikan
                 'waiting_solver' => GoCheck::query()
@@ -73,39 +95,54 @@ class GoCheckManagementController extends Controller
                 'approved' => GoCheck::where('approval_status', 'APPROVED')->count(),
                 'rejected' => GoCheck::where('approval_status', 'REJECTED')->count(),
                 'total' => GoCheck::count(),
-                'team_count' => User::where('role', 'five_r_team')->count(),
+                'team_count' => $teamCount,
+                'upcoming_schedules' => $upcomingSchedules,
             ],
         ]);
     }
 
-    public function teamIndex()
+    public function teamIndex(Request $request)
     {
-        $teamMembers = User::whereIn('role', ['five_r_team', 'five_r_ketua', 'five_r_sekretaris'])
-            ->orderBy('name')
-            ->get(['id', 'name', 'npp', 'role', 'bagian']);
+        $search = $request->input('search', '');
 
         try {
-            $assignments = FiveRBagianAssignment::query()
+            $teams = $this->teamService->teamsQuery($search)->get();
+            $serializedTeams = $this->teamService->serializeTeams($teams);
+
+            $schedules = GoCheckSchedule::query()
+                ->with(['team:id,inspector_area', 'creator:id,name'])
+                ->where('status', 'scheduled')
+                ->where('scheduled_date', '>=', now()->toDateString())
+                ->orderBy('scheduled_date')
+                ->limit(50)
                 ->get()
-                ->groupBy('user_id')
-                ->map(fn ($rows, $userId) => [
-                    'user_id' => (int) $userId,
-                    'bagian' => $rows->pluck('bagian')->values()->all(),
-                ])
-                ->values()
-                ->all();
+                ->map(fn ($s) => [
+                    'id' => $s->id,
+                    'team_id' => $s->team_id,
+                    'inspector_area' => $s->team?->inspector_area,
+                    'scheduled_date' => $s->scheduled_date->format('d/m/Y'),
+                    'scheduled_date_raw' => $s->scheduled_date->toDateString(),
+                    'target_area' => $s->target_area,
+                    'bagian' => $s->bagian,
+                    'notes' => $s->notes,
+                    'creator_name' => $s->creator?->name,
+                ]);
+
+            $allUsers = User::orderBy('name')->get(['id', 'name', 'npp', 'role', 'bagian']);
         } catch (\Throwable $e) {
             report($e);
 
             return redirect()
                 ->route('go_check.management.dashboard')
-                ->with('error', 'Tabel penugasan tim belum tersedia. Jalankan migrasi database (php artisan migrate) di server.');
+                ->with('error', 'Tabel tim 5R belum tersedia. Jalankan migrasi database (php artisan migrate) di server.');
         }
 
         return Inertia::render('GoCheck/Management/Team', [
-            'teamMembers' => $teamMembers,
-            'assignments' => $assignments,
+            'teams' => $serializedTeams,
+            'schedules' => $schedules,
+            'allUsers' => $allUsers,
             'bagianOptions' => self::BAGIAN_OPTIONS,
+            'filters' => ['search' => $search],
             'roleOptions' => [
                 ['value' => 'five_r_team', 'label' => 'Tim 5R (Finder)'],
                 ['value' => 'five_r_ketua', 'label' => 'Ketua 5R'],
@@ -113,6 +150,213 @@ class GoCheckManagementController extends Controller
                 ['value' => 'user', 'label' => 'User biasa'],
             ],
         ]);
+    }
+
+    public function storeTeam(Request $request)
+    {
+        $validated = $request->validate([
+            'inspector_area' => 'required|string|max:255',
+        ]);
+
+        $team = FiveRTeam::create([
+            'inspector_area' => $validated['inspector_area'],
+            'sort_order' => (int) (FiveRTeam::max('sort_order') ?? 0) + 1,
+        ]);
+
+        return redirect()
+            ->route('go_check.management.team')
+            ->with('success', 'Tim area inspector berhasil ditambahkan.')
+            ->with('new_team_id', $team->id);
+    }
+
+    public function updateTeam(Request $request, FiveRTeam $team)
+    {
+        $validated = $request->validate([
+            'inspector_area' => 'required|string|max:255',
+        ]);
+
+        $team->update($validated);
+
+        return back()->with('success', 'Data tim diperbarui.');
+    }
+
+    public function destroyTeam(FiveRTeam $team)
+    {
+        $team->delete();
+
+        return back()->with('success', 'Tim dihapus.');
+    }
+
+    public function addTeamMember(Request $request, FiveRTeam $team)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'is_leader' => 'boolean',
+            'set_role_five_r_team' => 'boolean',
+        ]);
+
+        $user = User::findOrFail($validated['user_id']);
+
+        if ($validated['set_role_five_r_team'] ?? true) {
+            if (! $user->isAdmin()) {
+                $user->update(['role' => 'five_r_team']);
+            }
+        }
+
+        FiveRTeamMember::firstOrCreate(
+            ['team_id' => $team->id, 'user_id' => $user->id],
+            [
+                'is_leader' => (bool) ($validated['is_leader'] ?? false),
+                'sort_order' => $team->members()->count() + 1,
+            ]
+        );
+
+        $this->teamService->syncLegacyAssignmentsFromTeam($team->fresh(['members.user', 'auditTargets']));
+
+        return back()->with('success', $user->name.' ditambahkan ke tim.');
+    }
+
+    public function removeTeamMember(FiveRTeam $team, User $user)
+    {
+        FiveRTeamMember::where('team_id', $team->id)->where('user_id', $user->id)->delete();
+
+        return back()->with('success', 'Anggota dihapus dari tim.');
+    }
+
+    public function syncTeamTargets(Request $request, FiveRTeam $team)
+    {
+        $validated = $request->validate([
+            'targets' => 'required|array',
+            'targets.*.target_area' => 'required|string|max:255',
+            'targets.*.pic_name' => 'nullable|string|max:255',
+            'targets.*.pic_user_id' => 'nullable|exists:users,id',
+            'targets.*.bagian' => 'nullable|string|max:255',
+        ]);
+
+        FiveRTeamAuditTarget::where('team_id', $team->id)->delete();
+
+        foreach ($validated['targets'] as $i => $target) {
+            if (trim($target['target_area']) === '') {
+                continue;
+            }
+            FiveRTeamAuditTarget::create([
+                'team_id' => $team->id,
+                'target_area' => $target['target_area'],
+                'pic_name' => $target['pic_name'] ?? null,
+                'pic_user_id' => $target['pic_user_id'] ?? null,
+                'bagian' => $target['bagian'] ?? null,
+                'sort_order' => $i + 1,
+            ]);
+        }
+
+        $this->teamService->syncLegacyAssignmentsFromTeam($team->fresh(['members.user', 'auditTargets']));
+
+        return back()->with('success', 'Penugasan area audit disimpan.');
+    }
+
+    public function updateTeamTarget(Request $request, FiveRTeam $team, FiveRTeamAuditTarget $target)
+    {
+        if ((int) $target->team_id !== (int) $team->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'target_area' => 'required|string|max:255',
+            'pic_name' => 'nullable|string|max:255',
+            'pic_user_id' => 'nullable|exists:users,id',
+            'bagian' => 'nullable|string|max:255',
+        ]);
+
+        $target->update($validated);
+
+        $this->teamService->syncLegacyAssignmentsFromTeam($team->fresh(['members.user', 'auditTargets']));
+
+        return back()->with('success', 'Penugasan area diperbarui.');
+    }
+
+    public function destroyTeamTarget(FiveRTeam $team, FiveRTeamAuditTarget $target)
+    {
+        if ((int) $target->team_id !== (int) $team->id) {
+            abort(404);
+        }
+
+        $target->delete();
+
+        $this->teamService->syncLegacyAssignmentsFromTeam($team->fresh(['members.user', 'auditTargets']));
+
+        return back()->with('success', 'Penugasan area dihapus.');
+    }
+
+    public function storeSchedule(Request $request)
+    {
+        $validated = $request->validate([
+            'team_id' => 'required|exists:five_r_teams,id',
+            'audit_target_id' => 'nullable|exists:five_r_team_audit_targets,id',
+            'scheduled_date' => 'required|date|after_or_equal:today',
+            'target_area' => 'required|string|max:255',
+            'bagian' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $schedule = GoCheckSchedule::create([
+            'team_id' => $validated['team_id'],
+            'audit_target_id' => $validated['audit_target_id'] ?? null,
+            'scheduled_date' => $validated['scheduled_date'],
+            'target_area' => $validated['target_area'],
+            'bagian' => $validated['bagian'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+            'status' => 'scheduled',
+            'created_by' => Auth::user()->id,
+            'notified_at' => now(),
+        ]);
+
+        $this->teamService->notifySchedule($schedule, 'created');
+
+        return back()->with('success', 'Jadwal Go Check dibuat. Notifikasi terkirim ke anggota tim.');
+    }
+
+    public function cancelSchedule(GoCheckSchedule $schedule)
+    {
+        $schedule->update(['status' => 'cancelled']);
+
+        return back()->with('success', 'Jadwal dibatalkan.');
+    }
+
+    public function updateSchedule(Request $request, GoCheckSchedule $schedule)
+    {
+        if ($schedule->status !== 'scheduled') {
+            return back()->with('error', 'Hanya jadwal aktif yang dapat diedit.');
+        }
+
+        $validated = $request->validate([
+            'team_id' => 'required|exists:five_r_teams,id',
+            'scheduled_date' => 'required|date',
+            'target_area' => 'required|string|max:255',
+            'bagian' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $schedule->update([
+            'team_id' => $validated['team_id'],
+            'scheduled_date' => $validated['scheduled_date'],
+            'target_area' => $validated['target_area'],
+            'bagian' => $validated['bagian'] ?? null,
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return back()->with('success', 'Jadwal Go Check diperbarui.');
+    }
+
+    public function destroySchedule(GoCheckSchedule $schedule)
+    {
+        $schedule->delete();
+
+        return back()->with('success', 'Jadwal Go Check dihapus.');
+    }
+
+    public function exportTeams()
+    {
+        return $this->teamService->exportTeamsExcel();
     }
 
     public function updateMemberRole(Request $request)

@@ -763,10 +763,18 @@ class AdminController extends Controller
                 'total' => $row->total,
             ]);
 
-        // Pemenang Go Care terbanyak
-        $topGoCares = GoCare::select('user_id', DB::raw('count(*) as total'))
+        // Pemenang Go Care: poin terbanyak dari laporan yang sudah di-approve (10 pt per approval)
+        $topGoCaresQuery = GoCare::query();
+        if (GoCare::hasApprovalWorkflow()) {
+            $topGoCaresQuery->where('approval_status', 'APPROVED');
+        } else {
+            $topGoCaresQuery->whereRaw('0 = 1');
+        }
+
+        $topGoCares = $topGoCaresQuery
+            ->select('user_id', DB::raw('count(*) * '.GoCare::POINTS_PER_APPROVAL.' as total'))
             ->groupBy('user_id')
-            ->orderBy('total', 'desc')
+            ->orderByDesc('total')
             ->limit(10)
             ->with('user:id,name,npp')
             ->get()
@@ -775,7 +783,7 @@ class AdminController extends Controller
                     'user_id' => $row->user_id,
                     'name' => $row->user?->name,
                     'npp' => $row->user?->npp,
-                    'total' => $row->total,
+                    'total' => (int) $row->total,
                 ];
             });
 
@@ -1338,7 +1346,7 @@ class AdminController extends Controller
         $goCare->update(GoCare::approvedAttributes(Auth::user()->id));
 
         if ($goCare->user) {
-            $goCare->user->increment('points_balance', 10);
+            $goCare->user->increment('points_balance', GoCare::POINTS_PER_APPROVAL);
 
             \App\Models\Notification::create([
                 'user_id' => $goCare->user_id,
