@@ -3,14 +3,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import PhotoGallery from '@/Components/PhotoGallery.vue';
-<<<<<<< HEAD
 import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
-=======
-import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
->>>>>>> 2c0a385462210724212168efee04285568c04831
 
 const props = defineProps({
     goCares: {
