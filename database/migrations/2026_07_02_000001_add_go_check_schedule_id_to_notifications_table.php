@@ -12,7 +12,6 @@ return new class extends Migration
             if (! Schema::hasColumn('notifications', 'go_check_schedule_id')) {
                 $table->foreignId('go_check_schedule_id')
                     ->nullable()
-                    ->after('go_check_id')
                     ->constrained('go_check_schedules')
                     ->nullOnDelete();
             }
