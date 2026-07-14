@@ -222,32 +222,7 @@ class FiveRMonthlyReportService
     public function exportGoOffer(?string $month): StreamedResponse
     {
         [$start, $end, $label] = $this->monthRange($month);
-
-        $headers = [
-            'No', 'ID', 'Tanggal', 'Go Action ID', 'Nama Barang', 'Jumlah', 'Satuan',
-            'Penawar (Nama)', 'Penawar (Bagian)', 'Target Bagian', 'Pemohon (Nama)', 'Status', 'Tanggal Diterima',
-        ];
-
-        $rows = [];
-        $no = 1;
-        foreach ($this->goOfferQuery($start, $end)->get() as $item) {
-            $snapshot = $item->dbr_snapshot ?? [];
-            $rows[] = [
-                $no++,
-                $item->id,
-                $this->formatDateTime($item->created_at),
-                $item->go_action_id,
-                $snapshot['nama_barang'] ?? '',
-                $snapshot['jumlah'] ?? '',
-                $snapshot['satuan'] ?? '',
-                $item->offeredByUser?->name,
-                $item->offered_by_bagian,
-                $item->target_bagian,
-                $item->requestedByUser?->name,
-                $item->status,
-                $this->formatDateTime($item->accepted_at),
-            ];
-        }
+        [$headers, $rows] = $this->buildGoOfferIndexExportRows($start, $end);
 
         return $this->downloadSingleSheet('GO OFFER', $headers, $rows, "laporan-go-offer-{$label}.xlsx");
     }
@@ -508,6 +483,105 @@ class FiveRMonthlyReportService
                     $goAction->user?->name, $goAction->bagian,
                     $barang['nama_barang'] ?? '', $barang['jumlah'] ?? '', $barang['satuan'] ?? '',
                     $barang['distribution_type'] ?? '', $barang['status_tps'] ?? '',
+                ];
+            }
+        }
+
+        return [$headers, $rows];
+    }
+
+    /**
+     * Baris ekspor Go Offer mengikuti halaman index: item DBR (offer/sale) dari GO ACTION,
+     * difilter bulan berdasarkan tanggal GO ACTION (bukan tanggal record go_offers).
+     *
+     * @return array{0: list<string>, 1: list<list<mixed>>}
+     */
+    private function buildGoOfferIndexExportRows(Carbon $start, Carbon $end): array
+    {
+        $headers = [
+            'No', 'Go Action ID', 'Tanggal', 'Nama Barang', 'Jumlah', 'Satuan',
+            'Creator (Nama)', 'Creator (Bagian)', 'Diminta Oleh', 'Status Mutasi',
+            'Tanggal Request', 'Tanggal Disetujui',
+        ];
+
+        $goActions = GoAction::with('user')
+            ->whereNotNull('list_barang_ringkas')
+            ->whereBetween('created_at', [$start, $end])
+            ->latest()
+            ->get();
+
+        $goActionIds = $goActions->pluck('id')->values();
+
+        $offers = GoOffer::with(['requestedByUser'])
+            ->whereIn('go_action_id', $goActionIds)
+            ->whereIn('status', ['pending', 'allocated', 'accepted', 'rejected'])
+            ->get(['go_action_id', 'dbr_index', 'status', 'id', 'requested_by_user_id', 'accepted_at', 'created_at']);
+
+        $offerBestByKey = [];
+        foreach ($offers as $offer) {
+            $key = $offer->go_action_id.'_'.$offer->dbr_index;
+
+            $tracking = 'available';
+            $priority = 0;
+            if (in_array($offer->status, ['allocated', 'accepted'], true)) {
+                $tracking = 'allocated';
+                $priority = 2;
+            } elseif ($offer->status === 'pending') {
+                $tracking = 'requested';
+                $priority = 1;
+            }
+
+            if (! isset($offerBestByKey[$key]) || $priority > $offerBestByKey[$key]['priority']) {
+                $offerBestByKey[$key] = [
+                    'tracking' => $tracking,
+                    'priority' => $priority,
+                    'requested_by_name' => $offer->requestedByUser?->name,
+                    'requested_created_at' => $offer->created_at,
+                    'accepted_at' => $offer->accepted_at,
+                ];
+            }
+        }
+
+        $rows = [];
+        $no = 1;
+        foreach ($goActions as $goAction) {
+            $list = $goAction->list_barang_ringkas ?? [];
+            if (! is_array($list)) {
+                continue;
+            }
+
+            foreach ($list as $index => $barang) {
+                $distributionType = $barang['distribution_type'] ?? null;
+                if ($distributionType === null || $distributionType === '') {
+                    $distributionType = 'offer';
+                }
+                if (! in_array($distributionType, ['offer', 'sale'], true)) {
+                    continue;
+                }
+
+                $key = $goAction->id.'_'.$index;
+                $best = $offerBestByKey[$key] ?? null;
+                $trackingStatus = $best['tracking'] ?? 'available';
+
+                $rows[] = [
+                    $no++,
+                    $goAction->id,
+                    $this->formatDateTime($goAction->created_at),
+                    $barang['nama_barang'] ?? '',
+                    $barang['jumlah'] ?? '',
+                    $barang['satuan'] ?? '',
+                    $goAction->user?->name,
+                    $goAction->bagian,
+                    in_array($trackingStatus, ['requested', 'allocated'], true)
+                        ? ($best['requested_by_name'] ?? '')
+                        : '',
+                    $trackingStatus,
+                    in_array($trackingStatus, ['requested', 'allocated'], true)
+                        ? $this->formatDateTime($best['requested_created_at'] ?? null)
+                        : null,
+                    $trackingStatus === 'allocated'
+                        ? $this->formatDateTime($best['accepted_at'] ?? null)
+                        : null,
                 ];
             }
         }
