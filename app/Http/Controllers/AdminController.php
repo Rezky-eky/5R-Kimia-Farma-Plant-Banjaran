@@ -55,6 +55,7 @@ class AdminController extends Controller
             ],
             'trendData' => $trendData,
             'departementStats' => $departementStats,
+            'isAdmin' => Auth::user()->isAdmin(),
         ]);
     }
 
@@ -68,6 +69,11 @@ class AdminController extends Controller
         $departemen = $request->input('departemen', '');
         $search = $request->input('search', '');
         $perPage = 15;
+        $isAdmin = Auth::user()->isAdmin();
+
+        if (! $isAdmin && $status === 'pending') {
+            $status = 'audited';
+        }
 
         $departements = $this->getAuditIndexDepartements();
 
@@ -121,6 +127,7 @@ class AdminController extends Controller
                 'jenis' => $jenis,
             ],
             'filterLabel' => $this->laporanFilterLabel($status),
+            'isAdmin' => $isAdmin,
         ]);
     }
 
@@ -247,6 +254,9 @@ class AdminController extends Controller
     {
         $query = GoAction::with(['user', 'audit.auditor'])->latest();
         $statusFilter = $request->input('status');
+        if (! Auth::user()->isAdmin() && ! $statusFilter) {
+            $statusFilter = 'audited';
+        }
         $this->applyGoActionStatusFilter($query, $statusFilter);
         if ($request->input('departemen')) {
             $query->where('bagian', $request->input('departemen'));
@@ -295,7 +305,11 @@ class AdminController extends Controller
     private function buildGoBoostRows(Request $request): \Illuminate\Support\Collection
     {
         $query = GoBoost::with(['user'])->latest();
-        $this->applyGoBoostStatusFilter($query, $request->input('status'));
+        $statusFilter = $request->input('status');
+        if (! Auth::user()->isAdmin() && ! $statusFilter) {
+            $statusFilter = 'audited';
+        }
+        $this->applyGoBoostStatusFilter($query, $statusFilter);
         if ($request->input('departemen')) {
             $query->where('bagian', $request->input('departemen'));
         }
@@ -345,7 +359,11 @@ class AdminController extends Controller
     private function buildGoCareRows(Request $request): \Illuminate\Support\Collection
     {
         $query = GoCare::with(['user'])->latest();
-        $this->applyGoCareStatusFilter($query, $request->input('status'));
+        $statusFilter = $request->input('status');
+        if (! Auth::user()->isAdmin() && ! $statusFilter) {
+            $statusFilter = 'audited';
+        }
+        $this->applyGoCareStatusFilter($query, $statusFilter);
         if ($request->input('departemen')) {
             $dept = $request->input('departemen');
             if (Schema::hasColumn('go_cares', 'bagian')) {
@@ -827,6 +845,7 @@ class AdminController extends Controller
             'topGoCheckClosers' => $topGoCheckClosers,
             'departementStats' => $departementStats,
             'topUsersByPoints' => $topUsersByPoints,
+            'isAdmin' => Auth::user()->isAdmin(),
         ]);
     }
 
@@ -938,6 +957,7 @@ class AdminController extends Controller
                 'search' => $request->search ?? '',
                 'departemen' => $request->departemen ?? '',
             ],
+            'isAdmin' => Auth::user()->isAdmin(),
         ]);
     }
 
@@ -1138,6 +1158,7 @@ class AdminController extends Controller
 
         return Inertia::render('Admin/GoBoostIndex', [
             'goBoosts' => $goBoosts,
+            'isAdmin' => Auth::user()->isAdmin(),
             'filters' => [
                 'search' => $request->search ?? '',
                 'status' => $request->status ?? '',
@@ -1275,6 +1296,7 @@ class AdminController extends Controller
 
         return Inertia::render('Admin/GoCareIndex', [
             'goCares' => $goCares,
+            'isAdmin' => Auth::user()->isAdmin(),
             'filters' => [
                 'search' => $request->search ?? '',
                 'approval_status' => $request->approval_status ?? '',

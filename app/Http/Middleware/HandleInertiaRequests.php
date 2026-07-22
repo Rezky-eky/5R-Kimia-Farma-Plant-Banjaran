@@ -45,6 +45,7 @@ class HandleInertiaRequests extends Middleware
                     'points_balance' => (int) ($user->points_balance ?? 0),
                     'can_manage_go_check' => $user->canManageGoCheck(),
                     'can_go_check_finder' => $user->canActAsGoCheckFinder(),
+                    'can_view_admin_data' => $user->canViewAdminData(),
                 ]) : null,
             ],
             'unreadNotificationsCount' => $unreadNotificationsCount,

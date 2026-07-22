@@ -82,57 +82,40 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan/go-boost.xlsx', [MonthlyReportExportController::class, 'goBoost'])->name('reports.go_boost.export');
     Route::get('/laporan/barang-ringkas.xlsx', [MonthlyReportExportController::class, 'dbr'])->name('reports.dbr.export');
     Route::get('/laporan/go-offer.xlsx', [MonthlyReportExportController::class, 'goOffer'])->name('reports.go_offer.export');
-    Route::get('/laporan/go-sale.xlsx', [MonthlyReportExportController::class, 'goSale'])->name('reports.go_sale.export');
 });
 
-// Admin Routes
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    // Dashboard
+// Admin Routes - view-only access for five_r_team and full admin access for actions
+Route::middleware(['auth', 'admin_or_five_r_team_viewer'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    
-    // Audit Routes
     Route::get('/audit', [AdminController::class, 'auditIndex'])->name('audit.index');
     Route::get('/audit/{id}', [AdminController::class, 'auditDetail'])->name('audit.detail');
-    Route::post('/audit/{id}', [AdminController::class, 'storeAudit'])->name('audit.store');
-    
-    // Reward Routes
-    Route::get('/reward', [AdminController::class, 'rewardIndex'])->name('reward.index');
-    Route::post('/reward', [AdminController::class, 'rewardStore'])->name('reward.store');
-    Route::put('/reward/{id}', [AdminController::class, 'rewardUpdate'])->name('reward.update');
-    Route::delete('/reward/{id}', [AdminController::class, 'rewardDestroy'])->name('reward.destroy');
-    
-    // Data Management Routes
     Route::get('/go-action', [AdminController::class, 'goActionIndex'])->name('go_action.index');
-    Route::get('/go-action/realisasi-mingguan', [AdminController::class, 'goActionWeeklyRealization'])->name('go_action.weekly_realization');
-    Route::get('/go-action/realisasi-mingguan-export.xlsx', [AdminController::class, 'goActionWeeklyRealizationExport'])->name('go_action.weekly_realization_export');
-    Route::get('/go-action/dbr-import', [AdminController::class, 'goActionDbrImport'])->name('go_action.dbr_import');
-    Route::post('/go-action/dbr-import', [AdminController::class, 'goActionDbrImportStore'])->name('go_action.dbr_import_store');
     Route::get('/go-action/dbr-template.xlsx', [AdminController::class, 'goActionDbrTemplate'])->name('go_action.dbr_template');
     Route::get('/go-action/dbr-export.xlsx', [AdminController::class, 'goActionDbrExport'])->name('go_action.dbr_export');
     Route::get('/go-boost', [AdminController::class, 'goBoostIndex'])->name('go_boost.index');
     Route::get('/go-boost/{id}', [AdminController::class, 'goBoostDetail'])->name('go_boost.detail');
-    Route::post('/go-boost/{id}/approve', [AdminController::class, 'goBoostApprove'])->name('go_boost.approve');
-    Route::post('/go-boost/{id}/reject', [AdminController::class, 'goBoostReject'])->name('go_boost.reject');
     Route::get('/go-care', [AdminController::class, 'goCareIndex'])->name('go_care.index');
     Route::get('/go-care/{id}', [AdminController::class, 'goCareDetail'])->name('go_care.detail');
-    Route::post('/go-care/{id}/approve', [AdminController::class, 'goCareApprove'])->name('go_care.approve');
-    Route::post('/go-care/{id}/reject', [AdminController::class, 'goCareReject'])->name('go_care.reject');
+});
 
-    // Laporan 5R Keseluruhan (dulu Kelola Audit)
-    // audit.index, audit.detail, audit.store tetap dipakai
-
-    // Go Reward - Dashboard pemenang (ganti Kelola Reward)
-    Route::get('/go-reward', [AdminController::class, 'goReward'])->name('go_reward');
-
-    // Laporan bulanan Excel (admin)
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/go-action/realisasi-mingguan', [AdminController::class, 'goActionWeeklyRealization'])->name('go_action.weekly_realization');
+    Route::get('/go-action/realisasi-mingguan-export.xlsx', [AdminController::class, 'goActionWeeklyRealizationExport'])->name('go_action.weekly_realization_export');
     Route::get('/laporan/go-action.xlsx', [MonthlyReportExportController::class, 'goAction'])->name('reports.go_action.export');
-    Route::get('/laporan/go-boost.xlsx', [MonthlyReportExportController::class, 'goBoost'])->name('reports.go_boost.export');
     Route::get('/laporan/go-care.xlsx', [MonthlyReportExportController::class, 'goCare'])->name('reports.go_care.export');
-    Route::get('/laporan/go-offer.xlsx', [MonthlyReportExportController::class, 'goOffer'])->name('reports.go_offer.export');
-    Route::get('/laporan/go-sale.xlsx', [MonthlyReportExportController::class, 'goSale'])->name('reports.go_sale.export');
-    Route::get('/laporan/barang-ringkas.xlsx', [MonthlyReportExportController::class, 'dbr'])->name('reports.dbr.export');
     Route::get('/laporan/go-reward.xlsx', [MonthlyReportExportController::class, 'goReward'])->name('reports.go_reward.export');
     Route::get('/laporan/5r-keseluruhan.xlsx', [MonthlyReportExportController::class, 'overall'])->name('reports.overall.export');
+    Route::post('/audit/{id}', [AdminController::class, 'storeAudit'])->name('audit.store');
+    Route::post('/reward', [AdminController::class, 'rewardStore'])->name('reward.store');
+    Route::put('/reward/{id}', [AdminController::class, 'rewardUpdate'])->name('reward.update');
+    Route::delete('/reward/{id}', [AdminController::class, 'rewardDestroy'])->name('reward.destroy');
+    Route::get('/go-action/dbr-import', [AdminController::class, 'goActionDbrImport'])->name('go_action.dbr_import');
+    Route::post('/go-action/dbr-import', [AdminController::class, 'goActionDbrImportStore'])->name('go_action.dbr_import_store');
+    Route::get('/go-reward', [AdminController::class, 'goReward'])->name('go_reward');
+    Route::post('/go-boost/{id}/approve', [AdminController::class, 'goBoostApprove'])->name('go_boost.approve');
+    Route::post('/go-boost/{id}/reject', [AdminController::class, 'goBoostReject'])->name('go_boost.reject');
+    Route::post('/go-care/{id}/approve', [AdminController::class, 'goCareApprove'])->name('go_care.approve');
+    Route::post('/go-care/{id}/reject', [AdminController::class, 'goCareReject'])->name('go_care.reject');
 });
 
 // Kelola Go Check — Admin, Ketua 5R, Sekretaris 5R
