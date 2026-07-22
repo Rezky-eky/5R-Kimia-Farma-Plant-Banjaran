@@ -11,6 +11,7 @@ const props = defineProps({
     topGoCheckClosers: { type: Array, default: () => [] },
     departementStats: { type: Array, default: () => [] },
     topUsersByPoints: { type: Array, default: () => [] },
+    isAdmin: { type: Boolean, default: false },
 });
 </script>
 
@@ -26,7 +27,10 @@ const props = defineProps({
         <div class="py-12">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10">
                 <div class="rounded-2xl bg-white/90 p-6 shadow-xl ring-1 ring-gray-100">
-                    <MonthlyExcelExport export-route="admin.reports.go_reward.export" />
+                    <MonthlyExcelExport
+                        v-if="isAdmin"
+                        export-route="admin.reports.go_reward.export"
+                    />
                 </div>
 
                 <!-- 1. Bagian teraktif -->

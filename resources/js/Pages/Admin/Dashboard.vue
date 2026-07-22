@@ -16,6 +16,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     }, 
+    isAdmin: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const fallbackTrendData = [
@@ -98,12 +102,12 @@ const gridLines = computed(() => {
 </script>
 
 <template>
-    <Head title="Admin Dashboard - 5R Kimia Farma Plant Banjaran" />
+    <Head title="Data 5R - 5R Kimia Farma Plant Banjaran" />
 
     <AuthenticatedLayout>
         <template #header>
             <h2 class="text-2xl font-bold leading-tight text-gray-900 drop-shadow">
-                Admin Dashboard
+                {{ isAdmin ? 'Admin Dashboard' : 'Data 5R' }}
             </h2>
         </template>
 
@@ -121,6 +125,7 @@ const gridLines = computed(() => {
                         <span class="leading-tight">Laporan 5R Keseluruhan</span>
                     </Link>
                     <Link
+                        v-if="isAdmin"
                         :href="route('admin.go_reward')"
                         class="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-amber-600 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-300/50 transition hover:bg-amber-700 text-center"
                     >
@@ -264,8 +269,8 @@ const gridLines = computed(() => {
                         <p class="mt-2 text-xs font-medium text-teal-700">Klik untuk detail →</p>
                     </Link>
 
-                    <!-- Sudah Diaudit -->
                     <Link
+                        v-if="isAdmin"
                         :href="route('admin.audit.index', { status: 'audited' })"
                         class="rounded-2xl bg-gradient-to-br from-blue-50 via-white to-blue-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60 cursor-pointer block"
                     >
@@ -285,6 +290,7 @@ const gridLines = computed(() => {
 
                     <!-- Menunggu Audit -->
                     <Link
+                        v-if="isAdmin"
                         :href="route('admin.audit.index', { status: 'pending' })"
                         class="rounded-2xl bg-gradient-to-br from-amber-50 via-white to-amber-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60 cursor-pointer block"
                     >

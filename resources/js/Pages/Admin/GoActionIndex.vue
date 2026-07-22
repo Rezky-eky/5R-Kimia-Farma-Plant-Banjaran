@@ -24,6 +24,14 @@ const props = defineProps({
             departemen: '',
         }),
     },
+    isAdmin: {
+        type: Boolean,
+        default: false,
+    },
+    isAdmin: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const searchForm = ref({
@@ -72,6 +80,7 @@ const toggleDetail = (id) => {
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <BackToDashboard admin />
                     <Link
+                        v-if="isAdmin"
                         :href="route('admin.go_action.weekly_realization')"
                         class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-blue-700"
                     >
@@ -135,7 +144,7 @@ const toggleDetail = (id) => {
                             </button>
                         </div>
                     </form>
-                    <div class="mt-4 border-t border-gray-100 pt-4">
+                    <div class="mt-4 border-t border-gray-100 pt-4" v-if="isAdmin">
                         <MonthlyExcelExport export-route="admin.reports.go_action.export" />
                     </div>
                 </div>

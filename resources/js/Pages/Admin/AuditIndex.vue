@@ -30,6 +30,10 @@ const props = defineProps({
         type: String,
         default: null,
     },
+    isAdmin: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const searchForm = ref({
@@ -167,7 +171,7 @@ const detailUrl = (action) => {
                         </div>
 
                         <!-- Status Filter -->
-                        <div class="md:w-52">
+                        <div class="md:w-52" v-if="isAdmin">
                             <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
                                 Status audit / approval
                             </label>
@@ -178,7 +182,7 @@ const detailUrl = (action) => {
                             >
                                 <option value="">Semua laporan</option>
                                 <option value="pending">Pending — menunggu audit/approve</option>
-                                <option value="audited">Audited — sudah diaudit/diseteujui</option>
+                                <option value="audited">Audited — sudah diaudit/disetujui</option>
                                 <option value="rejected">Rejected — ditolak</option>
                             </select>
                         </div>
@@ -200,7 +204,7 @@ const detailUrl = (action) => {
                             </button>
                         </div>
                     </form>
-                    <div class="mt-4 border-t border-gray-100 pt-4">
+                    <div class="mt-4 border-t border-gray-100 pt-4" v-if="isAdmin">
                         <MonthlyExcelExport
                             export-route="admin.reports.overall.export"
                             label="Unduh Laporan 5R Keseluruhan"

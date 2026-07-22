@@ -12,6 +12,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    isAdmin: {
+        type: Boolean,
+        default: false,
+    },
     filters: {
         type: Object,
         default: () => ({
@@ -150,7 +154,10 @@ const reject = (id) => {
                         </div>
                     </form>
                     <div class="mt-4 border-t border-gray-100 pt-4">
-                        <MonthlyExcelExport export-route="admin.reports.go_boost.export" />
+                        <MonthlyExcelExport
+                        v-if="isAdmin"
+                        export-route="admin.reports.go_boost.export"
+                    />
                     </div>
                 </div>
 
@@ -259,7 +266,7 @@ const reject = (id) => {
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                             <div class="flex flex-wrap justify-end gap-2">
-                                                <template v-if="goBoost.status_perbaikan === 'selesai' && (goBoost.approval_status === 'PENDING')">
+                                                <template v-if="isAdmin && goBoost.status_perbaikan === 'selesai' && (goBoost.approval_status === 'PENDING')">
                                                     <button
                                                         type="button"
                                                         @click="approve(goBoost.id)"

@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'admin_or_five_r_team_viewer' => \App\Http\Middleware\EnsureAdminOrFiveRTeamViewer::class,
             'go_check.management' => \App\Http\Middleware\EnsureGoCheckManagement::class,
             'five_r.team' => \App\Http\Middleware\EnsureFiveRTeam::class,
         ]);

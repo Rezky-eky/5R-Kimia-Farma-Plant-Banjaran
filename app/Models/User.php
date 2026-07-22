@@ -153,6 +153,11 @@ class User extends Authenticatable
         return $this->isAdmin() || $this->isFiveRKetua() || $this->isFiveRSekretaris();
     }
 
+    public function canViewAdminData(): bool
+    {
+        return $this->isAdmin() || $this->isFiveRTeam() || $this->isFiveRKetua() || $this->isFiveRSekretaris();
+    }
+
     /** Tim 5R yang boleh membuat temuan Go Check (finder). */
     public function canActAsGoCheckFinder(): bool
     {

@@ -1,9 +1,17 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps({
+    total_records_all: {
+        type: Number,
+        default: 0,
+    },
+    user_total_records: {
+        type: Number,
+        default: 0,
+    },
     total_go_actions: {
         type: Number,
         default: 0,
@@ -16,11 +24,102 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
+    user_go_actions: {
+        type: Number,
+        default: 0,
+    },
+    user_ringkas_items: {
+        type: Number,
+        default: 0,
+    },
+    user_go_boosts: {
+        type: Number,
+        default: 0,
+    },
+    user_go_cares: {
+        type: Number,
+        default: 0,
+    },
+    user_go_offers: {
+        type: Number,
+        default: 0,
+    },
+    user_go_sales: {
+        type: Number,
+        default: 0,
+    },
+    user_go_checks: {
+        type: Number,
+        default: 0,
+    },
+    user_activity_breakdown: {
+        type: Array,
+        default: () => [],
+    },
+    recent_user_records: {
+        type: Array,
+        default: () => [],
+    },
+    show_go_check: {
+        type: Boolean,
+        default: false,
+    },
     laporan_bulanan: {
         type: Array,
         default: () => [],
     },
 });
+
+const activityBreakdown = computed(() => props.user_activity_breakdown || []);
+const maxActivityValue = computed(() => {
+    if (!activityBreakdown.value.length) {
+        return 1;
+    }
+
+    return Math.max(1, ...activityBreakdown.value.map((item) => item.count ?? 0));
+});
+
+const recentRecords = computed(() => props.recent_user_records || []);
+const selectedModule = ref('All');
+const currentPage = ref(1);
+const pageSize = 10;
+const expandedRows = ref([]);
+const moduleOptions = computed(() => [
+    { label: 'Semua Modul', value: 'All' },
+    ...activityBreakdown.value.map((item) => ({ label: item.label, value: item.label })),
+]);
+const filteredRecords = computed(() => {
+    if (selectedModule.value === 'All') {
+        return recentRecords.value;
+    }
+
+    return recentRecords.value.filter((record) => record.module === selectedModule.value);
+});
+
+const pageCount = computed(() => Math.max(1, Math.ceil(filteredRecords.value.length / pageSize)));
+const pagedRecords = computed(() => {
+    const start = (currentPage.value - 1) * pageSize;
+    return filteredRecords.value.slice(start, start + pageSize);
+});
+
+const hasNextPage = computed(() => currentPage.value < pageCount.value);
+const hasPreviousPage = computed(() => currentPage.value > 1);
+
+watch(selectedModule, () => {
+    currentPage.value = 1;
+    expandedRows.value = [];
+});
+
+const toggleRowDetails = (id) => {
+    const index = expandedRows.value.indexOf(id);
+    if (index >= 0) {
+        expandedRows.value.splice(index, 1);
+    } else {
+        expandedRows.value.push(id);
+    }
+};
+
+const isRowExpanded = (id) => expandedRows.value.includes(id);
 
 const fallbackData = [
     { bulan: 'Jan', open: 12, closed: 7 },
@@ -115,70 +214,141 @@ const gridLines = computed(() => {
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
-                <!-- Ringkasan Kunci -->
-                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    <!-- Card 1: Total Temuan GO BOOST -->
+                <!-- Ringkasan Data 5R dan Personal -->
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
                     <div class="rounded-2xl bg-gradient-to-br from-sky-50 via-white to-sky-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
                         <div class="flex items-start justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Total Temuan</p>
-                                <h4 class="mt-1 text-base font-semibold text-gray-800">Total Temuan GO BOOST Bulan Ini</h4>
+                                <p class="text-sm font-medium text-gray-600">Total Data Masuk</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Semua Modul 5R</h4>
                             </div>
-                            <span class="text-xl">🔎</span>
+                            <span class="text-xl">📦</span>
                         </div>
                         <div class="mt-4 flex items-baseline gap-2">
-                            <span class="text-4xl font-bold" style="color: #00529b;">{{ total_go_boosts }}</span>
-                            <span class="text-xs text-gray-500">temuan</span>
+                            <span class="text-4xl font-bold" style="color: #00529b;">{{ total_records_all }}</span>
+                            <span class="text-xs text-gray-500">rekaman</span>
                         </div>
-                        <p class="mt-3 text-xs text-gray-500">Sumber: laporan observasi dan audit area kerja.</p>
+                        <p class="mt-3 text-xs text-gray-500">Jumlah total data yang masuk ke seluruh modul 5R.</p>
                     </div>
 
-                    <!-- Card 2: Total Perbaikan GO CARE -->
-                    <div class="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div class="rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
                         <div class="flex items-start justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Total Perbaikan</p>
-                                <h4 class="mt-1 text-base font-semibold text-gray-800">Total Perbaikan GO CARE Selesai</h4>
+                                <p class="text-sm font-medium text-gray-600">Aktivitas Saya</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Total Data Pribadi</h4>
                             </div>
-                            <span class="text-xl">🛠️</span>
+                            <span class="text-xl">👤</span>
                         </div>
                         <div class="mt-4 flex items-baseline gap-2">
-                            <span class="text-4xl font-bold" style="color: #00529b;">{{ total_go_cares }}</span>
-                            <span class="text-xs text-gray-500">perbaikan</span>
+                            <span class="text-4xl font-bold" style="color: #047857;">{{ user_total_records }}</span>
+                            <span class="text-xs text-gray-500">rekaman</span>
                         </div>
-                        <p class="mt-3 text-xs text-gray-500">Sumber: tindak lanjut penyelesaian dan verifikasi lapangan.</p>
+                        <p class="mt-3 text-xs text-gray-500">Ringkasan semua data yang Anda input dan ikuti.</p>
                     </div>
 
-                    <!-- Card 3: Aksi Ringkas GO ACTION -->
                     <div class="rounded-2xl bg-gradient-to-br from-rose-50 via-white to-rose-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
                         <div class="flex items-start justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Aksi Ringkas</p>
-                                <h4 class="mt-1 text-base font-semibold text-gray-800">Total Barang Dipilah/Dibuang GO ACTION</h4>
+                                <p class="text-sm font-medium text-gray-600">Go Action</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Aksi Saya</h4>
                             </div>
                             <span class="text-xl">🧹</span>
                         </div>
                         <div class="mt-4 flex items-baseline gap-2">
-                            <span class="text-4xl font-bold text-red-700">{{ total_go_actions }}</span>
+                            <span class="text-4xl font-bold text-red-700">{{ user_go_actions }}</span>
                             <span class="text-xs text-gray-500">aksi</span>
                         </div>
-                        <p class="mt-3 text-xs text-gray-500">Sumber: kegiatan pemilahan, pembersihan, dan penertiban area.</p>
+                        <p class="mt-3 text-xs text-gray-500">Jumlah GO ACTION yang Anda buat.</p>
                     </div>
 
-                    <!-- Card 4: Status Keseluruhan -->
+                    <div class="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Go Boost</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Temuan Saya</h4>
+                            </div>
+                            <span class="text-xl">🔍</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-2">
+                            <span class="text-4xl font-bold" style="color: #0f172a;">{{ user_go_boosts }}</span>
+                            <span class="text-xs text-gray-500">temuan</span>
+                        </div>
+                        <p class="mt-3 text-xs text-gray-500">Jumlah GO BOOST yang Anda laporkan.</p>
+                    </div>
+
                     <div class="rounded-2xl bg-gradient-to-br from-amber-50 via-white to-amber-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
                         <div class="flex items-start justify-between">
                             <div>
-                                <p class="text-sm font-medium text-gray-600">Status</p>
-                                <h4 class="mt-1 text-base font-semibold text-gray-800">Status Keseluruhan 5R</h4>
+                                <p class="text-sm font-medium text-gray-600">Barang Ringkas</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Total Item</h4>
                             </div>
-                            <span class="text-xl">📊</span>
+                            <span class="text-xl">📦</span>
                         </div>
                         <div class="mt-4 flex items-baseline gap-2">
-                            <span class="text-4xl font-bold text-yellow-600">92%</span>
-                            <span class="text-xs text-gray-500">compliance</span>
+                            <span class="text-4xl font-bold text-yellow-600">{{ user_ringkas_items }}</span>
+                            <span class="text-xs text-gray-500">item</span>
                         </div>
-                        <p class="mt-3 text-xs text-gray-500">Tingkat kepatuhan implementasi 5R.</p>
+                        <p class="mt-3 text-xs text-gray-500">Jumlah barang ringkas yang Anda catat.</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-gradient-to-br from-sky-50 via-white to-sky-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Go Care</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Perbaikan Saya</h4>
+                            </div>
+                            <span class="text-xl">🛠️</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-2">
+                            <span class="text-4xl font-bold" style="color: #0c4a6e;">{{ user_go_cares }}</span>
+                            <span class="text-xs text-gray-500">perbaikan</span>
+                        </div>
+                        <p class="mt-3 text-xs text-gray-500">Jumlah GO CARE yang Anda submit.</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-gradient-to-br from-violet-50 via-white to-violet-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Go Offer</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Tawaran Saya</h4>
+                            </div>
+                            <span class="text-xl">✉️</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-2">
+                            <span class="text-4xl font-bold" style="color: #7c3aed;">{{ user_go_offers }}</span>
+                            <span class="text-xs text-gray-500">tawaran</span>
+                        </div>
+                        <p class="mt-3 text-xs text-gray-500">Jumlah GO OFFER yang Anda buat.</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Go Sale</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Mutasi Saya</h4>
+                            </div>
+                            <span class="text-xl">💰</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-2">
+                            <span class="text-4xl font-bold" style="color: #166534;">{{ user_go_sales }}</span>
+                            <span class="text-xs text-gray-500">transaksi</span>
+                        </div>
+                        <p class="mt-3 text-xs text-gray-500">Jumlah Go Sale yang melibatkan Anda.</p>
+                    </div>
+
+                    <div v-if="show_go_check" class="rounded-2xl bg-gradient-to-br from-rose-50 via-white to-rose-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Go Check</p>
+                                <h4 class="mt-1 text-base font-semibold text-gray-800">Pemeriksaan Saya</h4>
+                            </div>
+                            <span class="text-xl">✔️</span>
+                        </div>
+                        <div class="mt-4 flex items-baseline gap-2">
+                            <span class="text-4xl font-bold text-red-700">{{ user_go_checks }}</span>
+                            <span class="text-xs text-gray-500">cek</span>
+                        </div>
+                        <p class="mt-3 text-xs text-gray-500">Jumlah Go Check yang terkait dengan Anda.</p>
                     </div>
                 </div>
 
@@ -274,6 +444,141 @@ const gridLines = computed(() => {
                             <span v-for="item in chartData" :key="`label-${item.bulan}`">
                                 {{ item.bulan }}
                             </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid gap-6 xl:grid-cols-3">
+                    <div class="rounded-2xl bg-white/90 p-6 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Distribusi Aktivitas Saya</h3>
+                                <p class="text-sm text-gray-500">Persentase interaksi setiap modul dalam data pribadi Anda.</p>
+                            </div>
+                            <span class="text-2xl">📈</span>
+                        </div>
+
+                        <div class="mt-6 space-y-4">
+                            <div v-for="item in activityBreakdown" :key="item.label">
+                                <div class="flex items-center justify-between text-sm text-gray-600">
+                                    <span>{{ item.label }}</span>
+                                    <span>{{ item.count }}</span>
+                                </div>
+                                <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                                    <div
+                                        class="h-full rounded-full bg-sky-500"
+                                        :style="{ width: `${Math.round(((item.count ?? 0) / maxActivityValue.value) * 100)}%` }"
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="xl:col-span-2 rounded-2xl bg-white/90 p-6 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Aktivitas Terakhir Saya</h3>
+                                <p class="text-sm text-gray-500">Ringkasan entri data terbaru yang Anda masukkan.</p>
+                            </div>
+                            <span class="text-2xl">📝</span>
+                        </div>
+
+                        <div class="mt-6 space-y-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <template v-for="option in moduleOptions" :key="option.value">
+                                    <button
+                                        type="button"
+                                        @click="selectedModule = option.value"
+                                        :class="selectedModule === option.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-slate-50'"
+                                        class="rounded-full px-4 py-2 text-xs font-semibold transition"
+                                    >
+                                        {{ option.label }}
+                                    </button>
+                                </template>
+                            </div>
+
+                            <div class="text-sm text-gray-500">
+                                Menampilkan {{ filteredRecords.length }} catatan untuk <span class="font-semibold">{{ selectedModule === 'All' ? 'Semua Modul' : selectedModule }}</span>.
+                            </div>
+
+                            <div v-if="!filteredRecords.length" class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+                                Tidak ada data untuk filter ini.
+                            </div>
+
+                            <div v-else class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+                                <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
+                                    <thead class="bg-slate-50 text-xs uppercase tracking-[0.2em] text-gray-500">
+                                        <tr>
+                                            <th class="px-4 py-3">Modul</th>
+                                            <th class="px-4 py-3">Deskripsi</th>
+                                            <th class="px-4 py-3">Waktu</th>
+                                            <th class="px-4 py-3"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        <template v-for="record in pagedRecords" :key="record.id">
+                                            <tr class="hover:bg-slate-50">
+                                                <td class="px-4 py-4 font-semibold text-gray-900">{{ record.module }}</td>
+                                                <td class="px-4 py-4 text-gray-600">{{ record.description }}</td>
+                                                <td class="px-4 py-4 text-xs uppercase tracking-[0.15em] text-gray-400">{{ record.created_at }}</td>
+                                                <td class="px-4 py-4 text-right">
+                                                    <button
+                                                        type="button"
+                                                        class="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-slate-50"
+                                                        @click="toggleRowDetails(record.id)"
+                                                    >
+                                                        {{ isRowExpanded(record.id) ? 'Tutup' : 'Lihat Detail' }}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="isRowExpanded(record.id)" class="bg-slate-50">
+                                                <td colspan="4" class="px-4 py-4 text-sm text-gray-700">
+                                                    <div class="space-y-4">
+                                                        <div class="grid gap-3 md:grid-cols-3">
+                                                            <div v-for="detail in record.details" :key="detail.label" class="rounded-2xl bg-white p-3 shadow-sm">
+                                                                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">{{ detail.label }}</p>
+                                                                <p class="mt-2 text-sm text-gray-800">{{ detail.value }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div v-if="record.photos && record.photos.length" class="space-y-3">
+                                                            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Foto Kegiatan</p>
+                                                            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                                                <div v-for="photo in record.photos" :key="photo" class="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                                                                    <img :src="photo" alt="Foto Go Action" class="h-40 w-full object-cover" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
+                                <p class="text-sm text-gray-500">
+                                    Menampilkan halaman {{ currentPage }} dari {{ pageCount }}.
+                                </p>
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        class="rounded-full border px-4 py-2 text-sm font-semibold transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                        :disabled="!hasPreviousPage"
+                                        @click="currentPage = Math.max(1, currentPage - 1)"
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="rounded-full border px-4 py-2 text-sm font-semibold transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                        :disabled="!hasNextPage"
+                                        @click="currentPage = Math.min(pageCount, currentPage + 1)"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
