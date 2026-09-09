@@ -25,7 +25,7 @@ class FiveRMonthlyReportService
     /**
      * @return array{0: Carbon, 1: Carbon, 2: string}
      */
-    public function monthRange(?string $month): array
+    public function monthRange(?string $month, ?string $endMonth = null): array
     {
         $month = $month ?: now()->format('Y-m');
         [$year, $m] = array_pad(explode('-', (string) $month), 2, null);
@@ -38,14 +38,30 @@ class FiveRMonthlyReportService
         }
 
         $start = Carbon::create($year, $m, 1, 0, 0, 0);
-        $end = $start->copy()->endOfMonth();
+        $endMonth = $endMonth ?: $month;
+        [$endYear, $endM] = array_pad(explode('-', (string) $endMonth), 2, null);
+        $endYear = (int) $endYear;
+        $endM = (int) $endM;
+        if ($endYear < 2000 || $endM < 1 || $endM > 12) {
+            $endYear = $year;
+            $endM = $m;
+        }
+        $end = Carbon::create($endYear, $endM, 1, 0, 0, 0)->endOfMonth();
 
-        return [$start, $end, sprintf('%04d-%02d', $year, $m)];
+        if ($end->lt($start)) {
+            [$start, $end] = [$end->copy()->startOfMonth(), $start->copy()->endOfMonth()];
+        }
+
+        $label = $start->format('Y-m') === $end->format('Y-m')
+            ? $start->format('Y-m')
+            : $start->format('Y-m') . '-sampai-' . $end->format('Y-m');
+
+        return [$start, $end, $label];
     }
 
-    public function exportGoAction(?string $month): StreamedResponse
+    public function exportGoAction(?string $month, ?string $endMonth = null): StreamedResponse
     {
-        [$start, $end, $label] = $this->monthRange($month);
+        [$start, $end, $label] = $this->monthRange($month, $endMonth);
 
         $headers = [
             'No', 'ID', 'Tanggal', 'Nama Karyawan', 'NPP', 'Bagian', 'Nama Ruangan', 'Kode Ruangan',
@@ -76,9 +92,9 @@ class FiveRMonthlyReportService
         return $this->downloadSingleSheet('GO ACTION', $headers, $rows, "laporan-go-action-{$label}.xlsx");
     }
 
-    public function exportGoBoost(?string $month): StreamedResponse
+    public function exportGoBoost(?string $month, ?string $endMonth = null): StreamedResponse
     {
-        [$start, $end, $label] = $this->monthRange($month);
+        [$start, $end, $label] = $this->monthRange($month, $endMonth);
 
         $headers = [
             'No', 'ID', 'Tanggal', 'Nama Karyawan', 'NPP', 'Bagian', 'Area Temuan', 'Ruangan Temuan',
@@ -113,9 +129,9 @@ class FiveRMonthlyReportService
         return $this->downloadSingleSheet('GO BOOST', $headers, $rows, "laporan-go-boost-{$label}.xlsx");
     }
 
-    public function exportGoCare(?string $month): StreamedResponse
+    public function exportGoCare(?string $month, ?string $endMonth = null): StreamedResponse
     {
-        [$start, $end, $label] = $this->monthRange($month);
+        [$start, $end, $label] = $this->monthRange($month, $endMonth);
 
         $headers = [
             'No', 'ID', 'Tanggal', 'Nama Karyawan', 'NPP', 'Bagian', 'Bagian Temuan', 'Area Temuan',
@@ -144,9 +160,9 @@ class FiveRMonthlyReportService
         return $this->downloadSingleSheet('GO CARE', $headers, $rows, "laporan-go-care-{$label}.xlsx");
     }
 
-    public function exportGoCheck(?string $month): StreamedResponse
+    public function exportGoCheck(?string $month, ?string $endMonth = null): StreamedResponse
     {
-        [$start, $end, $label] = $this->monthRange($month);
+        [$start, $end, $label] = $this->monthRange($month, $endMonth);
 
         $headers = [
             'No', 'ID', 'Tanggal', 'Bagian', 'Area Temuan', 'Ruangan Temuan', 'Penjelasan Temuan',
@@ -180,13 +196,13 @@ class FiveRMonthlyReportService
         return $this->downloadSingleSheet('GO CHECK', $headers, $rows, "laporan-go-check-{$label}.xlsx");
     }
 
-    public function exportDbr(?string $month): StreamedResponse
+    public function exportDbr(?string $month, ?string $endMonth = null): StreamedResponse
     {
-        [$start, $end, $label] = $this->monthRange($month);
+        [$start, $end, $label] = $this->monthRange($month, $endMonth);
 
         $headers = [
             'No', 'Go Action ID', 'Tanggal', 'Pelapor', 'Bagian', 'Nama Ruangan', 'Nama Barang',
-            'Jumlah', 'Satuan', 'Jenis Distribusi', 'No Aktiva SAP', 'Kondisi Barang', 'Status TPS', 'Tindakan Barang',
+            'Jumlah', 'Satuan', 'Jenis Distribusi', 'Harga', 'No Aktiva SAP', 'Kondisi Barang', 'Status TPS', 'Tindakan Barang',
         ];
 
         $rows = [];
@@ -208,6 +224,7 @@ class FiveRMonthlyReportService
                     $barang['jumlah'] ?? '',
                     $barang['satuan'] ?? '',
                     $barang['distribution_type'] ?? '',
+                    $barang['harga'] ?? '',
                     $barang['no_aktiva_sap'] ?? '',
                     $barang['kondisi_barang'] ?? '',
                     $barang['status_tps'] ?? '',
@@ -219,17 +236,17 @@ class FiveRMonthlyReportService
         return $this->downloadSingleSheet('Barang Ringkas', $headers, $rows, "laporan-barang-ringkas-{$label}.xlsx");
     }
 
-    public function exportGoOffer(?string $month): StreamedResponse
+    public function exportGoOffer(?string $month, ?string $endMonth = null): StreamedResponse
     {
-        [$start, $end, $label] = $this->monthRange($month);
+        [$start, $end, $label] = $this->monthRange($month, $endMonth);
         [$headers, $rows] = $this->buildGoOfferIndexExportRows($start, $end);
 
         return $this->downloadSingleSheet('GO OFFER', $headers, $rows, "laporan-go-offer-{$label}.xlsx");
     }
 
-    public function exportGoSale(?string $month): StreamedResponse
+    public function exportGoSale(?string $month, ?string $endMonth = null): StreamedResponse
     {
-        [$start, $end, $label] = $this->monthRange($month);
+        [$start, $end, $label] = $this->monthRange($month, $endMonth);
 
         $headers = [
             'No', 'ID', 'Tanggal', 'Go Action ID', 'Nama Barang', 'Jumlah', 'Satuan',
@@ -262,9 +279,9 @@ class FiveRMonthlyReportService
         return $this->downloadSingleSheet('GO SALE', $headers, $rows, "laporan-go-sale-{$label}.xlsx");
     }
 
-    public function exportGoReward(?string $month): StreamedResponse
+    public function exportGoReward(?string $month, ?string $endMonth = null): StreamedResponse
     {
-        [$start, $end, $label] = $this->monthRange($month);
+        [$start, $end, $label] = $this->monthRange($month, $endMonth);
 
         $spreadsheet = new Spreadsheet;
         $spreadsheet->getActiveSheet()->setTitle('Ringkasan Bulan');
@@ -292,9 +309,9 @@ class FiveRMonthlyReportService
         return $this->streamDownload($spreadsheet, "laporan-go-reward-{$label}.xlsx");
     }
 
-    public function exportOverall(?string $month): StreamedResponse
+    public function exportOverall(?string $month, ?string $endMonth = null): StreamedResponse
     {
-        [$start, $end, $label] = $this->monthRange($month);
+        [$start, $end, $label] = $this->monthRange($month, $endMonth);
 
         $spreadsheet = new Spreadsheet;
         $spreadsheet->getActiveSheet()->setTitle('Ringkasan');

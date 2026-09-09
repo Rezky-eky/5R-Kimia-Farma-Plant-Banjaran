@@ -103,18 +103,13 @@ const closeErrorNotification = () => {
         <div class="min-h-screen bg-slate-50">
             <!-- Notifikasi Success -->
             <Transition
-                enter-active-class="transition ease-out duration-300 transform"
-                enter-from-class="opacity-0 translate-x-full"
-                enter-to-class="opacity-100 translate-x-0"
-                leave-active-class="transition ease-in duration-200 transform"
-                leave-from-class="opacity-100 translate-x-0"
-                leave-to-class="opacity-0 translate-x-full"
+                name="toast"
             >
                 <div
                     v-if="flashSuccess && showSuccessNotification"
                     class="fixed top-4 right-4 z-50 max-w-sm w-full sm:w-auto"
                 >
-                    <div class="rounded-xl text-white shadow-2xl ring-1 p-4 flex items-start justify-between gap-4 backdrop-blur" style="background-color: #00529b; box-shadow: 0 20px 25px -5px rgba(0, 82, 155, 0.4), 0 10px 10px -5px rgba(0, 82, 155, 0.3);">
+                    <div class="motion-pulse rounded-xl text-white shadow-lg ring-1 ring-slate-300/20 p-4 flex items-start justify-between gap-4 backdrop-blur" style="background-color: #6689a3; box-shadow: 0 12px 28px rgba(71, 85, 105, 0.16);">
                         <div class="flex items-start gap-3 flex-1">
                             <div class="flex-shrink-0">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,18 +135,13 @@ const closeErrorNotification = () => {
 
             <!-- Flash error (validasi / gagal simpan) -->
             <Transition
-                enter-active-class="transition ease-out duration-300 transform"
-                enter-from-class="opacity-0 translate-x-full"
-                enter-to-class="opacity-100 translate-x-0"
-                leave-active-class="transition ease-in duration-200 transform"
-                leave-from-class="opacity-100 translate-x-0"
-                leave-to-class="opacity-0 translate-x-full"
+                name="toast"
             >
                 <div
                     v-if="flashError && showErrorNotification"
                     class="fixed top-4 right-4 z-50 max-w-sm w-full sm:w-auto sm:top-20"
                 >
-                    <div class="rounded-xl bg-red-600 text-white shadow-2xl ring-1 ring-red-700/30 p-4 flex items-start justify-between gap-4">
+                    <div class="rounded-xl bg-rose-500 text-white shadow-lg ring-1 ring-rose-600/20 p-4 flex items-start justify-between gap-4">
                         <div class="flex items-start gap-3 flex-1 min-w-0">
                             <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -172,18 +162,13 @@ const closeErrorNotification = () => {
 
             <!-- Mobile Notifikasi -->
             <Transition
-                enter-active-class="transition ease-out duration-300 transform"
-                enter-from-class="opacity-0 -translate-y-full"
-                enter-to-class="opacity-100 translate-y-0"
-                leave-active-class="transition ease-in duration-200 transform"
-                leave-from-class="opacity-100 translate-y-0"
-                leave-to-class="opacity-0 -translate-y-full"
+                name="toast"
             >
                 <div
                     v-if="flashSuccess && showSuccessNotification"
                     class="fixed top-4 left-4 right-4 z-50 sm:hidden"
                 >
-                    <div class="rounded-xl text-white shadow-2xl ring-1 p-4 flex items-start justify-between gap-3 backdrop-blur" style="background-color: #00529b; box-shadow: 0 20px 25px -5px rgba(0, 82, 155, 0.4), 0 10px 10px -5px rgba(0, 82, 155, 0.3);">
+                    <div class="motion-pulse rounded-xl text-white shadow-lg ring-1 ring-slate-300/20 p-4 flex items-start justify-between gap-3 backdrop-blur" style="background-color: #6689a3; box-shadow: 0 12px 28px rgba(71, 85, 105, 0.16);">
                         <div class="flex items-start gap-2 flex-1">
                             <div class="flex-shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,14 +192,14 @@ const closeErrorNotification = () => {
 
             <!-- Satu layout: Top bar + Sidebar untuk semua (admin & user) -->
             <!-- Top bar: logo, toggle sidebar, notif, user + poin -->
-            <nav class="border-b border-gray-200 bg-white shadow-sm sticky top-0 z-40">
-                <div class="px-4 sm:px-6 lg:px-8">
-                    <div class="flex h-14 justify-between items-center">
+            <nav class="sticky top-0 z-40 border-b border-[#e5e9e5] bg-[#fffdfa]/95 shadow-[0_4px_18px_rgba(93,108,101,0.07)] backdrop-blur">
+                <div class="px-3 sm:px-6 lg:px-8">
+                    <div class="flex min-h-14 items-center justify-between py-1">
                         <div class="flex items-center gap-3">
                             <button
                                 type="button"
                                 @click="showAdminSidebar = !showAdminSidebar"
-                                class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                                class="min-h-[42px] min-w-[42px] rounded-lg p-2 text-[#71817f] hover:bg-[#edf3f0] lg:hidden"
                                 aria-label="Toggle sidebar"
                             >
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,7 +211,7 @@ const closeErrorNotification = () => {
                             </Link>
                         </div>
                         <div class="flex items-center gap-2">
-                            <Link :href="route('notifications.index')" class="relative p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <Link :href="route('notifications.index')" class="relative min-h-[42px] min-w-[42px] rounded-lg p-2 text-[#71817f] hover:bg-[#edf3f0]">
                                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                 </svg>
@@ -236,7 +221,7 @@ const closeErrorNotification = () => {
                                 <Dropdown align="right" width="48">
                                     <template #trigger>
                                         <button type="button" class="flex items-center gap-2 p-1.5 rounded-lg text-gray-700 hover:bg-gray-100">
-                                            <div class="h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-semibold" style="background: linear-gradient(135deg, #00529b 0%, #003d75 100%);">{{ $page.props.auth.user.name.charAt(0).toUpperCase() }}</div>
+                                            <div class="h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-semibold" style="background: #86a7a0;">{{ $page.props.auth.user.name.charAt(0).toUpperCase() }}</div>
                                             <span class="text-sm font-medium hidden sm:inline">{{ $page.props.auth.user.name }}</span>
                                             <span class="hidden sm:inline text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title="Poin 5R">{{ $page.props.auth.user.points_balance ?? 0 }} pt</span>
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -262,23 +247,23 @@ const closeErrorNotification = () => {
                 <!-- Overlay hanya untuk mobile saat drawer terbuka -->
                 <div
                     v-show="showAdminSidebar"
-                    class="fixed inset-0 bg-black/45 z-20 lg:hidden"
+                    class="fixed inset-0 bg-slate-900/25 backdrop-blur-[1px] z-20 lg:hidden"
                     aria-hidden="true"
                     @click="showAdminSidebar = false"
                 />
 
                 <!-- Sidebar: desktop (in-flow + sticky), mobile (fixed drawer) -->
                 <aside
-                    class="z-30 flex flex-col bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/80 shadow-sm
+                    class="z-30 flex flex-col bg-[#f4f8f5] border-r border-[#e0e8e3] shadow-[4px_0_18px_rgba(93,108,101,0.06)]
                            fixed lg:sticky top-14 lg:top-14 left-0
-                           h-[calc(100dvh-3.5rem)] lg:h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)]
+                           h-[calc(100dvh-3.5rem)] lg:h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] pb-[env(safe-area-inset-bottom)]
                            w-72 sm:w-80 lg:w-60
-                           transform transition-transform duration-200
+                           transform transition-transform duration-300 ease-out
                            lg:translate-x-0"
                     :class="showAdminSidebar ? 'translate-x-0' : '-translate-x-full'"
                     aria-label="Sidebar navigasi"
                 >
-                    <nav class="flex-1 min-h-0 overflow-y-auto overscroll-contain py-4 px-3 space-y-1 pb-6 w-full">
+                    <nav class="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain px-3 py-3 pb-6">
                         <NavLink v-if="canViewAdminData" :href="route('admin.dashboard')" :active="route().current('admin.dashboard')">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                             Data 5R
@@ -323,6 +308,10 @@ const closeErrorNotification = () => {
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             Go Sale
                         </NavLink>
+                        <NavLink :href="route('leaderboard')" :active="route().current('leaderboard')">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19h16M6 16V8m6 8V4m6 12v-5" /></svg>
+                            Leaderboard 5R
+                        </NavLink>
                         <NavLink v-if="canViewAdminData && isAdmin" :href="route('admin.go_reward')" :active="route().current('admin.go_reward')">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
                             Go Reward
@@ -334,12 +323,16 @@ const closeErrorNotification = () => {
                     class="flex-1 min-w-0 transition-[transform,filter,opacity] duration-200 lg:transition-none"
                     :class="showAdminSidebar ? 'max-lg:opacity-70 max-lg:scale-[0.985] max-lg:brightness-75 max-lg:pointer-events-none' : ''"
                 >
-                    <header v-if="$slots.header" class="bg-white border-b border-gray-200">
-                        <div class="px-4 py-2 sm:px-6 lg:px-8"><slot name="header" /></div>
-                    </header>
-                    <main class="pb-4 pt-2 bg-slate-50 min-h-[calc(100vh-8rem)] overflow-x-hidden touch-pan-y">
-                        <div class="px-4 sm:px-6 lg:px-8"><slot /></div>
-                    </main>
+                    <Transition name="page" mode="out-in" appear>
+                        <div :key="$page.component">
+                            <header v-if="$slots.header" class="border-b border-[#e5e9e5] bg-[#fffdfa]">
+                                <div class="px-4 py-3 sm:px-6 lg:px-8"><slot name="header" /></div>
+                            </header>
+                            <main class="min-h-[calc(100vh-8rem)] overflow-x-hidden bg-[#f7f8f6] pb-6 pt-3 touch-pan-y">
+                                <div class="px-3 sm:px-6 lg:px-8"><slot /></div>
+                            </main>
+                        </div>
+                    </Transition>
                     <footer class="border-t border-gray-200 bg-white py-3">
                         <div class="px-4 sm:px-6 lg:px-8 text-center">
                             <p class="text-sm font-semibold italic mb-1" style="color: #00529b;">Berdaya</p>

@@ -44,7 +44,7 @@ const targetHref = computed(() => {
 <template>
     <Link
         :href="targetHref"
-        class="inline-flex shrink-0 items-center justify-center rounded-xl bg-gray-800 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2"
+        class="inline-flex min-h-[42px] shrink-0 items-center justify-center rounded-lg border border-[#dfe7e2] bg-[#fffdfa] px-3.5 py-2 text-sm font-semibold text-slate-600 shadow-sm transition-colors hover:border-[#c8dbd4] hover:bg-[#f2f7f4] focus:outline-none focus:ring-2 focus:ring-[#9bb5a5]/40 focus:ring-offset-2"
     >
         Kembali ke Dashboard
     </Link>

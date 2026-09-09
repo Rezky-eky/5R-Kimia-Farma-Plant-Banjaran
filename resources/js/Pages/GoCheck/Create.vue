@@ -114,12 +114,13 @@ const submit = () => {
                 </section>
 
                 <section class="rounded-2xl bg-white p-6 shadow ring-1 ring-gray-100">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Foto temuan</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Bukti temuan</h3>
                     <PhotoImagePicker
                         v-model="form.photo_temuan"
                         input-id="go-check-photo-temuan"
                         label=""
-                        hint="Maksimal 5 foto, masing-masing maks. 10MB (JPG, PNG, GIF). Ambil foto langsung atau pilih dari galeri."
+                        accept="image/*,*/*"
+                        hint="Maksimal 5 file, masing-masing maksimal 10MB. Semua format file didukung."
                     >
                         <InputError class="mt-2" :message="form.errors.photo_temuan" />
                     </PhotoImagePicker>

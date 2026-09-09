@@ -44,6 +44,7 @@ const performSearch = () => {
         search: searchForm.value.search,
         status: searchForm.value.status,
         status_perbaikan: searchForm.value.status_perbaikan,
+        page: 1,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -88,13 +89,13 @@ const reject = (id) => {
             </div>
         </template>
 
-        <div class="py-12">
+        <div class="py-6 sm:py-8">
             <div class="mx-auto max-w-none px-4 sm:px-6 lg:px-8">
                 <!-- Filter & Search -->
-                <div class="mb-6 rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                <div class="mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <form @submit.prevent="performSearch" class="space-y-4 md:space-y-0 md:flex md:items-end md:gap-4">
                         <div class="flex-1">
-                            <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="search" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 Pencarian
                             </label>
                             <input
@@ -102,7 +103,7 @@ const reject = (id) => {
                                 v-model="searchForm.search"
                                 type="text"
                                 placeholder="Cari berdasarkan nama, NPP, area, ruangan, atau penjelasan..."
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:shadow-lg focus:shadow-purple-100/50"
+                                class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-[#86a7a0] focus:ring-2 focus:ring-[#86a7a0]/30"
                             />
                         </div>
 
@@ -113,7 +114,7 @@ const reject = (id) => {
                             <select
                                 id="status"
                                 v-model="searchForm.status"
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:shadow-lg focus:shadow-purple-100/50"
+                                class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-[#86a7a0] focus:ring-2 focus:ring-[#86a7a0]/30"
                             >
                                 <option value="">Semua Status</option>
                                 <option value="OPEN">OPEN</option>
@@ -128,7 +129,7 @@ const reject = (id) => {
                             <select
                                 id="status_perbaikan"
                                 v-model="searchForm.status_perbaikan"
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-purple-500 focus:ring-offset-0 focus:shadow-lg focus:shadow-purple-100/50"
+                                class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-[#86a7a0] focus:ring-2 focus:ring-[#86a7a0]/30"
                             >
                                 <option value="">Semua Status</option>
                                 <option value="pending">Pending</option>
@@ -140,14 +141,14 @@ const reject = (id) => {
                         <div class="flex gap-2">
                             <button
                                 type="submit"
-                                class="rounded-xl bg-purple-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-300/50 transition hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
+                                class="min-h-[42px] rounded-lg bg-[#789e98] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#668c86] hover:shadow-md"
                             >
                                 Cari
                             </button>
                             <button
                                 type="button"
                                 @click="clearFilters"
-                                class="rounded-xl bg-gray-200 px-6 py-2.5 text-sm font-semibold text-gray-700 shadow-lg transition hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                                class="min-h-[42px] rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
                             >
                                 Reset
                             </button>

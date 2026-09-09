@@ -67,7 +67,7 @@ const getRingkasStatusLabel = (status) => {
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="mb-6 rounded-2xl bg-white p-6 shadow-xl ring-1 ring-gray-100">
+                <div class="mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <MonthlyExcelExport
                         :export-route="isAdmin ? 'admin.reports.go_sale.export' : 'reports.go_sale.export'"
                     />
@@ -108,6 +108,9 @@ const getRingkasStatusLabel = (status) => {
                                     <td class="px-6 py-4 text-sm font-medium text-gray-900">
                                         <template v-if="item.agreed_price !== null && item.agreed_price !== undefined">
                                             Rp {{ Number(item.agreed_price).toLocaleString('id-ID') }}
+                                        </template>
+                                        <template v-else-if="item.dbr_snapshot?.harga !== null && item.dbr_snapshot?.harga !== undefined">
+                                            Rp {{ Number(item.dbr_snapshot.harga).toLocaleString('id-ID') }}
                                         </template>
                                         <template v-else>-</template>
                                     </td>

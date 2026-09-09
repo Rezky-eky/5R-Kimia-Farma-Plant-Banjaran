@@ -13,46 +13,46 @@ class MonthlyReportExportController extends Controller
 
     public function goAction(Request $request)
     {
-        return $this->reportService->exportGoAction($request->input('month'));
+        return $this->reportService->exportGoAction($request->input('month'), $request->input('end_month'));
     }
 
     public function goBoost(Request $request)
     {
-        return $this->reportService->exportGoBoost($request->input('month'));
+        return $this->reportService->exportGoBoost($request->input('month'), $request->input('end_month'));
     }
 
     public function goCare(Request $request)
     {
-        return $this->reportService->exportGoCare($request->input('month'));
+        return $this->reportService->exportGoCare($request->input('month'), $request->input('end_month'));
     }
 
     public function goCheck(Request $request)
     {
-        return $this->reportService->exportGoCheck($request->input('month'));
+        return $this->reportService->exportGoCheck($request->input('month'), $request->input('end_month'));
     }
 
     public function dbr(Request $request)
     {
-        return $this->reportService->exportDbr($request->input('month'));
+        return $this->reportService->exportDbr($request->input('month'), $request->input('end_month'));
     }
 
     public function goOffer(Request $request)
     {
-        return $this->reportService->exportGoOffer($request->input('month'));
+        return $this->reportService->exportGoOffer($request->input('month'), $request->input('end_month'));
     }
 
     public function goSale(Request $request)
     {
-        return $this->reportService->exportGoSale($request->input('month'));
+        return $this->reportService->exportGoSale($request->input('month'), $request->input('end_month'));
     }
 
     public function goReward(Request $request)
     {
-        return $this->reportService->exportGoReward($request->input('month'));
+        return $this->reportService->exportGoReward($request->input('month'), $request->input('end_month'));
     }
 
     public function overall(Request $request)
     {
-        return $this->reportService->exportOverall($request->input('month'));
+        return $this->reportService->exportOverall($request->input('month'), $request->input('end_month'));
     }
 }

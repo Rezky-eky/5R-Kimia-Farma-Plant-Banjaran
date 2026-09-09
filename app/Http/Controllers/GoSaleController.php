@@ -6,8 +6,9 @@ use App\Models\GoAction;
 use App\Models\GoSale;
 use App\Models\Notification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class GoSaleController extends Controller
@@ -98,6 +99,7 @@ class GoSaleController extends Controller
                         'status_tps' => $barang['status_tps'] ?? '-',
                         'tindakan_barang' => $barang['tindakan_barang'] ?? '-',
                         'kondisi_barang' => $barang['kondisi_barang'] ?? '-',
+                        'harga' => $barang['harga'] ?? null,
                     ],
 
                     'distribution_type' => 'sale',
@@ -119,6 +121,29 @@ class GoSaleController extends Controller
 
         $sortedRows = collect($rows)->sortByDesc('created_at_raw')->values();
 
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $searchTerm = Str::lower($search);
+            $sortedRows = $sortedRows->filter(function ($row) use ($searchTerm): bool {
+                $haystack = collect([
+                    $row['dbr_snapshot']['nama_barang'] ?? '',
+                    $row['dbr_snapshot']['jumlah'] ?? '',
+                    $row['dbr_snapshot']['satuan'] ?? '',
+                    $row['dbr_snapshot']['no_aktiva_sap'] ?? '',
+                    $row['dbr_snapshot']['status_tps'] ?? '',
+                    $row['dbr_snapshot']['tindakan_barang'] ?? '',
+                    $row['dbr_snapshot']['kondisi_barang'] ?? '',
+                    $row['creator_name'] ?? '',
+                    $row['creator_bagian'] ?? '',
+                    $row['buyer_name'] ?? '',
+                    $row['buyer_bagian'] ?? '',
+                    $row['ringkas_status'] ?? '',
+                ])->map(fn ($value) => Str::lower((string) $value))->implode(' ');
+
+                return Str::contains($haystack, $searchTerm);
+            })->values();
+        }
+
         $perPage = 15;
         $page = (int) $request->input('page', 1);
         $slice = $sortedRows->forPage($page, $perPage)->values();
@@ -134,6 +159,9 @@ class GoSaleController extends Controller
         return Inertia::render('GoSale/Index', [
             'items' => $paginator,
             'isAdmin' => $isAdmin,
+            'filters' => [
+                'search' => $search,
+            ],
         ]);
     }
 

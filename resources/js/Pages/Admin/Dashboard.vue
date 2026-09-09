@@ -16,6 +16,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     }, 
+    leaderboards: {
+        type: Object,
+        default: () => ({}),
+    },
     isAdmin: {
         type: Boolean,
         default: false,
@@ -89,6 +93,14 @@ const openPoints = computed(() => generatePoints('open'));
 const closedPoints = computed(() => generatePoints('closed'));
 const openPath = computed(() => buildPath('open'));
 const closedPath = computed(() => buildPath('closed'));
+const activityBars = computed(() => [
+    { label: 'Go Action', value: props.stats.total_go_actions ?? 0, color: '#a9c8c0' },
+    { label: 'Go Boost', value: props.stats.total_go_boosts ?? 0, color: '#d8b7c8' },
+    { label: 'Go Care', value: props.stats.total_go_cares ?? 0, color: '#e8c7a8' },
+    { label: 'Barang Ringkas', value: props.stats.total_dbr_items ?? 0, color: '#b9c7dc' },
+    { label: 'Go Check', value: props.stats.total_go_checks ?? 0, color: '#c3c9a8' },
+]);
+const activityMax = computed(() => Math.max(1, ...activityBars.value.map((item) => item.value)));
 
 const gridLines = computed(() => {
     const lines = 4;
@@ -111,13 +123,13 @@ const gridLines = computed(() => {
             </h2>
         </template>
 
-        <div class="py-12">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10">
+        <div class="py-6 sm:py-8">
+            <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
                 <!-- Quick Actions — 2 baris, 4 kolom -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <Link
                         :href="route('admin.audit.index')"
-                        class="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-300/50 transition hover:bg-blue-700 text-center"
+                        class="motion-lift inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-[#b9cbd4] px-3 py-3 text-sm font-semibold text-[#405765] shadow-sm text-center"
                     >
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -127,7 +139,7 @@ const gridLines = computed(() => {
                     <Link
                         v-if="isAdmin"
                         :href="route('admin.go_reward')"
-                        class="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-amber-600 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-amber-300/50 transition hover:bg-amber-700 text-center"
+                        class="motion-lift inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-[#ead2a7] px-3 py-3 text-sm font-semibold text-[#6c5733] shadow-sm text-center"
                     >
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -136,8 +148,7 @@ const gridLines = computed(() => {
                     </Link>
                     <Link
                         :href="route('admin.go_action.index')"
-                        class="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-white shadow-lg transition text-center"
-                        style="background-color: #00529b;"
+                        class="motion-lift inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-[#aecbc4] px-3 py-3 text-sm font-semibold text-[#3f625d] shadow-sm text-center"
                     >
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -146,7 +157,7 @@ const gridLines = computed(() => {
                     </Link>
                     <Link
                         :href="route('admin.go_boost.index')"
-                        class="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-purple-600 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-300/50 transition hover:bg-purple-700 text-center"
+                        class="motion-lift inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-[#d7bbd2] px-3 py-3 text-sm font-semibold text-[#684f64] shadow-sm text-center"
                     >
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -155,7 +166,7 @@ const gridLines = computed(() => {
                     </Link>
                     <Link
                         :href="route('admin.go_care.index')"
-                        class="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-rose-600 px-3 py-3 text-sm font-semibold text-white shadow-lg shadow-rose-300/50 transition hover:bg-rose-700 text-center"
+                        class="motion-lift inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-[#e6b9b4] px-3 py-3 text-sm font-semibold text-[#754c4a] shadow-sm text-center"
                     >
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -164,15 +175,14 @@ const gridLines = computed(() => {
                     </Link>
                     <Link
                         :href="route('go_check.management.dashboard')"
-                        class="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-teal-700 px-3 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-teal-800 text-center"
+                        class="motion-lift inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-[#b9c9aa] px-3 py-3 text-sm font-semibold text-[#566343] shadow-sm text-center"
                     >
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                         Kelola Go Check
                     </Link>
                     <Link
                         :href="route('go_offer.index')"
-                        class="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-white shadow-lg transition text-center"
-                        style="background-color: #00529b;"
+                        class="motion-lift inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-[#c2d2e1] px-3 py-3 text-sm font-semibold text-[#4d6172] shadow-sm text-center"
                     >
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
@@ -181,8 +191,7 @@ const gridLines = computed(() => {
                     </Link>
                     <Link
                         :href="route('go_sale.index')"
-                        class="inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-semibold text-white shadow-lg transition text-center"
-                        style="background-color: #00529b;"
+                        class="motion-lift inline-flex min-h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-[#efd0b6] px-3 py-3 text-sm font-semibold text-[#765a45] shadow-sm text-center"
                     >
                         <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -196,7 +205,7 @@ const gridLines = computed(() => {
                     <!-- Total GO ACTION -->
                     <Link
                         :href="route('admin.go_action.index')"
-                        class="rounded-2xl bg-gradient-to-br from-blue-50 via-white to-blue-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60 cursor-pointer block"
+                        class="rounded-xl border border-blue-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer block"
                     >
                         <div class="flex items-start justify-between">
                             <div>
@@ -215,7 +224,7 @@ const gridLines = computed(() => {
                     <!-- Total GO BOOST (Temuan) -->
                     <Link
                         :href="route('admin.go_boost.index')"
-                        class="rounded-2xl bg-gradient-to-br from-purple-50 via-white to-purple-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60 cursor-pointer block"
+                        class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer block"
                     >
                         <div class="flex items-start justify-between">
                             <div>
@@ -234,7 +243,7 @@ const gridLines = computed(() => {
                     <!-- Total GO CARE (Perbaikan) -->
                     <Link
                         :href="route('admin.go_care.index')"
-                        class="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60 cursor-pointer block"
+                        class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer block"
                     >
                         <div class="flex items-start justify-between">
                             <div>
@@ -253,7 +262,7 @@ const gridLines = computed(() => {
                     <!-- Total Laporan 5R Keseluruhan -->
                     <Link
                         :href="route('admin.audit.index')"
-                        class="rounded-2xl bg-gradient-to-br from-teal-50 via-white to-teal-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60 cursor-pointer block"
+                        class="rounded-xl border border-teal-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer block"
                     >
                         <div class="flex items-start justify-between">
                             <div>
@@ -272,7 +281,7 @@ const gridLines = computed(() => {
                     <Link
                         v-if="isAdmin"
                         :href="route('admin.audit.index', { status: 'audited' })"
-                        class="rounded-2xl bg-gradient-to-br from-blue-50 via-white to-blue-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60 cursor-pointer block"
+                        class="rounded-xl border border-blue-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer block"
                     >
                         <div class="flex items-start justify-between">
                             <div>
@@ -292,7 +301,7 @@ const gridLines = computed(() => {
                     <Link
                         v-if="isAdmin"
                         :href="route('admin.audit.index', { status: 'pending' })"
-                        class="rounded-2xl bg-gradient-to-br from-amber-50 via-white to-amber-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60 cursor-pointer block"
+                        class="rounded-xl border border-amber-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md cursor-pointer block"
                     >
                         <div class="flex items-start justify-between">
                             <div>
@@ -309,8 +318,82 @@ const gridLines = computed(() => {
                     </Link>
                 </div>
 
+                <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+                    <section class="soft-panel rounded-xl p-5">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-800">Komposisi Aktivitas 5R</h3>
+                                <p class="mt-1 text-sm text-slate-500">Jumlah data setiap fitur utama.</p>
+                            </div>
+                            <span class="rounded-full bg-[#edf3f0] px-3 py-1 text-xs font-semibold text-[#5f827f]">Total</span>
+                        </div>
+                        <div class="mt-6 flex items-center justify-center">
+                            <div class="relative flex h-44 w-44 items-center justify-center rounded-full" style="background: conic-gradient(#a9c8c0 0 20%, #d8b7c8 20% 40%, #e8c7a8 40% 60%, #b9c7dc 60% 80%, #c3c9a8 80% 100%);">
+                                <div class="flex h-28 w-28 flex-col items-center justify-center rounded-full bg-[#fffdfa] shadow-inner">
+                                    <span class="text-2xl font-bold text-slate-700">{{ stats.total_laporan_keseluruhan }}</span>
+                                    <span class="text-[11px] uppercase tracking-wide text-slate-400">laporan</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5 xl:grid-cols-2">
+                            <div v-for="item in activityBars" :key="item.label" class="flex items-center gap-2 text-xs text-slate-600">
+                                <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: item.color }"></span>
+                                <span class="truncate">{{ item.label }}</span>
+                                <strong class="ml-auto text-slate-800">{{ item.value }}</strong>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="soft-panel rounded-xl p-5">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-800">Grafik Aktivitas</h3>
+                                <p class="mt-1 text-sm text-slate-500">Perbandingan jumlah data tiap fitur.</p>
+                            </div>
+                            <span class="rounded-full bg-[#f8eee8] px-3 py-1 text-xs font-semibold text-[#9a725a]">Ringkasan</span>
+                        </div>
+                        <div class="mt-6 space-y-4">
+                            <div v-for="item in activityBars" :key="`bar-${item.label}`">
+                                <div class="mb-1.5 flex justify-between text-xs font-medium text-slate-600"><span>{{ item.label }}</span><span>{{ item.value }}</span></div>
+                                <div class="h-3 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full transition-all duration-700 ease-out" :style="{ width: `${Math.max(4, (item.value / activityMax) * 100)}%`, backgroundColor: item.color }"></div></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="soft-panel rounded-xl p-5">
+                        <div class="flex items-start justify-between gap-3">
+                            <div><h3 class="text-lg font-semibold text-slate-800">Sorotan Juara 5R</h3><p class="mt-1 text-sm text-slate-500">Tiga klasemen teratas dari periode berjalan.</p></div>
+                            <span class="rounded-full bg-[#f7eee8] px-3 py-1 text-xs font-semibold text-[#9a725a]">Top 3</span>
+                        </div>
+                        <div class="mt-5 space-y-3">
+                            <div v-for="board in [{ title: 'Go Boost Finder', items: leaderboards.topGoBoostCreators }, { title: 'Go Boost Closer', items: leaderboards.topGoSolvers }, { title: 'Go Care', items: leaderboards.topGoCares }]" :key="`winner-${board.title}`">
+                                <div class="mb-2 flex items-center justify-between"><span class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ board.title }}</span><span class="text-xs text-slate-400">Juara 1</span></div>
+                                <div v-if="board.items?.length" class="rounded-lg border border-[#e5ebe7] bg-[#f8fbf9] p-3">
+                                    <div class="flex items-center justify-between gap-3"><div class="min-w-0"><p class="truncate font-semibold text-slate-700">{{ board.items[0].name || 'N/A' }}</p><p class="truncate text-xs text-slate-500">{{ board.items[0].bagian || 'Bagian belum tersedia' }}</p><p class="truncate text-[11px] text-slate-400">{{ board.items[0].npp || 'NPP -' }}</p></div><strong class="shrink-0 rounded-full bg-[#dceae5] px-3 py-1 text-sm text-[#527772]">{{ board.items[0].points ?? board.items[0].total }} pt</strong></div>
+                                </div>
+                                <p v-else class="text-xs text-slate-400">Belum ada data pemenang.</p>
+                            </div>
+                        </div>
+                        <Link :href="route('leaderboard')" class="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-[#789e98] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#668c86] hover:shadow-md">Buka leaderboard lengkap</Link>
+                    </section>
+                </div>
+
+                <section v-if="leaderboards.topGoBoostCreators?.length || leaderboards.topGoCares?.length" class="soft-panel rounded-xl p-5">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div><h3 class="text-lg font-semibold text-slate-800">Leaderboard 5R</h3><p class="mt-1 text-sm text-slate-500">Pemenang aktivitas utama yang dapat dilihat semua role.</p></div>
+                        <Link :href="route('admin.go_reward')" class="text-sm font-semibold text-[#648b84] hover:text-[#4f726c]">Lihat klasemen lengkap →</Link>
+                    </div>
+                    <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div v-for="board in [{ title: 'Go Boost Finder', items: leaderboards.topGoBoostCreators }, { title: 'Go Boost Closer', items: leaderboards.topGoSolvers }, { title: 'Go Care', items: leaderboards.topGoCares }]" :key="board.title" class="rounded-lg bg-[#f7faf8] p-4">
+                            <h4 class="text-sm font-semibold text-slate-700">{{ board.title }}</h4>
+                            <div v-for="(item, index) in board.items.slice(0, 3)" :key="item.user_id" class="mt-3 flex items-center justify-between gap-2 text-sm"><span class="truncate text-slate-600"><b class="mr-2 text-[#789e98]">{{ index + 1 }}</b>{{ item.name || 'N/A' }}</span><strong class="shrink-0 text-slate-700">{{ item.total }}</strong></div>
+                            <p v-if="!board.items.length" class="mt-3 text-xs text-slate-400">Belum ada data.</p>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- Tren Kinerja -->
-                <div class="rounded-2xl bg-white/90 p-6 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900">Tren Kinerja 5R (6 Bulan Terakhir)</h3>
@@ -406,7 +489,7 @@ const gridLines = computed(() => {
                 </div>
 
                 <!-- Statistik Per Departemen -->
-                <div v-if="departementStats && departementStats.length > 0" class="rounded-2xl bg-white/90 p-6 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                <div v-if="departementStats && departementStats.length > 0" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Top 10 Departemen Berdasarkan Laporan</h3>
                     <div class="space-y-3">
                         <div

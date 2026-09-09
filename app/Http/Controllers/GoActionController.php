@@ -8,6 +8,7 @@ use App\Models\GoSale;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class GoActionController extends Controller
@@ -35,28 +36,29 @@ class GoActionController extends Controller
             'nama_ruangan' => 'nullable|string|max:255',
             'penjelasan_aksi' => 'nullable|string',
             'foto_kegiatan' => 'nullable|array|max:5',
-            'foto_kegiatan.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
+            'foto_kegiatan.*' => 'file|max:10240',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
             'list_barang_ringkas' => 'nullable|array',
             'list_barang_ringkas.*.nama_barang' => 'required_with:list_barang_ringkas|string|max:255',
             'list_barang_ringkas.*.jumlah' => 'required_with:list_barang_ringkas|integer|min:1',
             'list_barang_ringkas.*.satuan' => 'required_with:list_barang_ringkas|string|max:50',
-            'list_barang_ringkas.*.distribution_type' => 'required_with:list_barang_ringkas|in:offer,sale',
+            'list_barang_ringkas.*.distribution_type' => 'required_with:list_barang_ringkas|in:offer,sale,destroyed',
+            'list_barang_ringkas.*.harga' => 'nullable|required_if:list_barang_ringkas.*.distribution_type,sale|numeric|min:0',
             'list_barang_ringkas.*.no_aktiva_sap' => 'nullable|string|max:100',
             'list_barang_ringkas.*.kondisi_barang' => 'required_with:list_barang_ringkas|in:baik,rusak,kadaluarsa,lainnya',
             'list_barang_ringkas.*.status_tps' => 'required_with:list_barang_ringkas|in:Diperlukan,Ragu-Ragu,Tidak Diperlukan',
             'list_barang_ringkas.*.tindakan_barang' => 'nullable|string|max:500',
         ]);
 
-        // Validasi fleksibilitas: minimal salah satu (Foto/Aksi ATAU DBR)
+        // Validasi fleksibilitas: minimal salah satu (File/Aksi ATAU DBR)
         $hasFotoAksi = $request->hasFile('foto_kegiatan') && count($request->file('foto_kegiatan', [])) > 0;
         $hasPenjelasan = !empty($validatedData['penjelasan_aksi']);
         $hasDBR = !empty($validatedData['list_barang_ringkas']) && is_array($validatedData['list_barang_ringkas']) && count($validatedData['list_barang_ringkas']) > 0;
 
         if (!$hasFotoAksi && !$hasPenjelasan && !$hasDBR) {
             return back()->withErrors([
-                'foto_kegiatan' => 'Minimal salah satu harus diisi: Foto/Aksi ATAU Daftar Barang Ringkas.'
+                'foto_kegiatan' => 'Minimal salah satu harus diisi: File/Aksi ATAU Daftar Barang Ringkas.'
             ])->withInput();
         }
 
@@ -88,6 +90,47 @@ class GoActionController extends Controller
 
         // 5. Redirect dengan Flash Message Sukses
         return redirect()->route('dashboard')->with('success', 'Data GO ACTION berhasil disimpan.');
+    }
+
+    public function dbrStore(Request $request)
+    {
+        $user = Auth::user();
+        $validated = $request->validate([
+            'bagian' => 'required|string|max:255',
+            'nama_ruangan' => 'nullable|string|max:255',
+            'nama_barang' => 'required|string|max:255',
+            'jumlah' => 'required|integer|min:1',
+            'satuan' => 'required|string|max:50',
+            'distribution_type' => 'required|in:offer,sale,destroyed',
+            'harga' => 'nullable|required_if:distribution_type,sale|numeric|min:0',
+            'no_aktiva_sap' => 'nullable|string|max:100',
+            'kondisi_barang' => 'required|in:baik,rusak,kadaluarsa,lainnya',
+            'status_tps' => 'required|in:Diperlukan,Ragu-Ragu,Tidak Diperlukan',
+            'tindakan_barang' => 'nullable|string|max:500',
+        ]);
+
+        GoAction::create([
+            'user_id' => $user->id,
+            'npp_karyawan' => $user->npp,
+            'nama_karyawan' => $user->name,
+            'metode' => 'GO ACTION',
+            'bagian' => $validated['bagian'],
+            'nama_ruangan' => $validated['nama_ruangan'] ?? null,
+            'penjelasan_aksi' => 'Input DBR langsung',
+            'list_barang_ringkas' => [[
+                'nama_barang' => $validated['nama_barang'],
+                'jumlah' => $validated['jumlah'],
+                'satuan' => $validated['satuan'],
+                'distribution_type' => $validated['distribution_type'],
+                'harga' => $validated['harga'] ?? null,
+                'no_aktiva_sap' => $validated['no_aktiva_sap'] ?? null,
+                'kondisi_barang' => $validated['kondisi_barang'],
+                'status_tps' => $validated['status_tps'],
+                'tindakan_barang' => $validated['tindakan_barang'] ?? null,
+            ]],
+        ]);
+
+        return redirect()->route('go_action.dbr_index')->with('success', 'Barang berhasil ditambahkan ke DBR.');
     }
 
     /**
@@ -177,6 +220,7 @@ class GoActionController extends Controller
         $reversePriority = ['available', 'requested', 'allocated', 'completed'];
 
         $dbrItems = [];
+        $destroyedItems = [];
         foreach ($goActions as $goAction) {
             if (is_array($goAction->list_barang_ringkas)) {
                 foreach ($goAction->list_barang_ringkas as $index => $barang) {
@@ -191,7 +235,9 @@ class GoActionController extends Controller
                     $offerTrack = $offerTrackingByKey[$key]['tracking'] ?? 'available';
                     $saleTrack = $saleTrackingByKey[$key]['tracking'] ?? 'available';
                     $maxP = max($priorityMap[$offerTrack] ?? 0, $priorityMap[$saleTrack] ?? 0);
-                    $trackingStatus = $reversePriority[$maxP] ?? 'available';
+                    $trackingStatus = $distributionType === 'destroyed'
+                        ? 'destroyed'
+                        : ($reversePriority[$maxP] ?? 'available');
 
                     $activeOfferId = (($offerTrackingByKey[$key]['tracking'] ?? '') === 'requested')
                         ? ($offerTrackingByKey[$key]['offer_id'] ?? null)
@@ -200,7 +246,7 @@ class GoActionController extends Controller
                         ? ($saleTrackingByKey[$key]['sale_id'] ?? null)
                         : null;
 
-                    $dbrItems[] = [
+                    $row = [
                         'id' => $goAction->id . '_' . $index,
                         'go_action_id' => $goAction->id,
                         'dbr_index' => (int) $index,
@@ -216,12 +262,19 @@ class GoActionController extends Controller
                         'status_tps' => $barang['status_tps'] ?? '-',
                         'tindakan_barang' => $barang['tindakan_barang'] ?? '-',
                         'kondisi_barang' => $barang['kondisi_barang'] ?? '-',
+                        'harga' => $barang['harga'] ?? null,
                         'pelapor' => $goAction->user->name ?? 'N/A',
                         'creator_user_id' => $goAction->user_id,
                         'ringkas_status' => $trackingStatus,
                         'active_offer_id' => $activeOfferId,
                         'active_sale_request_id' => $activeSaleRequestId,
                     ];
+
+                    if ($distributionType === 'destroyed') {
+                        $destroyedItems[] = $row;
+                    } else {
+                        $dbrItems[] = $row;
+                    }
                 }
             }
         }
@@ -233,6 +286,25 @@ class GoActionController extends Controller
             $collection = $collection->filter(
                 fn ($item) => ($item['status_tps'] ?? '') === $statusFilter
             )->values();
+        }
+
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $searchTerm = Str::lower($search);
+            $collection = $collection->filter(function ($item) use ($searchTerm): bool {
+                $haystack = collect([
+                    $item['bagian'] ?? '',
+                    $item['nama_ruangan'] ?? '',
+                    $item['nama_barang'] ?? '',
+                    $item['no_aktiva_sap'] ?? '',
+                    $item['status_tps'] ?? '',
+                    $item['tindakan_barang'] ?? '',
+                    $item['kondisi_barang'] ?? '',
+                    $item['pelapor'] ?? '',
+                ])->map(fn ($value) => Str::lower((string) $value))->implode(' ');
+
+                return Str::contains($haystack, $searchTerm);
+            })->values();
         }
 
         $perPage = 10;
@@ -249,8 +321,10 @@ class GoActionController extends Controller
 
         return Inertia::render('GoAction/DBRIndex', [
             'dbrItems' => $paginator,
+            'destroyedItems' => $destroyedItems,
             'filters' => [
                 'status_tps' => $statusFilter,
+                'search' => $search,
             ],
             'userBagian' => Auth::user()->bagian ?? null,
         ]);

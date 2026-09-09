@@ -30,7 +30,7 @@ class StoreGoActionRequest extends FormRequest
             'kode_ruangan' => ['nullable', 'string', 'max:100'],
             'penjelasan_aksi' => ['nullable', 'string'],
             'foto_kegiatan' => ['nullable', 'array', 'max:5'],
-            'foto_kegiatan.*' => ['image', 'mimes:jpeg,png,jpg,gif', 'max:10240'],
+            'foto_kegiatan.*' => ['file', 'max:10240'],
             'latitude' => ['required', 'numeric'],
             'longitude' => ['required', 'numeric'],
             'list_barang_ringkas' => ['nullable', 'array'],
@@ -55,19 +55,19 @@ class StoreGoActionRequest extends FormRequest
             $hasPenjelasan = !empty($this->penjelasan_aksi);
             $hasDBR = !empty($this->list_barang_ringkas) && is_array($this->list_barang_ringkas) && count($this->list_barang_ringkas) > 0;
 
-            // Validasi: Minimal salah satu harus diisi (Foto/Aksi ATAU DBR)
+            // Validasi: Minimal salah satu harus diisi (File/Aksi ATAU DBR)
             if (!$hasFotoAksi && !$hasPenjelasan && !$hasDBR) {
                 $validator->errors()->add(
                     'foto_kegiatan',
-                    'Minimal salah satu harus diisi: Foto/Aksi ATAU Daftar Barang Ringkas.'
+                    'Minimal salah satu harus diisi: File/Aksi ATAU Daftar Barang Ringkas.'
                 );
             }
 
-            // Jika ada foto, validasi lebih ketat
+            // Jika ada file, validasi jumlahnya
             if ($hasFotoAksi && count($this->file('foto_kegiatan', [])) > 5) {
                 $validator->errors()->add(
                     'foto_kegiatan',
-                    'Maksimal 5 foto yang dapat diunggah.'
+                    'Maksimal 5 file yang dapat diunggah.'
                 );
             }
 
@@ -99,11 +99,10 @@ class StoreGoActionRequest extends FormRequest
             'kode_ruangan.string' => 'Kode ruangan harus berupa teks.',
             'kode_ruangan.max' => 'Kode ruangan maksimal 100 karakter.',
             'penjelasan_aksi.string' => 'Penjelasan aksi harus berupa teks.',
-            'foto_kegiatan.array' => 'Foto Kegiatan harus berupa array.',
-            'foto_kegiatan.max' => 'Maksimal 5 foto yang dapat diunggah.',
-            'foto_kegiatan.*.image' => 'Setiap foto harus berupa file gambar.',
-            'foto_kegiatan.*.mimes' => 'Format foto harus JPG, PNG, atau GIF.',
-            'foto_kegiatan.*.max' => 'Ukuran setiap foto maksimal 10MB.',
+            'foto_kegiatan.array' => 'File kegiatan harus berupa array.',
+            'foto_kegiatan.max' => 'Maksimal 5 file yang dapat diunggah.',
+            'foto_kegiatan.*.file' => 'Setiap lampiran harus berupa file yang valid.',
+            'foto_kegiatan.*.max' => 'Ukuran setiap file maksimal 10MB.',
             'latitude.required' => 'Lokasi GPS wajib diambil. Pastikan izin lokasi diaktifkan.',
             'latitude.numeric' => 'Koordinat latitude tidak valid.',
             'longitude.required' => 'Lokasi GPS wajib diambil. Pastikan izin lokasi diaktifkan.',

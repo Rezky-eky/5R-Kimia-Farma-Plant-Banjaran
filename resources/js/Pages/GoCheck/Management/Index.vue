@@ -18,7 +18,11 @@ const searchForm = useForm({
 });
 
 const performSearch = () => {
-    router.get(route('go_check.management.index'), searchForm, { preserveState: true, preserveScroll: true });
+    router.get(route('go_check.management.index'), {
+        search: searchForm.search,
+        approval_status: searchForm.approval_status,
+        page: 1,
+    }, { preserveState: true, preserveScroll: true });
 };
 
 const showDetail = ref({});

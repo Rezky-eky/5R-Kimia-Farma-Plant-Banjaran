@@ -57,6 +57,7 @@ const performSearch = () => {
         departemen: searchForm.value.departemen,
         status: searchForm.value.status,
         jenis: searchForm.value.jenis,
+        page: 1,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -97,7 +98,7 @@ const detailUrl = (action) => {
             </div>
         </template>
 
-        <div class="py-12">
+        <div class="py-6 sm:py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div
                     v-if="filterLabel"
@@ -114,11 +115,11 @@ const detailUrl = (action) => {
                 </div>
 
                 <!-- Filter & Search -->
-                <div class="mb-6 rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                <div class="mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <form @submit.prevent="performSearch" class="space-y-4 md:space-y-0 md:flex md:items-end md:gap-4">
                         <!-- Search Input -->
                         <div class="flex-1">
-                            <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="search" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 Pencarian
                             </label>
                             <input
@@ -126,7 +127,7 @@ const detailUrl = (action) => {
                                 v-model="searchForm.search"
                                 type="text"
                                 placeholder="Cari berdasarkan nama, NPP, bagian, atau penjelasan..."
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-[#86a7a0] focus:ring-2 focus:ring-[#86a7a0]/30"
                             />
                         </div>
 
@@ -138,7 +139,7 @@ const detailUrl = (action) => {
                             <select
                                 id="departemen"
                                 v-model="searchForm.departemen"
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-[#86a7a0] focus:ring-2 focus:ring-[#86a7a0]/30"
                             >
                                 <option value="">Semua Departemen</option>
                                 <option
@@ -159,7 +160,7 @@ const detailUrl = (action) => {
                             <select
                                 id="jenis"
                                 v-model="searchForm.jenis"
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-[#86a7a0] focus:ring-2 focus:ring-[#86a7a0]/30"
                             >
                                 <option value="">Semua</option>
                                 <option value="go_action">Go Action saja</option>
@@ -178,7 +179,7 @@ const detailUrl = (action) => {
                             <select
                                 id="status"
                                 v-model="searchForm.status"
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-[#86a7a0] focus:ring-2 focus:ring-[#86a7a0]/30"
                             >
                                 <option value="">Semua laporan</option>
                                 <option value="pending">Pending — menunggu audit/approve</option>
@@ -191,14 +192,14 @@ const detailUrl = (action) => {
                         <div class="flex gap-2">
                             <button
                                 type="submit"
-                                class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-300/50 transition duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                                class="inline-flex min-h-[42px] items-center justify-center rounded-lg bg-[#789e98] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-[#668c86] hover:shadow-md"
                             >
                                 Cari
                             </button>
                             <button
                                 type="button"
                                 @click="clearFilters"
-                                class="inline-flex items-center justify-center rounded-xl bg-gray-200 px-6 py-2.5 text-sm font-semibold text-gray-700 shadow-md transition hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                                class="inline-flex min-h-[42px] items-center justify-center rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
                             >
                                 Reset
                             </button>
@@ -213,7 +214,7 @@ const detailUrl = (action) => {
                 </div>
 
                 <!-- Table -->
-                <div class="overflow-hidden rounded-2xl bg-white/90 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="px-8 py-6 border-b border-gray-100">
                         <h3 class="text-lg font-semibold text-gray-900">
                             Laporan Data 5R Keseluruhan

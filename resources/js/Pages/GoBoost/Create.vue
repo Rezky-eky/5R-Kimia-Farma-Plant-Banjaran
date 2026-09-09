@@ -77,7 +77,7 @@ const submit = () => {
             </h2>
         </template>
 
-        <div class="py-12">
+        <div class="py-6 sm:py-8">
             <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
                 <div class="overflow-hidden rounded-2xl bg-white/85 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
                     <div class="border-b border-white/60 px-8 py-6">
@@ -262,12 +262,13 @@ const submit = () => {
 
                             <div class="grid grid-cols-1 gap-6">
                                 <div>
-                                    <InputLabel for="photo_temuan" value="Upload Foto Temuan" />
+                                    <InputLabel for="photo_temuan" value="Upload Bukti Temuan" />
                                     <PhotoImagePicker
                                         v-model="form.photo_temuan"
                                         input-id="go-boost-photo-temuan"
                                         label=""
-                                        hint="Maksimal 5 foto @ 10MB. Ambil foto atau pilih dari galeri."
+                                        accept="image/*,*/*"
+                                        hint="Maksimal 5 file @ 10MB. Semua format file didukung."
                                     >
                                         <InputError class="mt-2" :message="form.errors.photo_temuan" />
                                     </PhotoImagePicker>

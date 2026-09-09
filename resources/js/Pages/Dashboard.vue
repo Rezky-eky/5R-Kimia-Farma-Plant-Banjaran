@@ -213,10 +213,10 @@ const gridLines = computed(() => {
         </template>
 
         <div class="py-8">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+            <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
                 <!-- Ringkasan Data 5R dan Personal -->
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                    <div class="rounded-2xl bg-gradient-to-br from-sky-50 via-white to-sky-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div class="rounded-xl border border-sky-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Total Data Masuk</p>
@@ -231,7 +231,7 @@ const gridLines = computed(() => {
                         <p class="mt-3 text-xs text-gray-500">Jumlah total data yang masuk ke seluruh modul 5R.</p>
                     </div>
 
-                    <div class="rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Aktivitas Saya</p>
@@ -246,7 +246,7 @@ const gridLines = computed(() => {
                         <p class="mt-3 text-xs text-gray-500">Ringkasan semua data yang Anda input dan ikuti.</p>
                     </div>
 
-                    <div class="rounded-2xl bg-gradient-to-br from-rose-50 via-white to-rose-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div class="rounded-xl border border-rose-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Go Action</p>
@@ -261,7 +261,7 @@ const gridLines = computed(() => {
                         <p class="mt-3 text-xs text-gray-500">Jumlah GO ACTION yang Anda buat.</p>
                     </div>
 
-                    <div class="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Go Boost</p>
@@ -276,7 +276,7 @@ const gridLines = computed(() => {
                         <p class="mt-3 text-xs text-gray-500">Jumlah GO BOOST yang Anda laporkan.</p>
                     </div>
 
-                    <div class="rounded-2xl bg-gradient-to-br from-amber-50 via-white to-amber-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div class="rounded-xl border border-amber-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Barang Ringkas</p>
@@ -291,7 +291,7 @@ const gridLines = computed(() => {
                         <p class="mt-3 text-xs text-gray-500">Jumlah barang ringkas yang Anda catat.</p>
                     </div>
 
-                    <div class="rounded-2xl bg-gradient-to-br from-sky-50 via-white to-sky-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div class="rounded-xl border border-sky-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Go Care</p>
@@ -306,7 +306,7 @@ const gridLines = computed(() => {
                         <p class="mt-3 text-xs text-gray-500">Jumlah GO CARE yang Anda submit.</p>
                     </div>
 
-                    <div class="rounded-2xl bg-gradient-to-br from-violet-50 via-white to-violet-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div class="rounded-xl border border-violet-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Go Offer</p>
@@ -321,7 +321,7 @@ const gridLines = computed(() => {
                         <p class="mt-3 text-xs text-gray-500">Jumlah GO OFFER yang Anda buat.</p>
                     </div>
 
-                    <div class="rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Go Sale</p>
@@ -336,7 +336,7 @@ const gridLines = computed(() => {
                         <p class="mt-3 text-xs text-gray-500">Jumlah Go Sale yang melibatkan Anda.</p>
                     </div>
 
-                    <div v-if="show_go_check" class="rounded-2xl bg-gradient-to-br from-rose-50 via-white to-rose-100/60 p-6 shadow-xl shadow-gray-300/50 transition duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-gray-300/60">
+                    <div v-if="show_go_check" class="rounded-xl border border-rose-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-600">Go Check</p>
@@ -353,7 +353,7 @@ const gridLines = computed(() => {
                 </div>
 
                 <!-- Tren Kinerja -->
-                <div class="rounded-2xl bg-white/90 p-6 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900">Tren Kinerja 5R (6 Bulan Terakhir)</h3>
@@ -449,7 +449,7 @@ const gridLines = computed(() => {
                 </div>
 
                 <div class="grid gap-6 xl:grid-cols-3">
-                    <div class="rounded-2xl bg-white/90 p-6 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900">Distribusi Aktivitas Saya</h3>
@@ -474,7 +474,7 @@ const gridLines = computed(() => {
                         </div>
                     </div>
 
-                    <div class="xl:col-span-2 rounded-2xl bg-white/90 p-6 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                    <div class="xl:col-span-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900">Aktivitas Terakhir Saya</h3>

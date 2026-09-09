@@ -132,7 +132,7 @@ const deleteReward = (id) => {
             </div>
         </template>
 
-        <div class="py-12">
+        <div class="py-6 sm:py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
                 <!-- Form Create/Edit -->
                 <div v-if="showForm" class="rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60">
@@ -237,7 +237,7 @@ const deleteReward = (id) => {
                 </div>
 
                 <!-- Daftar Rewards -->
-                <div class="rounded-2xl bg-white/90 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="px-8 py-6 border-b border-gray-100">
                         <h3 class="text-lg font-semibold text-gray-900">
                             Daftar Rewards

@@ -12,6 +12,7 @@ use App\Models\GoSale;
 use App\Models\Reward;
 use App\Models\User;
 use App\Services\DbrImportService;
+use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Http\Request;
@@ -43,18 +44,22 @@ class AdminController extends Controller
 
         // Statistik per departemen
         $departementStats = $this->getDepartementStats();
+        $leaderboards = $this->getLeaderboards();
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
                 'total_go_actions' => $totalGoActions,
                 'total_go_boosts' => $totalGoBoosts,
                 'total_go_cares' => $totalGoCares,
+                'total_go_checks' => GoCheck::count(),
+                'total_dbr_items' => $this->countDbrItems(),
                 'total_laporan_keseluruhan' => $totalLaporanKeseluruhan,
                 'total_audited' => $totalAudited,
                 'total_pending' => $totalPending,
             ],
             'trendData' => $trendData,
             'departementStats' => $departementStats,
+            'leaderboards' => $leaderboards,
             'isAdmin' => Auth::user()->isAdmin(),
         ]);
     }
@@ -88,13 +93,22 @@ class AdminController extends Controller
         } elseif ($jenis === 'go_sale') {
             $items = $this->buildGoSaleRows($request);
         } else {
-            // Filter status audit/approval: hanya Go Action, Go Boost, Go Care
+            // Filter status audit/approval
             if ($this->isLaporanApprovalStatusFilter($status)) {
-                $items = $this->buildGoActionRows($request)
-                    ->concat($this->buildGoBoostRows($request))
-                    ->concat($this->buildGoCareRows($request))
-                    ->sortByDesc('created_at_raw')
-                    ->values();
+                // Untuk status 'pending' hanya tampilkan Go Boost dan Go Care
+                if ($status === 'pending') {
+                    $items = $this->buildGoBoostRows($request)
+                        ->concat($this->buildGoCareRows($request))
+                        ->sortByDesc('created_at_raw')
+                        ->values();
+                } else {
+                    // Untuk status lain (audited/approved/rejected) sertakan Go Action juga
+                    $items = $this->buildGoActionRows($request)
+                        ->concat($this->buildGoBoostRows($request))
+                        ->concat($this->buildGoCareRows($request))
+                        ->sortByDesc('created_at_raw')
+                        ->values();
+                }
             } else {
                 $items = $this->buildGoActionRows($request)
                     ->concat($this->buildGoBoostRows($request))
@@ -139,7 +153,7 @@ class AdminController extends Controller
     private function laporanFilterLabel(?string $status): ?string
     {
         return match ($status) {
-            'pending' => 'Menunggu audit / persetujuan (Go Action, Go Boost, Go Care)',
+            'pending' => 'Menunggu audit / persetujuan (Go Boost, Go Care)',
             'audited', 'approved' => 'Sudah diaudit / disetujui (Go Action, Go Boost, Go Care)',
             'rejected' => 'Ditolak (Go Action, Go Boost, Go Care)',
             default => null,
@@ -148,7 +162,8 @@ class AdminController extends Controller
 
     private function countPendingLaporan(): int
     {
-        $count = GoAction::whereDoesntHave('audit')->count();
+        // Hanya hitung pending untuk modul yang memang memiliki workflow approval
+        $count = 0;
 
         if (GoBoost::hasApprovalWorkflow()) {
             $count += GoBoost::query()
@@ -695,7 +710,21 @@ class AdminController extends Controller
     /**
      * Go Reward - Dashboard pemenang berdasarkan aktivitas (ganti Kelola Reward).
      */
-    public function goReward()
+    public function goReward(Request $request)
+    {
+        [$periodStart, $periodEnd, $periodLabel] = $this->resolveRewardPeriod($request);
+        $leaderboards = $this->getLeaderboards($periodStart, $periodEnd);
+
+        return Inertia::render('Admin/GoReward', [
+            ...$leaderboards,
+            'departementStats' => $leaderboards['departementStats'],
+            'topUsersByPoints' => $leaderboards['topUsersByPoints'],
+            'period' => ['start' => $periodStart?->format('Y-m'), 'end' => $periodEnd?->format('Y-m'), 'label' => $periodLabel],
+            'isAdmin' => Auth::user()->isAdmin(),
+        ]);
+    }
+
+    private function getLeaderboards(?Carbon $periodStart = null, ?Carbon $periodEnd = null): array
     {
         $goBoostApproved = function ($query) {
             if (GoBoost::hasApprovalWorkflow()) {
@@ -703,26 +732,38 @@ class AdminController extends Controller
             }
         };
 
+        $withinPeriod = function ($query, string $column = 'created_at') use ($periodStart, $periodEnd) {
+            if ($periodStart && $periodEnd) {
+                $query->whereBetween($column, [$periodStart, $periodEnd]);
+            }
+        };
+
         // Reward Go Boost: Finder terbanyak (yang membuat temuan) - hanya yang APPROVED
-        $topGoBoostCreators = GoBoost::query()
+        $topGoBoostCreatorsQuery = GoBoost::query();
+        $withinPeriod($topGoBoostCreatorsQuery);
+        $topGoBoostCreators = $topGoBoostCreatorsQuery
             ->tap($goBoostApproved)
             ->select('user_id', DB::raw('count(*) as total'))
             ->groupBy('user_id')
             ->orderBy('total', 'desc')
             ->limit(10)
-            ->with('user:id,name,npp')
+            ->with('user:id,name,npp,bagian')
             ->get()
             ->map(function ($row) {
                 return [
                     'user_id' => $row->user_id,
                     'name' => $row->user?->name,
                     'npp' => $row->user?->npp,
+                    'bagian' => $row->user?->bagian,
                     'total' => $row->total,
+                    'points' => (int) $row->total * 10,
                 ];
             });
 
         // Reward Go Boost: Solver terbanyak (yang menyelesaikan perbaikan) - hanya yang APPROVED
-        $topGoSolvers = GoBoost::query()
+        $topGoSolversQuery = GoBoost::query();
+        $withinPeriod($topGoSolversQuery);
+        $topGoSolvers = $topGoSolversQuery
             ->tap($goBoostApproved)
             ->whereNotNull('mentioned_user_id')
             ->where('status_perbaikan', 'selesai')
@@ -732,14 +773,16 @@ class AdminController extends Controller
             ->limit(10)
             ->get();
         $mentionedIds = $topGoSolvers->pluck('mentioned_user_id')->unique()->filter()->values();
-        $usersMap = User::whereIn('id', $mentionedIds)->get()->keyBy('id');
+        $usersMap = User::whereIn('id', $mentionedIds)->get(['id', 'name', 'npp', 'bagian'])->keyBy('id');
         $topGoSolversList = $topGoSolvers->map(function ($row) use ($usersMap) {
             $u = $usersMap->get($row->mentioned_user_id);
             return [
                 'user_id' => $row->mentioned_user_id,
                 'name' => $u?->name,
                 'npp' => $u?->npp,
+                'bagian' => $u?->bagian,
                 'total' => $row->total,
+                'points' => (int) $row->total * 10,
             ];
         });
 
@@ -749,22 +792,28 @@ class AdminController extends Controller
             }
         };
 
-        $topGoCheckFinders = GoCheck::query()
+        $topGoCheckFindersQuery = GoCheck::query();
+        $withinPeriod($topGoCheckFindersQuery);
+        $topGoCheckFinders = $topGoCheckFindersQuery
             ->tap($goCheckApproved)
             ->select('finder_user_id', DB::raw('count(*) as total'))
             ->groupBy('finder_user_id')
             ->orderByDesc('total')
             ->limit(10)
-            ->with('finder:id,name,npp')
+            ->with('finder:id,name,npp,bagian')
             ->get()
             ->map(fn ($row) => [
                 'user_id' => $row->finder_user_id,
                 'name' => $row->finder?->name,
                 'npp' => $row->finder?->npp,
+                'bagian' => $row->finder?->bagian,
                 'total' => $row->total,
+                'points' => (int) $row->total * 10,
             ]);
 
-        $topGoCheckClosers = GoCheck::query()
+        $topGoCheckClosersQuery = GoCheck::query();
+        $withinPeriod($topGoCheckClosersQuery);
+        $topGoCheckClosers = $topGoCheckClosersQuery
             ->tap($goCheckApproved)
             ->whereNotNull('solver_user_id')
             ->where('status_perbaikan', 'selesai')
@@ -772,17 +821,20 @@ class AdminController extends Controller
             ->groupBy('solver_user_id')
             ->orderByDesc('total')
             ->limit(10)
-            ->with('solver:id,name,npp')
+            ->with('solver:id,name,npp,bagian')
             ->get()
             ->map(fn ($row) => [
                 'user_id' => $row->solver_user_id,
                 'name' => $row->solver?->name,
                 'npp' => $row->solver?->npp,
+                'bagian' => $row->solver?->bagian,
                 'total' => $row->total,
+                'points' => (int) $row->total * 10,
             ]);
 
         // Pemenang Go Care: poin terbanyak dari laporan yang sudah di-approve (10 pt per approval)
         $topGoCaresQuery = GoCare::query();
+        $withinPeriod($topGoCaresQuery);
         if (GoCare::hasApprovalWorkflow()) {
             $topGoCaresQuery->where('approval_status', 'APPROVED');
         } else {
@@ -794,25 +846,31 @@ class AdminController extends Controller
             ->groupBy('user_id')
             ->orderByDesc('total')
             ->limit(10)
-            ->with('user:id,name,npp')
+            ->with('user:id,name,npp,bagian')
             ->get()
             ->map(function ($row) {
                 return [
                     'user_id' => $row->user_id,
                     'name' => $row->user?->name,
                     'npp' => $row->user?->npp,
+                    'bagian' => $row->user?->bagian,
                     'total' => (int) $row->total,
+                    'points' => (int) $row->total,
                 ];
             });
 
         // Statistik bagian/departemen paling rajin implementasi 5R (gabungan Go Action + Go Boost + Go Care)
-        $bagianGoAction = GoAction::select('bagian', DB::raw('count(*) as total'))->groupBy('bagian')->pluck('total', 'bagian');
-        $bagianGoBoost = GoBoost::select('bagian', DB::raw('count(*) as total'))->groupBy('bagian')->pluck('total', 'bagian');
+        $bagianGoActionQuery = GoAction::query(); $withinPeriod($bagianGoActionQuery);
+        $bagianGoAction = $bagianGoActionQuery->select('bagian', DB::raw('count(*) as total'))->groupBy('bagian')->pluck('total', 'bagian');
+        $bagianGoBoostQuery = GoBoost::query(); $withinPeriod($bagianGoBoostQuery);
+        $bagianGoBoost = $bagianGoBoostQuery->select('bagian', DB::raw('count(*) as total'))->groupBy('bagian')->pluck('total', 'bagian');
         // GoCare: pakai bagian_temuan (kolom yang pasti ada di tabel go_cares)
-        $bagianGoCare = GoCare::select('bagian_temuan', DB::raw('count(*) as total'))
+        $bagianGoCareQuery = GoCare::query(); $withinPeriod($bagianGoCareQuery);
+        $bagianGoCare = $bagianGoCareQuery->select('bagian_temuan', DB::raw('count(*) as total'))
             ->groupBy('bagian_temuan')
             ->pluck('total', 'bagian_temuan');
-        $bagianGoCheck = GoCheck::select('bagian', DB::raw('count(*) as total'))
+        $bagianGoCheckQuery = GoCheck::query(); $withinPeriod($bagianGoCheckQuery);
+        $bagianGoCheck = $bagianGoCheckQuery->select('bagian', DB::raw('count(*) as total'))
             ->groupBy('bagian')
             ->pluck('total', 'bagian');
         $allBagian = $bagianGoAction->keys()->merge($bagianGoBoost->keys())->merge($bagianGoCare->keys())->merge($bagianGoCheck->keys())->unique()->filter();
@@ -837,7 +895,7 @@ class AdminController extends Controller
                 ];
             });
 
-        return Inertia::render('Admin/GoReward', [
+        return [
             'topGoBoostCreators' => $topGoBoostCreators,
             'topGoSolvers' => $topGoSolversList,
             'topGoCares' => $topGoCares,
@@ -846,7 +904,29 @@ class AdminController extends Controller
             'departementStats' => $departementStats,
             'topUsersByPoints' => $topUsersByPoints,
             'isAdmin' => Auth::user()->isAdmin(),
-        ]);
+        ];
+    }
+
+    private function countDbrItems(): int
+    {
+        return GoAction::whereNotNull('list_barang_ringkas')->get(['list_barang_ringkas'])
+            ->sum(fn ($action) => is_array($action->list_barang_ringkas) ? count($action->list_barang_ringkas) : 0);
+    }
+
+    private function resolveRewardPeriod(Request $request): array
+    {
+        $start = $request->input('start_month');
+        $end = $request->input('end_month', $start);
+        try {
+            $startDate = $start ? Carbon::createFromFormat('!Y-m', $start)->startOfMonth() : null;
+            $endDate = $end ? Carbon::createFromFormat('!Y-m', $end)->endOfMonth() : null;
+        } catch (\Throwable) {
+            $startDate = null;
+            $endDate = null;
+        }
+        if (!$startDate || !$endDate) return [null, null, 'Semua periode'];
+        if ($endDate->lt($startDate)) [$startDate, $endDate] = [$endDate->copy()->startOfMonth(), $startDate->copy()->endOfMonth()];
+        return [$startDate, $endDate, $startDate->format('M Y') . ($startDate->format('Y-m') === $endDate->format('Y-m') ? '' : ' - ' . $endDate->format('M Y'))];
     }
 
     /**

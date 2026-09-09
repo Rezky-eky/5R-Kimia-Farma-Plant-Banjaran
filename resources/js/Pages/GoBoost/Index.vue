@@ -33,13 +33,13 @@ defineProps({
             </div>
         </template>
 
-        <div class="py-12">
+        <div class="py-6 sm:py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="mb-6 rounded-2xl bg-white/90 p-6 shadow-xl ring-1 ring-gray-100">
                     <MonthlyExcelExport export-route="reports.go_boost.export" />
                 </div>
 
-                <div class="overflow-hidden rounded-2xl bg-white/90 shadow-2xl shadow-blue-100/60 ring-1 ring-white/60 backdrop-blur">
+                <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="px-8 py-6 border-b border-white/60">
                         <h3 class="text-lg font-semibold text-gray-900">
                             Semua Temuan GO BOOST
