@@ -37,6 +37,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/go-action/create', [GoActionController::class, 'create'])->name('go_action.create');
     Route::post('/go-action', [GoActionController::class, 'store'])->name('go_action.store');
     Route::get('/go-action/dbr', [GoActionController::class, 'dbrIndex'])->name('go_action.dbr_index');
+    Route::post('/go-action/dbr', [GoActionController::class, 'dbrStore'])->name('go_action.dbr_store');
+    Route::get('/leaderboard', [AdminController::class, 'goReward'])->name('leaderboard');
     
     // GO BOOST Routes
     Route::get('/go-boost', [GoBoostController::class, 'index'])->name('go_boost.index');

@@ -7,9 +7,10 @@ use App\Models\GoOffer;
 use App\Models\GoSale;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class GoOfferController extends Controller
@@ -118,6 +119,28 @@ class GoOfferController extends Controller
 
         $sortedRows = collect($rows)->sortByDesc('created_at_raw')->values();
 
+        $search = trim((string) $request->input('search', ''));
+        if ($search !== '') {
+            $searchTerm = Str::lower($search);
+            $sortedRows = $sortedRows->filter(function ($row) use ($searchTerm): bool {
+                $haystack = collect([
+                    $row['dbr_snapshot']['nama_barang'] ?? '',
+                    $row['dbr_snapshot']['jumlah'] ?? '',
+                    $row['dbr_snapshot']['satuan'] ?? '',
+                    $row['dbr_snapshot']['no_aktiva_sap'] ?? '',
+                    $row['dbr_snapshot']['status_tps'] ?? '',
+                    $row['dbr_snapshot']['tindakan_barang'] ?? '',
+                    $row['dbr_snapshot']['kondisi_barang'] ?? '',
+                    $row['creator_name'] ?? '',
+                    $row['creator_bagian'] ?? '',
+                    $row['requested_by_name'] ?? '',
+                    $row['ringkas_status'] ?? '',
+                ])->map(fn ($value) => Str::lower((string) $value))->implode(' ');
+
+                return Str::contains($haystack, $searchTerm);
+            })->values();
+        }
+
         $perPage = 15;
         $page = (int) $request->input('page', 1);
         $slice = $sortedRows->forPage($page, $perPage)->values();
@@ -133,6 +156,9 @@ class GoOfferController extends Controller
         return Inertia::render('GoOffer/Index', [
             'items' => $paginator,
             'isAdmin' => $isAdmin,
+            'filters' => [
+                'search' => $search,
+            ],
         ]);
     }
 

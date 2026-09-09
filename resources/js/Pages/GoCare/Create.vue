@@ -104,7 +104,7 @@ const submit = () => {
             </h2>
         </template>
 
-        <div class="py-12">
+        <div class="py-6 sm:py-8">
             <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
                 <div class="overflow-hidden rounded-2xl bg-white/85 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
                     <div class="border-b border-white/60 px-8 py-6">
@@ -234,13 +234,14 @@ const submit = () => {
                                     </div>
 
                                     <div>
-                                        <InputLabel for="photo_before" value="Upload Foto Temuan (Sebelum Perbaikan)" />
+                                        <InputLabel for="photo_before" value="Upload Bukti Temuan (Sebelum Perbaikan)" />
                                         <PhotoImagePicker
                                             v-model="form.photo_before"
                                             input-id="go-care-photo-before"
                                             :max-files="maxFiles"
                                             label=""
-                                            hint="Maksimal 5 foto @ 10MB. Ambil foto atau pilih dari galeri."
+                                            accept="image/*,*/*"
+                                            hint="Maksimal 5 file @ 10MB. Semua format file didukung."
                                         >
                                             <div v-if="errorMessageBefore" class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
                                                 {{ errorMessageBefore }}
@@ -272,13 +273,14 @@ const submit = () => {
                                     </div>
 
                                     <div>
-                                        <InputLabel for="photo_after" value="Upload Foto Temuan (Setelah Perbaikan)" />
+                                        <InputLabel for="photo_after" value="Upload Bukti Temuan (Setelah Perbaikan)" />
                                         <PhotoImagePicker
                                             v-model="form.photo_after"
                                             input-id="go-care-photo-after"
                                             :max-files="maxFiles"
                                             label=""
-                                            hint="Maksimal 5 foto @ 10MB. Ambil foto atau pilih dari galeri."
+                                            accept="image/*,*/*"
+                                            hint="Maksimal 5 file @ 10MB. Semua format file didukung."
                                         >
                                             <div v-if="errorMessageAfter" class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
                                                 {{ errorMessageAfter }}

@@ -48,6 +48,7 @@ const summaryText = computed(() => {
                     v-if="link.url"
                     :href="link.url"
                     preserve-scroll
+                    preserve-state
                     :class="[
                         'min-w-[2.25rem] rounded-lg px-3 py-2 text-center text-sm font-medium transition',
                         link.active

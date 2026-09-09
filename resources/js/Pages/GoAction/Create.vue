@@ -201,7 +201,7 @@ const submit = () => {
             </h2>
         </template>
 
-        <div class="py-12">
+        <div class="py-6 sm:py-8">
             <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
                 <div class="overflow-hidden rounded-2xl bg-white/85 shadow-2xl shadow-gray-300/50 ring-1 ring-gray-100/60">
                     <div class="border-b border-white/60 px-8 py-6">
@@ -374,13 +374,14 @@ const submit = () => {
 
                                 <!-- Foto Kegiatan -->
                                 <div>
-                                    <InputLabel for="foto_kegiatan" value="Foto Kegiatan" />
+                                    <InputLabel for="foto_kegiatan" value="File Bukti Kegiatan" />
                                     <PhotoImagePicker
                                         v-model="form.foto_kegiatan"
                                         input-id="go-action-foto-kegiatan"
                                         :max-files="maxFiles"
                                         label=""
-                                        hint="Maksimal 5 foto @ 10MB. Ambil foto atau pilih dari galeri."
+                                        accept="image/*,*/*"
+                                        hint="Maksimal 5 file @ 10MB. Semua format file didukung."
                                     >
                                         <div v-if="errorMessage" class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
                                             {{ errorMessage }}

@@ -1,14 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router, usePage, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
-import TextInput from '@/Components/TextInput.vue';
 import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
-import PaginationBar from '@/Components/PaginationBar.vue';
 import PhotoGallery from '@/Components/PhotoGallery.vue';
 
 const props = defineProps({
@@ -18,24 +16,10 @@ const props = defineProps({
     },
 });
 
-const markAsRead = (id) => {
-    router.post(route('notifications.markAsRead', id), {}, {
-        preserveScroll: true,
-    });
-};
-
 const markAllAsRead = () => {
     router.post(route('notifications.markAllAsRead'), {}, {
         preserveScroll: true,
     });
-};
-
-const deleteNotification = (id) => {
-    if (confirm('Apakah Anda yakin ingin menghapus notifikasi ini?')) {
-        router.delete(route('notifications.destroy', id), {
-            preserveScroll: true,
-        });
-    }
 };
 
 const getNotificationIcon = (type) => {
@@ -45,7 +29,6 @@ const getNotificationIcon = (type) => {
         case 'go_boost_perbaikan':
         case 'go_check_solver_needed':
         case 'go_check_perbaikan':
-            return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
         case 'go_check_approved_finder':
         case 'go_check_approved_solver':
             return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
@@ -59,9 +42,7 @@ const getNotificationIcon = (type) => {
 const getNotificationColor = (type) => {
     switch (type) {
         case 'go_boost_mention':
-            return 'bg-blue-100 text-blue-800';
         case 'go_boost_perbaikan':
-            return 'bg-blue-100 text-blue-800';
         case 'go_offer_request':
         case 'go_sale_request':
             return 'bg-blue-100 text-blue-800';
@@ -87,6 +68,7 @@ const getNotificationColor = (type) => {
 // State untuk form perbaikan
 const showPerbaikanForm = ref({});
 const perbaikanForms = ref({});
+const maxFiles = 5;
 
 const togglePerbaikanForm = (goBoostId) => {
     if (!showPerbaikanForm.value[goBoostId]) {
@@ -99,8 +81,6 @@ const togglePerbaikanForm = (goBoostId) => {
         showPerbaikanForm.value[goBoostId] = false;
     }
 };
-
-const maxFiles = 5;
 
 const submitPerbaikan = (goBoostId) => {
     const form = perbaikanForms.value[goBoostId];
@@ -202,8 +182,7 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                         :key="notification.id"
                         :class="[
                             'min-w-0 overflow-hidden rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60 transition duration-200 hover:shadow-2xl hover:shadow-gray-300/60',
-                            !notification.is_read ? 'border-l-4' : '',
-                            !notification.is_read ? 'border-blue-500' : '',
+                            !notification.is_read ? 'border-l-4 border-blue-500' : '',
                         ]"
                     >
                         <div class="flex min-w-0 items-start gap-4">
@@ -247,6 +226,8 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                         >
                                             {{ notification.message }}
                                         </p>
+
+                                        <!-- GO CHECK SCHEDULE -->
                                         <div
                                             v-if="notification.type === 'go_check_schedule'"
                                             class="mt-3 min-w-0 overflow-hidden rounded-lg bg-amber-50 p-4 border border-amber-100"
@@ -282,6 +263,8 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                 Laporan Go Check
                                             </Link>
                                         </div>
+
+                                        <!-- GO BOOST DETAILS -->
                                         <div
                                             v-if="notification.go_boost"
                                             class="mt-3 min-w-0 overflow-hidden rounded-lg bg-blue-50 p-3 border border-blue-100"
@@ -319,7 +302,7 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                 </div>
                                             </div>
                                             
-                                            <!-- Form Perbaikan (hanya untuk user yang di-mention dan belum ada perbaikan) -->
+                                            <!-- Form Perbaikan GO BOOST -->
                                             <div v-else-if="notification.go_boost.is_mentioned" class="mt-3">
                                                 <button
                                                     v-if="!showPerbaikanForm[notification.go_boost.id]"
@@ -329,7 +312,6 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                     📝 Lakukan Perbaikan
                                                 </button>
                                                 
-                                                <!-- Form Perbaikan -->
                                                 <div
                                                     v-if="showPerbaikanForm[notification.go_boost.id]"
                                                     class="mt-3 rounded-lg bg-white p-4 border border-blue-200"
@@ -339,35 +321,32 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                     </h4>
                                                     
                                                     <form @submit.prevent="submitPerbaikan(notification.go_boost.id)">
-                                                        <!-- Keterangan Perbaikan -->
                                                         <div class="mb-4">
                                                             <InputLabel for="keterangan_perbaikan" value="Keterangan Perbaikan *" />
                                                             <textarea
                                                                 id="keterangan_perbaikan"
                                                                 v-model="perbaikanForms[notification.go_boost.id].keterangan_perbaikan"
                                                                 rows="4"
-                                                                class="mt-2 block w-full rounded-xl border-0 bg-white/95 px-3 py-3 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                                                class="mt-2 block w-full rounded-xl border-0 bg-white/95 px-3 py-3 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0"
                                                                 required
                                                                 placeholder="Jelaskan perbaikan yang telah dilakukan..."
                                                             ></textarea>
                                                             <InputError class="mt-2" :message="perbaikanForms[notification.go_boost.id]?.errors?.keterangan_perbaikan" />
                                                         </div>
                                                         
-                                                        <!-- Upload Foto Perbaikan -->
                                                         <div v-if="perbaikanForms[notification.go_boost.id]" class="mb-4">
-                                                            <InputLabel value="Foto Perbaikan (Opsional)" />
+                                                            <InputLabel value="Bukti Perbaikan (Opsional)" />
                                                             <PhotoImagePicker
                                                                 v-model="perbaikanForms[notification.go_boost.id].foto_perbaikan"
                                                                 :input-id="`foto-perbaikan-${notification.go_boost.id}`"
                                                                 :max-files="maxFiles"
                                                                 label=""
-                                                                hint="Maksimal 5 foto @ 10MB. Ambil foto atau pilih dari galeri."
-                                                            >
-                                                                <InputError class="mt-2" :message="perbaikanForms[notification.go_boost.id]?.errors?.foto_perbaikan" />
-                                                            </PhotoImagePicker>
+                                                                accept="image/*,*/*"
+                                                                hint="Maksimal 5 file @ 10MB. Semua format file didukung."
+                                                            />
+                                                            <InputError class="mt-2" :message="perbaikanForms[notification.go_boost.id]?.errors?.foto_perbaikan" />
                                                         </div>
                                                         
-                                                        <!-- Action Buttons -->
                                                         <div class="flex items-center gap-2">
                                                             <button
                                                                 type="button"
@@ -397,6 +376,7 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                             </Link>
                                         </div>
 
+                                        <!-- GO CHECK DETAILS -->
                                         <div
                                             v-if="notification.go_check"
                                             class="mt-3 min-w-0 overflow-hidden rounded-lg bg-teal-50 p-3 border border-teal-100"
@@ -415,76 +395,16 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                 v-if="notification.go_check.has_perbaikan"
                                                 class="mt-2 text-xs text-teal-800 break-words break-all whitespace-pre-wrap"
                                             >
-                                                <strong>Solver:</strong> {{ notification.go_check.keterangan_perbaikan }}
+                                                ✅ Perbaikan sudah dilakukan
                                             </p>
-                                            <div v-else-if="notification.go_check.can_submit_solver" class="mt-3">
-                                                <button
-                                                    v-if="!showPerbaikanForm[gcKey(notification.go_check.id)]"
-                                                    type="button"
-                                                    class="w-full rounded-lg bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
-                                                    @click="toggleGoCheckPerbaikanForm(notification.go_check.id)"
-                                                >
-                                                    Input Perbaikan (Solver)
-                                                </button>
-                                                <form
-                                                    v-if="showPerbaikanForm[gcKey(notification.go_check.id)]"
-                                                    class="mt-2 space-y-2"
-                                                    @submit.prevent="submitGoCheckPerbaikan(notification.go_check.id)"
-                                                >
-                                                    <textarea
-                                                        v-model="perbaikanForms[gcKey(notification.go_check.id)].keterangan_perbaikan"
-                                                        rows="3"
-                                                        required
-                                                        class="w-full rounded-lg text-sm border-gray-200"
-                                                        placeholder="Keterangan perbaikan bagian Anda..."
-                                                    />
-                                                    <PhotoImagePicker
-                                                        v-if="perbaikanForms[gcKey(notification.go_check.id)]"
-                                                        v-model="perbaikanForms[gcKey(notification.go_check.id)].foto_perbaikan"
-                                                        :input-id="`gc-foto-${notification.go_check.id}`"
-                                                        :max-files="maxFiles"
-                                                        label="Foto perbaikan (opsional)"
-                                                        hint="Maksimal 5 foto @ 10MB. Ambil foto atau pilih dari galeri."
-                                                    />
-                                                    <PrimaryButton type="submit" class="w-full">Submit Solver</PrimaryButton>
-                                                </form>
-                                            </div>
                                         </div>
-
-                                        <p class="mt-2 text-xs text-gray-500">
-                                            {{ notification.created_at_human }}
-                                        </p>
-                                    </div>
-
-                                    <!-- Actions -->
-                                    <div class="flex shrink-0 items-center gap-2">
-                                        <button
-                                            v-if="!notification.is_read"
-                                            @click="markAsRead(notification.id)"
-                                            class="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors"
-                                            title="Tandai sebagai dibaca"
-                                        >
-                                            Tandai Dibaca
-                                        </button>
-                                        <button
-                                            @click="deleteNotification(notification.id)"
-                                            class="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
-                                            title="Hapus notifikasi"
-                                        >
-                                            Hapus
-                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="mt-6 overflow-hidden rounded-xl bg-white shadow ring-1 ring-gray-100">
-                    <PaginationBar :paginator="notifications" item-label="notifikasi" />
-                </div>
             </div>
         </div>
     </AuthenticatedLayout>
 </template>
-

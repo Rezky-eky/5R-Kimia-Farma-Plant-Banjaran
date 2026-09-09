@@ -25,7 +25,7 @@ const props = defineProps({
             </div>
         </template>
 
-        <div class="py-12">
+        <div class="py-6 sm:py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
                 <!-- Informasi Laporan -->
                 <div class="rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60">

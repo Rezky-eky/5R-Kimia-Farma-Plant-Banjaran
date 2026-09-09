@@ -4,11 +4,39 @@ import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
     items: { type: Object, required: true },
     isAdmin: { type: Boolean, default: false },
+    filters: {
+        type: Object,
+        default: () => ({ search: '' }),
+    },
 });
+
+const searchForm = ref({
+    search: props.filters.search || '',
+});
+
+watch(() => props.filters, (newFilters) => {
+    searchForm.value.search = newFilters.search || '';
+}, { deep: true });
+
+const performSearch = () => {
+    router.get(route('go_offer.index'), {
+        search: searchForm.value.search.trim(),
+        page: 1,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
+
+const clearSearch = () => {
+    searchForm.value.search = '';
+    performSearch();
+};
 
 const approveOffer = (id) => {
     if (confirm('Terima request ini?')) {
@@ -63,13 +91,45 @@ const getRingkasStatusLabel = (status) => {
 
         <div class="py-8">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="mb-6 rounded-2xl bg-white p-6 shadow-xl ring-1 ring-gray-100">
+                <div class="mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <MonthlyExcelExport
                         :export-route="isAdmin ? 'admin.reports.go_offer.export' : 'reports.go_offer.export'"
                     />
                 </div>
 
-                <div class="rounded-2xl bg-white shadow-xl ring-1 ring-gray-100 overflow-hidden">
+                <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-200 px-5 py-4">
+                        <form @submit.prevent="performSearch" class="flex flex-col gap-3 md:flex-row md:items-end">
+                            <div class="flex-1">
+                                <label for="go-offer-search" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    Pencarian
+                                </label>
+                                <input
+                                    id="go-offer-search"
+                                    v-model="searchForm.search"
+                                    type="search"
+                                    placeholder="Cari nama barang, creator, bagian, status..."
+                                    class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-[#86a7a0] focus:outline-none focus:ring-2 focus:ring-[#86a7a0]/30"
+                                />
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button
+                                    type="submit"
+                                    class="min-h-[42px] rounded-lg bg-[#789e98] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#668c86] hover:shadow-md"
+                                >
+                                    Cari
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="clearSearch"
+                                    class="min-h-[42px] rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                     <div class="px-6 py-4 border-b border-gray-200">
                         <p class="text-sm text-gray-600">
                             {{ isAdmin ? 'Semua item Go Offer.' : 'Ajukan Ambil untuk request, creator meng-approve/reject.' }}

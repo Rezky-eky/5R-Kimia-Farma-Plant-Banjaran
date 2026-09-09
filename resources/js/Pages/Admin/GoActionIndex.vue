@@ -49,6 +49,7 @@ const performSearch = () => {
     router.get(route('admin.go_action.index'), {
         search: searchForm.value.search,
         departemen: searchForm.value.departemen,
+        page: 1,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -90,13 +91,13 @@ const toggleDetail = (id) => {
             </div>
         </template>
 
-        <div class="py-12">
+        <div class="py-6 sm:py-8">
             <div class="mx-auto max-w-none px-4 sm:px-6 lg:px-8">
                 <!-- Filter & Search -->
-                <div class="mb-6 rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60">
+                <div class="mb-5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <form @submit.prevent="performSearch" class="space-y-4 md:space-y-0 md:flex md:items-end md:gap-4">
                         <div class="flex-1">
-                            <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="search" class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 Pencarian
                             </label>
                             <input
@@ -104,7 +105,7 @@ const toggleDetail = (id) => {
                                 v-model="searchForm.search"
                                 type="text"
                                 placeholder="Cari berdasarkan nama, NPP, bagian, atau penjelasan..."
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-[#86a7a0] focus:ring-2 focus:ring-[#86a7a0]/30"
                             />
                         </div>
 
@@ -115,7 +116,7 @@ const toggleDetail = (id) => {
                             <select
                                 id="departemen"
                                 v-model="searchForm.departemen"
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
+                                class="block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm transition focus:border-[#86a7a0] focus:ring-2 focus:ring-[#86a7a0]/30"
                             >
                                 <option value="">Semua Departemen</option>
                                 <option
@@ -131,14 +132,14 @@ const toggleDetail = (id) => {
                         <div class="flex gap-2">
                             <button
                                 type="submit"
-                                class="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-300/50 transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                                class="min-h-[42px] rounded-lg bg-[#789e98] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#668c86] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#86a7a0]/40"
                             >
                                 Cari
                             </button>
                             <button
                                 type="button"
                                 @click="clearFilters"
-                                class="rounded-xl bg-gray-200 px-6 py-2.5 text-sm font-semibold text-gray-700 shadow-lg transition hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                                class="min-h-[42px] rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300"
                             >
                                 Reset
                             </button>

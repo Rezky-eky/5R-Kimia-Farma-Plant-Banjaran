@@ -36,10 +36,10 @@ class GoCareController extends Controller
             'area_temuan' => 'nullable|string|max:255',
             'penjelasan_temuan' => 'required|string',
             'photo_before' => 'required|array|min:1|max:5',
-            'photo_before.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
+            'photo_before.*' => 'file|max:10240',
             'penjelasan_capa' => 'required|string',
             'photo_after' => 'required|array|min:1|max:5',
-            'photo_after.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
+            'photo_after.*' => 'file|max:10240',
         ]);
 
         $photoBeforePaths = [];

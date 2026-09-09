@@ -108,7 +108,7 @@ class GoCheckController extends Controller
             'penjelasan_temuan' => 'required|string',
             'pic_terkait' => 'nullable|string|max:255',
             'photo_temuan' => 'nullable|array|max:5',
-            'photo_temuan.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
+            'photo_temuan.*' => 'file|max:10240',
         ]);
 
         if (! in_array($validated['bagian'], $assignedBagian, true)) {
@@ -186,7 +186,7 @@ class GoCheckController extends Controller
         $validated = $request->validate([
             'keterangan_perbaikan' => 'required|string',
             'foto_perbaikan' => 'nullable|array|max:5',
-            'foto_perbaikan.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
+            'foto_perbaikan.*' => 'file|max:10240',
         ]);
 
         $photoPaths = [];

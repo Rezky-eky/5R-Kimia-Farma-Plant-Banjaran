@@ -26,7 +26,7 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'npp' => fake()->unique()->numerify('##########'), // Generate 10-digit NPP
-            'password' => static::$password ??= Hash::make('kfpb'),
+            'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
     }
