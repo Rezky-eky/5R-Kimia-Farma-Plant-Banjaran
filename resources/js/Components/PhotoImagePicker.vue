@@ -9,7 +9,7 @@ const props = defineProps({
     hint: { type: String, default: 'Maksimal 5 file, masing-masing maksimal 10MB.' },
     disabled: { type: Boolean, default: false },
     inputId: { type: String, default: () => `file-picker-${Math.random().toString(36).slice(2, 9)}` },
-    accept: { type: String, default: 'image/*,*/*' },
+    accept: { type: String, default: '*/*' },
     allowCamera: { type: Boolean, default: true },
 });
 

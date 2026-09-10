@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Schema;
 class GoCheck extends Model
 {
     protected $fillable = [
+        'id',
         'finder_user_id',
         'solver_user_id',
         'bagian',
@@ -36,6 +37,7 @@ class GoCheck extends Model
         'approved_at' => 'datetime',
         'rejected_at' => 'datetime',
     ];
+
 
     public static function hasApprovalWorkflow(): bool
     {

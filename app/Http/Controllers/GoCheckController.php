@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class GoCheckController extends Controller
@@ -135,18 +136,30 @@ class GoCheckController extends Controller
             }
         }
 
-        $goCheck = GoCheck::create([
-            'finder_user_id' => $user->id,
-            'solver_user_id' => $solver->id,
-            'bagian' => $storeBagian,
-            'area_temuan' => $validated['area_temuan'],
-            'ruangan_temuan' => $validated['ruangan_temuan'],
-            'penjelasan_temuan' => $validated['penjelasan_temuan'],
-            'pic_terkait' => $validated['pic_terkait'] ?? null,
-            'photo_temuan' => ! empty($photoPaths) ? json_encode($photoPaths) : null,
-            'status' => 'OPEN',
-            'status_perbaikan' => 'pending',
-        ]);
+        $lockName = 'go_checks_id_allocator';
+        $locked = (int) DB::selectOne('SELECT GET_LOCK(?, 5) AS acquired', [$lockName])->acquired === 1;
+        if (! $locked) {
+            throw new \RuntimeException('Tidak dapat mengalokasikan ID Go Check. Silakan coba lagi.');
+        }
+
+        try {
+            $nextId = ((int) DB::table('go_checks')->max('id')) + 1;
+            $goCheck = GoCheck::create([
+                'id' => $nextId,
+                'finder_user_id' => $user->id,
+                'solver_user_id' => $solver->id,
+                'bagian' => $storeBagian,
+                'area_temuan' => $validated['area_temuan'],
+                'ruangan_temuan' => $validated['ruangan_temuan'],
+                'penjelasan_temuan' => $validated['penjelasan_temuan'],
+                'pic_terkait' => $validated['pic_terkait'] ?? null,
+                'photo_temuan' => ! empty($photoPaths) ? json_encode($photoPaths) : null,
+                'status' => 'OPEN',
+                'status_perbaikan' => 'pending',
+            ]);
+        } finally {
+            DB::selectOne('SELECT RELEASE_LOCK(?) AS released', [$lockName]);
+        }
 
         Notification::create([
             'user_id' => $solver->id,

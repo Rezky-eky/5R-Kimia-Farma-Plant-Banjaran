@@ -23,7 +23,7 @@ const classes = computed(() =>
     <Link 
         :href="href" 
         :class="classes"
-        :style="active ? { color: '#00529b', backgroundColor: 'rgba(0, 82, 155, 0.1)', fontWeight: '600' } : {}"
+        :style="active ? { color: '#5d7f91', backgroundColor: 'rgba(142, 175, 193, 0.16)', fontWeight: '600' } : {}"
     >
         <slot />
     </Link>

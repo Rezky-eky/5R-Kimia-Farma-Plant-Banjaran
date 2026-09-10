@@ -39,13 +39,13 @@ const submit = () => {
             <div class="flex justify-center mb-3">
                 <ApplicationLogo class="h-14 w-auto" />
             </div>
-            <h1 class="text-xl md:text-2xl font-bold mb-1.5" style="color: #00529b;">
+            <h1 class="mb-1.5 text-xl font-bold text-[#5d7f91] md:text-2xl">
                 5R Kimia Farma Plant Banjaran
             </h1>
-            <div class="inline-flex items-center px-3 py-1.5 rounded-full bg-slate-50 border border-gray-200 mt-2">
-                <p class="text-xs font-medium italic" style="color: #00529b;">Berdaya</p>
-                <span class="mx-1.5 text-gray-400">•</span>
-                <p class="text-xs text-gray-600">Bersih dalam bekerja, amanah dalam berkarya</p>
+            <div class="mt-2 inline-flex items-center rounded-full border border-[#c9dce6] bg-[#edf4f8] px-3 py-1.5">
+                <p class="text-xs font-medium italic text-[#66889b]">Berdaya</p>
+                <span class="mx-1.5 text-[#9ebfd1]">•</span>
+                <p class="text-xs text-slate-600">Bersih dalam bekerja, amanah dalam berkarya</p>
             </div>
             <div class="border-t border-gray-200 my-3 max-w-xs mx-auto"></div>
             <h2 class="text-lg font-bold text-gray-800 mb-1">Masuk ke Akun</h2>
@@ -53,7 +53,7 @@ const submit = () => {
         </div>
 
         <!-- Status Message -->
-        <div v-if="status" class="mb-4 rounded-xl bg-blue-50 border border-blue-200 p-3 text-sm font-medium text-blue-800">
+        <div v-if="status" class="mb-4 rounded-xl border border-[#c9dce6] bg-[#edf4f8] p-3 text-sm font-medium text-[#5d7f91]">
             {{ status }}
         </div>
 
@@ -65,7 +65,7 @@ const submit = () => {
                 <TextInput
                     id="npp"
                     type="text"
-                    class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    class="mt-1 block w-full rounded-lg border-[#d8e2dd] shadow-sm focus:border-[#86a7a0] focus:ring-[#86a7a0]/30"
                     v-model="form.npp"
                     required
                     autofocus
@@ -82,7 +82,7 @@ const submit = () => {
                 <TextInput
                     id="password"
                     type="password"
-                    class="mt-1 block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    class="mt-1 block w-full rounded-lg border-[#d8e2dd] shadow-sm focus:border-[#86a7a0] focus:ring-[#86a7a0]/30"
                     v-model="form.password"
                     required
                     autocomplete="current-password"
@@ -101,8 +101,7 @@ const submit = () => {
                 <Link
                     v-if="canResetPassword"
                     :href="route('password.request')"
-                    class="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                    style="color: #00529b;"
+                    class="text-sm text-[#648b84] transition-colors hover:text-[#4f726c]"
                 >
                     Lupa password?
                 </Link>
@@ -110,8 +109,7 @@ const submit = () => {
 
             <div class="pt-2">
                 <PrimaryButton
-                    class="w-full justify-center py-3 text-base font-semibold rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl"
-                    style="background-color: #00529b;"
+                    class="motion-lift w-full justify-center rounded-xl bg-[#8eafc1] py-3 text-base font-semibold text-white shadow-md"
                     :class="{ 'opacity-25': form.processing }"
                     :disabled="form.processing"
                 >

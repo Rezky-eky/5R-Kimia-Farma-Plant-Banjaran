@@ -724,7 +724,7 @@ class AdminController extends Controller
         ]);
     }
 
-    private function getLeaderboards(?Carbon $periodStart = null, ?Carbon $periodEnd = null): array
+    public function getLeaderboards(?Carbon $periodStart = null, ?Carbon $periodEnd = null): array
     {
         $goBoostApproved = function ($query) {
             if (GoBoost::hasApprovalWorkflow()) {
@@ -746,7 +746,6 @@ class AdminController extends Controller
             ->select('user_id', DB::raw('count(*) as total'))
             ->groupBy('user_id')
             ->orderBy('total', 'desc')
-            ->limit(10)
             ->with('user:id,name,npp,bagian')
             ->get()
             ->map(function ($row) {
@@ -770,7 +769,6 @@ class AdminController extends Controller
             ->select('mentioned_user_id', DB::raw('count(*) as total'))
             ->groupBy('mentioned_user_id')
             ->orderBy('total', 'desc')
-            ->limit(10)
             ->get();
         $mentionedIds = $topGoSolvers->pluck('mentioned_user_id')->unique()->filter()->values();
         $usersMap = User::whereIn('id', $mentionedIds)->get(['id', 'name', 'npp', 'bagian'])->keyBy('id');
@@ -799,7 +797,6 @@ class AdminController extends Controller
             ->select('finder_user_id', DB::raw('count(*) as total'))
             ->groupBy('finder_user_id')
             ->orderByDesc('total')
-            ->limit(10)
             ->with('finder:id,name,npp,bagian')
             ->get()
             ->map(fn ($row) => [
@@ -820,7 +817,6 @@ class AdminController extends Controller
             ->select('solver_user_id', DB::raw('count(*) as total'))
             ->groupBy('solver_user_id')
             ->orderByDesc('total')
-            ->limit(10)
             ->with('solver:id,name,npp,bagian')
             ->get()
             ->map(fn ($row) => [
@@ -845,7 +841,6 @@ class AdminController extends Controller
             ->select('user_id', DB::raw('count(*) * '.GoCare::POINTS_PER_APPROVAL.' as total'))
             ->groupBy('user_id')
             ->orderByDesc('total')
-            ->limit(10)
             ->with('user:id,name,npp,bagian')
             ->get()
             ->map(function ($row) {
@@ -881,8 +876,8 @@ class AdminController extends Controller
 
         // Ranking poin (points_balance) untuk reward
         $topUsersByPoints = User::where('role', 'user')
+            ->where('points_balance', '>', 0)
             ->orderByDesc('points_balance')
-            ->limit(15)
             ->get(['id', 'name', 'npp', 'points_balance', 'bagian'])
             ->map(function ($user, $index) {
                 return [

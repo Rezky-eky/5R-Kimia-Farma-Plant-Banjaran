@@ -16,6 +16,28 @@ const props = defineProps({
     },
 });
 
+const mentionSearch = ref('');
+const showMentionOptions = ref(false);
+const filteredMentionUsers = computed(() => {
+    const query = mentionSearch.value.trim().toLowerCase();
+    if (!query) return props.users.slice(0, 30);
+    return props.users.filter((candidate) => {
+        const haystack = `${candidate.name ?? ''} ${candidate.npp ?? ''}`.toLowerCase();
+        return haystack.includes(query);
+    }).slice(0, 30);
+});
+
+const selectedMention = computed(() => props.users.find((candidate) => Number(candidate.id) === Number(form.mentioned_user_id)));
+const selectMention = (candidate) => {
+    form.mentioned_user_id = candidate.id;
+    mentionSearch.value = `${candidate.name} (${candidate.npp})`;
+    showMentionOptions.value = false;
+};
+const clearMention = () => {
+    form.mentioned_user_id = null;
+    mentionSearch.value = '';
+};
+
 // Data statis untuk dropdown Bagian Kimia Farma
 const departemenOptions = [
     'Bagian Mekanik & Electrical',
@@ -227,22 +249,26 @@ const submit = () => {
                                     <InputError class="mt-2" :message="form.errors.pic_terkait" />
                                 </div>
 
-                                <div>
+                                <div class="relative">
                                     <InputLabel for="mentioned_user_id" value="Mention User (Opsional)" />
-                                    <select
+                                    <input
                                         id="mentioned_user_id"
-                                        v-model.number="form.mentioned_user_id"
-                                        class="mt-2 block w-full rounded-xl border-0 bg-white/95 px-3 py-2 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
-                                    >
-                                        <option :value="null">-- Pilih User untuk di-mention --</option>
-                                        <option
-                                            v-for="userOption in props.users"
-                                            :key="userOption.id"
-                                            :value="userOption.id"
-                                        >
-                                            {{ userOption.label || `${userOption.name} (${userOption.npp})` }}
-                                        </option>
-                                    </select>
+                                        v-model="mentionSearch"
+                                        type="search"
+                                        autocomplete="off"
+                                        placeholder="Cari nama atau NPP..."
+                                        class="mt-2 block min-h-[42px] w-full rounded-lg border-slate-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-[#78a9c3] focus:ring-2 focus:ring-[#78a9c3]/30"
+                                        @focus="showMentionOptions = true"
+                                        @input="showMentionOptions = true"
+                                    />
+                                    <button v-if="selectedMention" type="button" class="absolute right-2 top-8 rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100" @click="clearMention">Hapus</button>
+                                    <div v-if="showMentionOptions" class="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+                                        <button v-for="candidate in filteredMentionUsers" :key="candidate.id" type="button" class="block w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-[#edf4f8]" @mousedown.prevent="selectMention(candidate)">
+                                            <span class="block font-medium">{{ candidate.name }}</span>
+                                            <span class="block text-xs text-slate-400">NPP {{ candidate.npp || '-' }}</span>
+                                        </button>
+                                        <p v-if="!filteredMentionUsers.length" class="px-3 py-3 text-xs text-slate-500">User tidak ditemukan.</p>
+                                    </div>
                                     <p class="mt-2 text-xs text-gray-500">
                                         Pilih user yang ingin Anda mention dalam GO BOOST ini. User yang di-mention akan menerima notifikasi.
                                     </p>
@@ -267,8 +293,8 @@ const submit = () => {
                                         v-model="form.photo_temuan"
                                         input-id="go-boost-photo-temuan"
                                         label=""
-                                        accept="image/*,*/*"
-                                        hint="Maksimal 5 file @ 10MB. Semua format file didukung."
+                                        accept="*/*"
+                                        hint="Maksimal 5 file, masing-masing 10MB. Gambar, PDF, Word, Excel, dan format file lain didukung."
                                     >
                                         <InputError class="mt-2" :message="form.errors.photo_temuan" />
                                     </PhotoImagePicker>
