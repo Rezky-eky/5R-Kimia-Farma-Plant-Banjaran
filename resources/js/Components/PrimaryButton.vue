@@ -1,10 +1,10 @@
 <template>
     <button
         class="inline-flex min-w-[3rem] items-center justify-center rounded-xl border border-transparent px-5 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-200 ease-in-out hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
-        style="background-color: #00529b; box-shadow: 0 10px 15px -3px rgba(0, 82, 155, 0.3), 0 4px 6px -2px rgba(0, 82, 155, 0.2);"
-        @mouseenter="$event.target.style.backgroundColor='#003d75'; $event.target.style.boxShadow='0 20px 25px -5px rgba(0, 82, 155, 0.4), 0 10px 10px -5px rgba(0, 82, 155, 0.3)';"
-        @mouseleave="$event.target.style.backgroundColor='#00529b'; $event.target.style.boxShadow='0 10px 15px -3px rgba(0, 82, 155, 0.3), 0 4px 6px -2px rgba(0, 82, 155, 0.2)';"
-        @focus="$event.target.style.outline='2px solid #00529b'; $event.target.style.outlineOffset='2px';"
+        style="background-color: #78a9c3; box-shadow: 0 10px 15px -3px rgba(65, 108, 132, 0.24), 0 4px 6px -2px rgba(65, 108, 132, 0.16);"
+        @mouseenter="$event.target.style.backgroundColor='#6696b2'; $event.target.style.boxShadow='0 18px 28px -8px rgba(65, 108, 132, 0.34)';"
+        @mouseleave="$event.target.style.backgroundColor='#78a9c3'; $event.target.style.boxShadow='0 10px 15px -3px rgba(65, 108, 132, 0.24), 0 4px 6px -2px rgba(65, 108, 132, 0.16)';"
+        @focus="$event.target.style.outline='2px solid #78a9c3'; $event.target.style.outlineOffset='2px';"
     >
         <svg
             v-if="$attrs.disabled || $attrs['aria-busy'] || $attrs.class?.includes('opacity-25')"

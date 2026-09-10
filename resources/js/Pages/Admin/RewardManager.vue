@@ -196,7 +196,7 @@ const deleteReward = (id) => {
                             <input
                                 id="image"
                                 type="file"
-                                accept="image/*"
+                                accept="*/*"
                                 @change="handleImageChange"
                                 class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                             />

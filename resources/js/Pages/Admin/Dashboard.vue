@@ -383,10 +383,10 @@ const gridLines = computed(() => {
                         <div><h3 class="text-lg font-semibold text-slate-800">Leaderboard 5R</h3><p class="mt-1 text-sm text-slate-500">Pemenang aktivitas utama yang dapat dilihat semua role.</p></div>
                         <Link :href="route('admin.go_reward')" class="text-sm font-semibold text-[#648b84] hover:text-[#4f726c]">Lihat klasemen lengkap →</Link>
                     </div>
-                    <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <div v-for="board in [{ title: 'Go Boost Finder', items: leaderboards.topGoBoostCreators }, { title: 'Go Boost Closer', items: leaderboards.topGoSolvers }, { title: 'Go Care', items: leaderboards.topGoCares }]" :key="board.title" class="rounded-lg bg-[#f7faf8] p-4">
+                    <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <div v-for="board in [{ title: 'Go Boost Finder', items: leaderboards.topGoBoostCreators }, { title: 'Go Boost Closer', items: leaderboards.topGoSolvers }, { title: 'Go Care', items: leaderboards.topGoCares }, { title: 'Go Check Finder', items: leaderboards.topGoCheckFinders }, { title: 'Go Check Closer', items: leaderboards.topGoCheckClosers }, { title: 'Poin Tertinggi', items: leaderboards.topUsersByPoints }]" :key="board.title" class="rounded-lg bg-[#f7faf8] p-4">
                             <h4 class="text-sm font-semibold text-slate-700">{{ board.title }}</h4>
-                            <div v-for="(item, index) in board.items.slice(0, 3)" :key="item.user_id" class="mt-3 flex items-center justify-between gap-2 text-sm"><span class="truncate text-slate-600"><b class="mr-2 text-[#789e98]">{{ index + 1 }}</b>{{ item.name || 'N/A' }}</span><strong class="shrink-0 text-slate-700">{{ item.total }}</strong></div>
+                            <div class="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1"><div v-for="(item, index) in board.items" :key="`${board.title}-${item.user_id}`" class="flex items-start justify-between gap-2 rounded-md bg-white px-2.5 py-2 text-xs shadow-sm"><span class="min-w-0"><b class="mr-1.5 text-[#4b7892]">{{ index + 1 }}</b><strong class="block truncate text-slate-700">{{ item.name || 'N/A' }}</strong><small class="ml-4 block truncate text-slate-400">{{ item.bagian || 'Bagian belum tersedia' }}</small></span><span class="shrink-0 text-right font-semibold text-[#4b7892]">{{ item.points ?? item.points_balance ?? item.total }}<small class="block font-normal text-slate-400">pt</small></span></div></div>
                             <p v-if="!board.items.length" class="mt-3 text-xs text-slate-400">Belum ada data.</p>
                         </div>
                     </div>

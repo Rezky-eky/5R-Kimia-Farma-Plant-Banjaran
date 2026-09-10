@@ -6,6 +6,7 @@ import { Head, Link } from '@inertiajs/vue3';
 defineProps({
     stats: { type: Object, default: () => ({}) },
     teamsMigrationPending: { type: Boolean, default: false },
+    leaderboards: { type: Object, default: () => ({}) },
 });
 </script>
 
@@ -76,6 +77,16 @@ defineProps({
                 </Link>
                 <BackToDashboard v-if="$page.props.auth?.user?.role === 'admin'" admin />
             </div>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-end justify-between gap-3"><div><h3 class="text-lg font-semibold text-slate-800">Go Reward</h3><p class="mt-1 text-sm text-slate-500">Klasemen lengkap untuk tim 5R.</p></div><Link :href="route('leaderboard')" class="text-sm font-semibold text-[#4b7892]">Lihat semua →</Link></div>
+                <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div v-for="board in [{ title: 'Go Boost Finder', items: leaderboards.topGoBoostCreators }, { title: 'Go Boost Closer', items: leaderboards.topGoSolvers }, { title: 'Go Care', items: leaderboards.topGoCares }, { title: 'Go Check Finder', items: leaderboards.topGoCheckFinders }, { title: 'Go Check Closer', items: leaderboards.topGoCheckClosers }, { title: 'Poin Tertinggi', items: leaderboards.topUsersByPoints }]" :key="board.title" class="rounded-lg bg-[#f4f8fb] p-3">
+                        <h4 class="text-sm font-semibold text-slate-700">{{ board.title }}</h4>
+                        <div class="mt-2 max-h-48 space-y-1.5 overflow-y-auto"><div v-for="(item, index) in board.items" :key="`${board.title}-${item.user_id}`" class="flex justify-between gap-2 rounded bg-white px-2 py-1.5 text-xs"><span class="min-w-0 truncate"><b class="mr-1 text-[#4b7892]">{{ index + 1 }}</b>{{ item.name || 'N/A' }}<small class="block pl-4 text-slate-400">{{ item.bagian || '-' }}</small></span><strong class="shrink-0 text-[#4b7892]">{{ item.points ?? item.points_balance ?? item.total }} pt</strong></div></div>
+                    </div>
+                </div>
+            </section>
         </div>
     </AuthenticatedLayout>
 </template>

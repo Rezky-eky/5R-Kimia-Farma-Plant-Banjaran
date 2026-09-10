@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\AdminController;
 use App\Models\GoAction;
 use App\Models\GoBoost;
 use App\Models\GoCare;
@@ -160,6 +161,8 @@ class DashboardController extends Controller
             ['label' => 'Go Check', 'count' => $userGoChecks],
         ];
 
+        $leaderboards = app(AdminController::class)->getLeaderboards();
+
         // Grafik tren 5R (6 bulan terakhir)
         $laporanBulanan = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -195,6 +198,7 @@ class DashboardController extends Controller
             'recent_user_records' => $recentItems,
             'show_go_check' => $userGoChecks > 0 || $user->isFiveRTeam(),
             'laporan_bulanan' => $laporanBulanan,
+            'leaderboards' => $leaderboards,
         ]);
     }
 }

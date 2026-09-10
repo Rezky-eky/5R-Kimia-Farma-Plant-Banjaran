@@ -109,7 +109,7 @@ const closeErrorNotification = () => {
                     v-if="flashSuccess && showSuccessNotification"
                     class="fixed top-4 right-4 z-50 max-w-sm w-full sm:w-auto"
                 >
-                    <div class="motion-pulse rounded-xl text-white shadow-lg ring-1 ring-slate-300/20 p-4 flex items-start justify-between gap-4 backdrop-blur" style="background-color: #6689a3; box-shadow: 0 12px 28px rgba(71, 85, 105, 0.16);">
+                    <div class="motion-pulse rounded-xl text-white shadow-lg ring-1 ring-slate-300/20 p-4 flex items-start justify-between gap-4 backdrop-blur" style="background-color: #8eafc1; box-shadow: 0 12px 28px rgba(93, 127, 145, 0.18);">
                         <div class="flex items-start gap-3 flex-1">
                             <div class="flex-shrink-0">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,7 +168,7 @@ const closeErrorNotification = () => {
                     v-if="flashSuccess && showSuccessNotification"
                     class="fixed top-4 left-4 right-4 z-50 sm:hidden"
                 >
-                    <div class="motion-pulse rounded-xl text-white shadow-lg ring-1 ring-slate-300/20 p-4 flex items-start justify-between gap-3 backdrop-blur" style="background-color: #6689a3; box-shadow: 0 12px 28px rgba(71, 85, 105, 0.16);">
+                    <div class="motion-pulse rounded-xl text-white shadow-lg ring-1 ring-slate-300/20 p-4 flex items-start justify-between gap-3 backdrop-blur" style="background-color: #8eafc1; box-shadow: 0 12px 28px rgba(93, 127, 145, 0.18);">
                         <div class="flex items-start gap-2 flex-1">
                             <div class="flex-shrink-0">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,7 +221,7 @@ const closeErrorNotification = () => {
                                 <Dropdown align="right" width="48">
                                     <template #trigger>
                                         <button type="button" class="flex items-center gap-2 p-1.5 rounded-lg text-gray-700 hover:bg-gray-100">
-                                            <div class="h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-semibold" style="background: #86a7a0;">{{ $page.props.auth.user.name.charAt(0).toUpperCase() }}</div>
+                                            <div class="h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-semibold" style="background: #8eafc1;">{{ $page.props.auth.user.name.charAt(0).toUpperCase() }}</div>
                                             <span class="text-sm font-medium hidden sm:inline">{{ $page.props.auth.user.name }}</span>
                                             <span class="hidden sm:inline text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title="Poin 5R">{{ $page.props.auth.user.points_balance ?? 0 }} pt</span>
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -254,7 +254,7 @@ const closeErrorNotification = () => {
 
                 <!-- Sidebar: desktop (in-flow + sticky), mobile (fixed drawer) -->
                 <aside
-                    class="z-30 flex flex-col bg-[#f4f8f5] border-r border-[#e0e8e3] shadow-[4px_0_18px_rgba(93,108,101,0.06)]
+                    class="z-30 flex flex-col bg-[#f4f8fb] border-r border-[#dfe9ef] shadow-[4px_0_18px_rgba(93,127,145,0.07)]
                            fixed lg:sticky top-14 lg:top-14 left-0
                            h-[calc(100dvh-3.5rem)] lg:h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] pb-[env(safe-area-inset-bottom)]
                            w-72 sm:w-80 lg:w-60
@@ -308,12 +308,8 @@ const closeErrorNotification = () => {
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             Go Sale
                         </NavLink>
-                        <NavLink :href="route('leaderboard')" :active="route().current('leaderboard')">
+                        <NavLink :href="isAdmin ? route('admin.go_reward') : route('leaderboard')" :active="route().current('leaderboard') || route().current('admin.go_reward')">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19h16M6 16V8m6 8V4m6 12v-5" /></svg>
-                            Leaderboard 5R
-                        </NavLink>
-                        <NavLink v-if="canViewAdminData && isAdmin" :href="route('admin.go_reward')" :active="route().current('admin.go_reward')">
-                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
                             Go Reward
                         </NavLink>
                     </nav>
@@ -325,10 +321,10 @@ const closeErrorNotification = () => {
                 >
                     <Transition name="page" mode="out-in" appear>
                         <div :key="$page.component">
-                            <header v-if="$slots.header" class="border-b border-[#e5e9e5] bg-[#fffdfa]">
+                            <header v-if="$slots.header" class="border-b border-[#dfe9ef] bg-[#fffefa]">
                                 <div class="px-4 py-3 sm:px-6 lg:px-8"><slot name="header" /></div>
                             </header>
-                            <main class="min-h-[calc(100vh-8rem)] overflow-x-hidden bg-[#f7f8f6] pb-6 pt-3 touch-pan-y">
+                            <main class="min-h-[calc(100vh-8rem)] overflow-x-hidden bg-[#f4f8fb] pb-6 pt-3 touch-pan-y">
                                 <div class="px-3 sm:px-6 lg:px-8"><slot /></div>
                             </main>
                         </div>

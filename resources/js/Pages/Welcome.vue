@@ -15,9 +15,9 @@ defineProps({
 <template>
     <Head title="5R Kimia Farma Plant Banjaran - Sistem Manajemen 5R" />
 
-    <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div class="min-h-screen bg-[#f7f8f6]">
         <!-- Header Premium -->
-        <header class="w-full bg-white/95 backdrop-blur-lg shadow-sm border-b border-gray-200/60 sticky top-0 z-50">
+        <header class="sticky top-0 z-50 w-full border-b border-[#e5e9e5] bg-[#fffdfa]/95 shadow-[0_4px_18px_rgba(93,108,101,0.07)] backdrop-blur-lg">
             <div class="mx-auto max-w-7xl px-4 py-2 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between">
                     <!-- Logo & Brand -->
@@ -30,8 +30,7 @@ defineProps({
                         <Link
                             v-if="$page.props.auth.user"
                             :href="route('dashboard')"
-                            class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.02]"
-                            style="background-color: #00529b;"
+                            class="motion-lift inline-flex items-center rounded-xl bg-[#c2d2e1] px-5 py-2.5 text-sm font-semibold text-[#4d6172] shadow-sm"
                         >
                             Dashboard
                         </Link>
@@ -39,8 +38,7 @@ defineProps({
                         <template v-else>
                             <Link
                                 :href="route('login')"
-                                class="inline-flex items-center px-6 py-3 text-sm font-bold rounded-xl text-white shadow-lg shadow-[#00529b]/30 ring-2 ring-[#00529b]/25 transition-all duration-200 hover:shadow-2xl hover:scale-[1.02] hover:bg-[#004080]"
-                                style="background-color: #00529b; border-color: rgba(0, 82, 155, 0.35);"
+                                class="motion-lift inline-flex items-center rounded-xl bg-[#8eafc1] px-6 py-3 text-sm font-bold text-white shadow-sm ring-2 ring-[#c4dbe7]/70"
                             >
                                 Login
                             </Link>
@@ -48,8 +46,7 @@ defineProps({
                             <Link
                                 v-if="canRegister"
                                 :href="route('register')"
-                                class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white rounded-xl shadow-md transition-all duration-200 hover:shadow-lg hover:scale-[1.02]"
-                                style="background-color: #00529b;"
+                                class="motion-lift inline-flex items-center rounded-xl bg-[#c2d2e1] px-5 py-2.5 text-sm font-semibold text-[#4d6172] shadow-sm"
                             >
                                 Daftar
                             </Link>
@@ -63,24 +60,24 @@ defineProps({
         <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <div class="flex flex-col items-center text-center">
                 <!-- Hero Card Premium -->
-                <div class="w-full max-w-5xl rounded-3xl bg-white p-12 md:p-16 mb-20 shadow-2xl ring-1 ring-gray-200/50" style="box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.12);">
+                <div class="soft-panel motion-lift mb-20 w-full max-w-5xl rounded-3xl bg-[#fffdfa] p-8 shadow-lg sm:p-12 md:p-16">
                     <!-- Logo & Branding -->
                     <div class="mb-10">
                         <div class="flex justify-center mb-6">
                             <ApplicationLogo class="h-20 w-auto" />
                         </div>
-                        <h1 class="text-5xl md:text-6xl font-extrabold mb-4 tracking-tight" style="color: #00529b;">
+                        <h1 class="text-5xl font-extrabold tracking-tight text-[#5d7f91] md:text-6xl mb-4">
                             Sistem Manajemen 5R
                         </h1>
-                        <p class="text-xl md:text-2xl font-semibold text-gray-700 mb-3">
+                        <p class="text-xl font-semibold text-slate-700 md:text-2xl mb-3">
                             5R Kimia Farma Plant Banjaran
                         </p>
-                        <div class="inline-flex items-center px-4 py-2 rounded-full bg-slate-50 border border-gray-200">
-                            <p class="text-sm font-medium italic" style="color: #00529b;">
+                        <div class="inline-flex items-center rounded-full border border-[#dceae5] bg-[#f1f7f4] px-4 py-2">
+                            <p class="text-sm font-medium italic text-[#648b84]">
                                 Berdaya
                             </p>
-                            <span class="mx-2 text-gray-400">•</span>
-                            <p class="text-xs text-gray-600">
+                            <span class="mx-2 text-[#a9bdb7]">•</span>
+                            <p class="text-xs text-slate-600">
                                 Bersih dalam bekerja, amanah dalam berkarya
                             </p>
                         </div>
@@ -96,8 +93,7 @@ defineProps({
                         <Link
                             v-if="canLogin && !$page.props.auth.user"
                             :href="route('login')"
-                            class="inline-flex items-center px-10 py-4 text-lg font-semibold text-white rounded-xl shadow-xl transition-all duration-200 hover:shadow-2xl hover:scale-[1.02]"
-                            style="background-color: #00529b; box-shadow: 0 20px 25px -5px rgba(0, 82, 155, 0.4), 0 10px 10px -5px rgba(0, 82, 155, 0.3);"
+                            class="motion-lift inline-flex items-center rounded-xl bg-[#8eafc1] px-10 py-4 text-lg font-semibold text-white shadow-lg"
                         >
                             Mulai
                             <svg class="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,13 +104,13 @@ defineProps({
                 </div>
 
                 <!-- 5R Pilar Cards -->
-                <div class="w-full mb-20">
-                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-12">Lima Pilar 5R</h2>
+                <div class="mb-20 w-full">
+                    <h2 class="mb-12 text-3xl font-bold text-slate-800 md:text-4xl">Lima Pilar 5R</h2>
                     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
                         <!-- Ringkas -->
-                        <div class="group rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:translate-y-[-6px] hover:shadow-xl">
-                            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl mb-4 transition group-hover:scale-110" style="background-color: rgba(220, 38, 38, 0.1);">
-                                <svg class="h-8 w-8" style="color: #dc2626;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="motion-lift group rounded-2xl border border-[#e5e9e5] bg-[#fffdfa] p-6 shadow-sm">
+                            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f0dfe9] transition group-hover:scale-105">
+                                <svg class="h-8 w-8 text-[#806276]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                             </div>
@@ -125,9 +121,9 @@ defineProps({
                         </div>
 
                         <!-- Rapi -->
-                        <div class="group rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:translate-y-[-6px] hover:shadow-xl">
-                            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl mb-4 transition group-hover:scale-110" style="background-color: rgba(0, 82, 155, 0.1);">
-                                <svg class="h-8 w-8" style="color: #00529b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="motion-lift group rounded-2xl border border-[#e5e9e5] bg-[#fffdfa] p-6 shadow-sm">
+                            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#e1e8f2] transition group-hover:scale-105">
+                                <svg class="h-8 w-8 text-[#5d718d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
                                 </svg>
                             </div>
@@ -138,9 +134,9 @@ defineProps({
                         </div>
 
                         <!-- Resik -->
-                        <div class="group rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:translate-y-[-6px] hover:shadow-xl">
-                            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl mb-4 transition group-hover:scale-110" style="background-color: rgba(249, 115, 22, 0.1);">
-                                <svg class="h-8 w-8" style="color: #f97316;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="motion-lift group rounded-2xl border border-[#e5e9e5] bg-[#fffdfa] p-6 shadow-sm">
+                            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f4e2d3] transition group-hover:scale-105">
+                                <svg class="h-8 w-8 text-[#9a725a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                                 </svg>
                             </div>
@@ -151,9 +147,9 @@ defineProps({
                         </div>
 
                         <!-- Rawat -->
-                        <div class="group rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:translate-y-[-6px] hover:shadow-xl">
-                            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl mb-4 transition group-hover:scale-110" style="background-color: rgba(22, 163, 74, 0.1);">
-                                <svg class="h-8 w-8" style="color: #16a34a;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="motion-lift group rounded-2xl border border-[#e5e9e5] bg-[#fffdfa] p-6 shadow-sm">
+                            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#dceae5] transition group-hover:scale-105">
+                                <svg class="h-8 w-8 text-[#527772]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
@@ -165,9 +161,9 @@ defineProps({
                         </div>
 
                         <!-- Rajin -->
-                        <div class="group rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-200/50 transition-all duration-300 hover:translate-y-[-6px] hover:shadow-xl">
-                            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl mb-4 transition group-hover:scale-110" style="background-color: rgba(6, 182, 212, 0.1);">
-                                <svg class="h-8 w-8" style="color: #06b6d4;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="motion-lift group rounded-2xl border border-[#e5e9e5] bg-[#fffdfa] p-6 shadow-sm">
+                            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#dce4ef] transition group-hover:scale-105">
+                                <svg class="h-8 w-8 text-[#5d718d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
@@ -180,7 +176,7 @@ defineProps({
                 </div>
 
                 <!-- Manfaat Section -->
-                <div class="w-full rounded-3xl bg-white p-10 md:p-12 shadow-xl ring-1 ring-gray-200/50">
+                <div class="soft-panel w-full rounded-3xl bg-[#fffdfa] p-8 shadow-lg md:p-12">
                     <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-10 text-center">
                         Manfaat Penerapan 5R
                     </h3>
@@ -194,8 +190,8 @@ defineProps({
                             { icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15', title: 'Peningkatan Berkelanjutan', desc: 'Budaya perbaikan terus-menerus' }
                         ]" :key="index" class="flex items-start space-x-4 rounded-xl bg-slate-50 px-5 py-4 shadow-sm hover:shadow-md transition-shadow">
                             <div class="flex-shrink-0">
-                                <div class="flex h-12 w-12 items-center justify-center rounded-xl" style="background-color: rgba(0, 82, 155, 0.1);">
-                                    <svg class="h-6 w-6" style="color: #00529b;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-[#e1e8f2]">
+                                    <svg class="h-6 w-6 text-[#5d718d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="benefit.icon" />
                                     </svg>
                                 </div>
@@ -211,10 +207,10 @@ defineProps({
         </main>
 
         <!-- Footer Premium -->
-        <footer class="mt-6 border-t border-gray-200 bg-white py-4">
+        <footer class="mt-6 border-t border-[#e5e9e5] bg-[#fffdfa] py-4">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="text-center">
-                    <p class="text-base font-semibold italic mb-3" style="color: #00529b;">
+                    <p class="mb-3 text-base font-semibold italic text-[#66889b]">
                         Berdaya
                     </p>
                     <p class="text-sm text-gray-500 mb-2">

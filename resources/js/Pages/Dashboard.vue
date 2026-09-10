@@ -68,6 +68,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    leaderboards: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const activityBreakdown = computed(() => props.user_activity_breakdown || []);
@@ -351,6 +355,22 @@ const gridLines = computed(() => {
                         <p class="mt-3 text-xs text-gray-500">Jumlah Go Check yang terkait dengan Anda.</p>
                     </div>
                 </div>
+
+                <section class="soft-panel rounded-xl p-5">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                        <div><h3 class="text-lg font-semibold text-slate-800">Go Reward</h3><p class="mt-1 text-sm text-slate-500">Klasemen lengkap seluruh user berdasarkan aktivitas dan poin.</p></div>
+                        <Link :href="route('leaderboard')" class="text-sm font-semibold text-[#4b7892] hover:text-[#365d73]">Buka halaman Go Reward →</Link>
+                    </div>
+                    <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <div v-for="board in [{ title: 'Go Boost Finder', items: leaderboards.topGoBoostCreators }, { title: 'Go Boost Closer', items: leaderboards.topGoSolvers }, { title: 'Go Care', items: leaderboards.topGoCares }, { title: 'Go Check Finder', items: leaderboards.topGoCheckFinders }, { title: 'Go Check Closer', items: leaderboards.topGoCheckClosers }, { title: 'Poin Tertinggi', items: leaderboards.topUsersByPoints }]" :key="board.title" class="rounded-lg border border-[#dfe9ef] bg-[#f8fbfd] p-4">
+                            <h4 class="text-sm font-semibold text-slate-700">{{ board.title }}</h4>
+                            <div class="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+                                <div v-for="(item, index) in board.items" :key="`${board.title}-${item.user_id}`" class="flex items-start justify-between gap-2 rounded-md bg-white px-2.5 py-2 text-xs shadow-sm"><span class="min-w-0"><b class="mr-1.5 text-[#4b7892]">{{ index + 1 }}</b><strong class="block truncate text-slate-700">{{ item.name || 'N/A' }}</strong><small class="ml-4 block truncate text-slate-400">{{ item.bagian || 'Bagian belum tersedia' }}</small></span><span class="shrink-0 text-right font-semibold text-[#4b7892]">{{ item.points ?? item.points_balance ?? item.total }}<small class="block font-normal text-slate-400">pt</small></span></div>
+                            </div>
+                            <p v-if="!board.items?.length" class="mt-3 text-xs text-slate-400">Belum ada data.</p>
+                        </div>
+                    </div>
+                </section>
 
                 <!-- Tren Kinerja -->
                 <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

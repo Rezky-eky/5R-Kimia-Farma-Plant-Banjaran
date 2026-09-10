@@ -75,6 +75,7 @@ class GoCheckManagementController extends Controller
 
         return Inertia::render('GoCheck/Management/Dashboard', [
             'teamsMigrationPending' => $teamsMigrationPending,
+            'leaderboards' => app(AdminController::class)->getLeaderboards(),
             'stats' => [
                 // Temuan Finder sudah masuk, Solver belum input perbaikan
                 'waiting_solver' => GoCheck::query()
