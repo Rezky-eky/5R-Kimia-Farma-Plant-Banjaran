@@ -82,7 +82,7 @@ const submit = () => {
                             <InputError class="mt-2" :message="form.errors.bagian" />
                         </div>
                         <div>
-                            <InputLabel for="solver_user_id" value="Solver (Ketua tim inspector) *" />
+                            <InputLabel for="solver_user_id" value="Solver (Ketua Tim Area Penugasan) *" />
                             <select
                                 id="solver_user_id"
                                 v-model="form.solver_user_id"
@@ -94,9 +94,9 @@ const submit = () => {
                                     v-for="solver in solverLeaders"
                                     :key="solver.id"
                                     :value="solver.id"
-                                    :title="`${solver.name} (NPP: ${solver.npp}) — Ketua ${solver.team_name || 'Tim inspector'}`"
+                                    :title="`${solver.name} (NPP: ${solver.npp}) — Ketua ${solver.team_name || 'Tim Area Penugasan'}`"
                                 >
-                                    {{ solver.name }} — Ketua {{ solver.team_name || 'Tim inspector' }}
+                                    {{ solver.name }} — Ketua {{ solver.team_name || 'Tim Area Penugasan' }}
                                 </option>
                             </select>
                             <p v-if="currentSolverInfo?.solver_name" class="mt-1 text-xs text-emerald-700 flex items-center gap-1 font-medium">
