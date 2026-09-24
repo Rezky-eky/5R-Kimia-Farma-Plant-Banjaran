@@ -240,11 +240,30 @@ class GoCheckManagementController extends Controller
             if (trim($target['target_area']) === '') {
                 continue;
             }
+
+            $picUserId = $target['pic_user_id'] ?? null;
+            $picName = $target['pic_name'] ?? null;
+
+            if (! $picUserId) {
+                $resolved = $this->teamService->resolveSolverForTarget(
+                    $target['target_area'],
+                    $picName,
+                    null,
+                    $target['bagian'] ?? null
+                );
+                if ($resolved) {
+                    $picUserId = $resolved->id;
+                    if (empty($picName)) {
+                        $picName = $resolved->name;
+                    }
+                }
+            }
+
             FiveRTeamAuditTarget::create([
                 'team_id' => $team->id,
                 'target_area' => $target['target_area'],
-                'pic_name' => $target['pic_name'] ?? null,
-                'pic_user_id' => $target['pic_user_id'] ?? null,
+                'pic_name' => $picName,
+                'pic_user_id' => $picUserId,
                 'bagian' => $target['bagian'] ?? null,
                 'sort_order' => $i + 1,
             ]);
@@ -267,6 +286,27 @@ class GoCheckManagementController extends Controller
             'pic_user_id' => 'nullable|exists:users,id',
             'bagian' => 'nullable|string|max:255',
         ]);
+
+        $picUserId = $validated['pic_user_id'] ?? null;
+        $picName = $validated['pic_name'] ?? null;
+
+        if (! $picUserId) {
+            $resolved = $this->teamService->resolveSolverForTarget(
+                $validated['target_area'],
+                $picName,
+                null,
+                $validated['bagian'] ?? null
+            );
+            if ($resolved) {
+                $picUserId = $resolved->id;
+                if (empty($picName)) {
+                    $picName = $resolved->name;
+                }
+            }
+        }
+
+        $validated['pic_user_id'] = $picUserId;
+        $validated['pic_name'] = $picName;
 
         $target->update($validated);
 

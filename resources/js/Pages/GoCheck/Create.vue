@@ -6,20 +6,45 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
+import { watch, computed } from 'vue';
 
 const props = defineProps({
     assignedBagian: { type: Array, default: () => [] },
     solverLeaders: { type: Array, default: () => [] },
+    assignmentSolverMap: { type: Object, default: () => ({}) },
+    defaultBagian: { type: String, default: '' },
+    defaultSolverId: { type: [Number, String], default: '' },
 });
 
+const initialBagian = props.defaultBagian || props.assignedBagian[0] || '';
+const initialSolverId = props.defaultSolverId
+    || props.assignmentSolverMap[initialBagian]?.solver_user_id
+    || props.solverLeaders[0]?.id
+    || '';
+
 const form = useForm({
-    bagian: props.assignedBagian[0] ?? '',
-    solver_user_id: props.solverLeaders[0]?.id ?? '',
+    bagian: initialBagian,
+    solver_user_id: initialSolverId,
     area_temuan: '',
     ruangan_temuan: '',
     penjelasan_temuan: '',
     pic_terkait: '',
     photo_temuan: [],
+});
+
+watch(
+    () => form.bagian,
+    (newBagian) => {
+        if (!newBagian) return;
+        const mapped = props.assignmentSolverMap[newBagian];
+        if (mapped && mapped.solver_user_id) {
+            form.solver_user_id = mapped.solver_user_id;
+        }
+    }
+);
+
+const currentSolverInfo = computed(() => {
+    return props.assignmentSolverMap[form.bagian] || null;
 });
 
 const submit = () => {
@@ -74,7 +99,13 @@ const submit = () => {
                                     {{ solver.name }} — Ketua {{ solver.team_name || 'Tim inspector' }}
                                 </option>
                             </select>
-                            <p v-if="!solverLeaders.length" class="mt-2 text-xs text-amber-700">
+                            <p v-if="currentSolverInfo?.solver_name" class="mt-1 text-xs text-emerald-700 flex items-center gap-1 font-medium">
+                                <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                Otomatis terhubung: {{ currentSolverInfo.solver_name }} ({{ currentSolverInfo.team_name || 'Ketua Tim Solver' }})
+                            </p>
+                            <p v-else-if="!solverLeaders.length" class="mt-2 text-xs text-amber-700">
                                 Belum ada ketua tim inspector. Tandai anggota sebagai ketua tim di Kelola Go Check.
                             </p>
                             <InputError class="mt-2" :message="form.errors.solver_user_id" />

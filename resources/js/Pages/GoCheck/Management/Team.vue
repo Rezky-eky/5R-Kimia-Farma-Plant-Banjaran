@@ -251,6 +251,51 @@ const removeTargetRow = (teamId, index) => {
     targetForms.value[teamId]?.targets.splice(index, 1);
 };
 
+const allLeaderUsers = computed(() => {
+    const list = [];
+    props.teams.forEach((t) => {
+        (t.members || []).forEach((m) => {
+            if (m.is_leader) {
+                list.push({
+                    id: m.user_id,
+                    name: m.name,
+                    team_name: t.inspector_area,
+                });
+            }
+        });
+    });
+    return list;
+});
+
+const onTargetAreaInput = (row) => {
+    if (!row.target_area) return;
+    const q = row.target_area.trim().toLowerCase();
+    const matched = props.teams.find(
+        (t) => t.inspector_area?.toLowerCase().trim() === q
+    );
+    if (matched) {
+        const leader = matched.members?.find((m) => m.is_leader) || matched.members?.[0];
+        if (leader && !row.pic_name) {
+            row.pic_name = leader.name;
+        }
+    }
+};
+
+const onEditTargetAreaInput = (formKey) => {
+    const form = targetEditForms.value[formKey];
+    if (!form || !form.target_area) return;
+    const q = form.target_area.trim().toLowerCase();
+    const matched = props.teams.find(
+        (t) => t.inspector_area?.toLowerCase().trim() === q
+    );
+    if (matched) {
+        const leader = matched.members?.find((m) => m.is_leader) || matched.members?.[0];
+        if (leader && !form.pic_name) {
+            form.pic_name = leader.name;
+        }
+    }
+};
+
 const selectedTeamForSchedule = computed(() =>
     props.teams.find((t) => t.id === scheduleForm.team_id) ?? null,
 );
@@ -509,13 +554,16 @@ const usersNotInTeam = (team) => {
                                                     <input
                                                         v-model="targetEditForms[targetEditKey(team.id, target.id)].target_area"
                                                         type="text"
+                                                        list="team-area-suggestions"
                                                         class="w-full rounded-lg border-gray-200 text-sm"
+                                                        @input="onEditTargetAreaInput(targetEditKey(team.id, target.id))"
                                                     />
                                                 </td>
                                                 <td class="px-4 py-2">
                                                     <input
                                                         v-model="targetEditForms[targetEditKey(team.id, target.id)].pic_name"
                                                         type="text"
+                                                        list="leader-name-suggestions"
                                                         class="w-full rounded-lg border-gray-200 text-sm"
                                                     />
                                                 </td>
@@ -580,11 +628,24 @@ const usersNotInTeam = (team) => {
                                 >
                                     <div class="sm:col-span-2">
                                         <label class="text-xs text-gray-500">Area pengecekan *</label>
-                                        <input v-model="row.target_area" type="text" class="mt-1 w-full rounded-lg border-gray-200 text-sm" placeholder="Area Office" />
+                                        <input
+                                            v-model="row.target_area"
+                                            type="text"
+                                            list="team-area-suggestions"
+                                            class="mt-1 w-full rounded-lg border-gray-200 text-sm"
+                                            placeholder="Contoh: Area Security, Parkir, Smoking area"
+                                            @input="onTargetAreaInput(row)"
+                                        />
                                     </div>
                                     <div>
                                         <label class="text-xs text-gray-500">PIC area</label>
-                                        <input v-model="row.pic_name" type="text" class="mt-1 w-full rounded-lg border-gray-200 text-sm" placeholder="Nama PIC" />
+                                        <input
+                                            v-model="row.pic_name"
+                                            type="text"
+                                            list="leader-name-suggestions"
+                                            class="mt-1 w-full rounded-lg border-gray-200 text-sm"
+                                            placeholder="Nama PIC (misal: Bu Eva)"
+                                        />
                                     </div>
                                     <div>
                                         <label class="text-xs text-gray-500">Bagian (Solver)</label>
@@ -598,6 +659,15 @@ const usersNotInTeam = (team) => {
                                     </div>
                                 </div>
                             </div>
+
+                            <datalist id="team-area-suggestions">
+                                <option v-for="t in teams" :key="t.id" :value="t.inspector_area" />
+                            </datalist>
+                            <datalist id="leader-name-suggestions">
+                                <option v-for="u in allLeaderUsers" :key="u.id" :value="u.name">
+                                    {{ u.name }} — Ketua {{ u.team_name }}
+                                </option>
+                            </datalist>
 
                             <div class="mt-3 flex flex-wrap gap-2">
                                 <button type="button" class="text-sm text-[#00529b] font-medium" @click="addTargetRow(team.id)">+ Tambah area pengecekan</button>

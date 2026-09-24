@@ -168,4 +168,167 @@ class GoCheckTeamService
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
     }
+
+    /**
+     * Normalisasi nama area untuk pencocokan toleran (misal "Area Security, Parkir dan Smoking area" vs "Area Security, Parkir, Smoking area").
+     */
+    public function normalizeAreaName(?string $name): string
+    {
+        if (empty($name)) {
+            return '';
+        }
+        $s = mb_strtolower(trim($name));
+        $s = str_replace([' dan ', ' & ', '+', '/'], ' ', $s);
+        $s = preg_replace('/\barea\b/i', '', $s);
+        $s = preg_replace('/[^a-z0-9]/', '', $s);
+        return trim($s);
+    }
+
+    /**
+     * Normalisasi nama orang (menghapus titel honorifik seperti Bu, Pak, dsb).
+     */
+    public function normalizePersonName(?string $name): string
+    {
+        if (empty($name)) {
+            return '';
+        }
+        $s = mb_strtolower(trim($name));
+        $s = preg_replace('/^(bu|ibu|pak|bapak|mas|mbak|sdr|sdri)\.?\s+/i', '', $s);
+        $s = preg_replace('/,\s*(s\.[a-z]+|m\.[a-z]+|drg?|apt\.?|a\.md\.?).*$/i', '', $s);
+        $s = preg_replace('/\b(dr|drg|apt)\.?\s+/i', '', $s);
+        return trim($s);
+    }
+
+    /**
+     * Resolusi ketua tim / solver untuk suatu target audit (target area atau bagian).
+     */
+    public function resolveSolverForTarget(
+        FiveRTeamAuditTarget|string $target,
+        ?string $picName = null,
+        ?int $picUserId = null,
+        ?string $bagian = null
+    ): ?User {
+        $targetModel = null;
+        if ($target instanceof FiveRTeamAuditTarget) {
+            $targetModel = $target;
+            $targetArea = $target->target_area;
+            $picName = $target->pic_name ?: $picName;
+            $picUserId = $target->pic_user_id ?: $picUserId;
+            $bagian = $target->bagian ?: $bagian;
+        } else {
+            $targetArea = $target;
+        }
+
+        // 1. Jika sudah ada pic_user_id yang valid
+        if ($picUserId) {
+            $user = User::find($picUserId);
+            if ($user) {
+                return $user;
+            }
+        }
+
+        $allTeams = FiveRTeam::with(['members.user'])->get();
+
+        // 2. Cari team yang inspector_area cocok dengan target_area
+        $normalizedTarget = $this->normalizeAreaName($targetArea);
+        $matchedTeam = null;
+
+        if (! empty($normalizedTarget)) {
+            $matchedTeam = $allTeams->first(function ($t) use ($normalizedTarget, $targetArea) {
+                if (strcasecmp(trim($t->inspector_area), trim($targetArea)) === 0) {
+                    return true;
+                }
+                return $this->normalizeAreaName($t->inspector_area) === $normalizedTarget;
+            });
+
+            if (! $matchedTeam && strlen($normalizedTarget) >= 4) {
+                $matchedTeam = $allTeams->first(function ($t) use ($normalizedTarget) {
+                    $normTeam = $this->normalizeAreaName($t->inspector_area);
+                    return ! empty($normTeam) && (str_contains($normTeam, $normalizedTarget) || str_contains($normalizedTarget, $normTeam));
+                });
+            }
+        }
+
+        if ($matchedTeam) {
+            $leaderMember = $matchedTeam->members->firstWhere('is_leader', true)
+                ?? $matchedTeam->members->first();
+
+            if ($leaderMember?->user) {
+                $resolved = $leaderMember->user;
+                if ($targetModel && ! $targetModel->pic_user_id) {
+                    $targetModel->update(['pic_user_id' => $resolved->id]);
+                    if (empty($targetModel->pic_name)) {
+                        $targetModel->update(['pic_name' => $resolved->name]);
+                    }
+                }
+                return $resolved;
+            }
+        }
+
+        // 3. Cocokkan berdasarkan nama PIC jika diisi
+        if (! empty($picName)) {
+            $cleanPic = $this->normalizePersonName($picName);
+
+            if (! empty($cleanPic)) {
+                $allLeaders = \App\Models\FiveRTeamMember::where('is_leader', true)
+                    ->with('user')
+                    ->get()
+                    ->pluck('user')
+                    ->filter();
+
+                $matchedLeader = $allLeaders->first(function ($u) use ($cleanPic) {
+                    $cleanUser = $this->normalizePersonName($u->name);
+                    if (strcasecmp($cleanUser, $cleanPic) === 0) {
+                        return true;
+                    }
+                    if (str_contains($cleanUser, $cleanPic) || str_contains($cleanPic, $cleanUser)) {
+                        return true;
+                    }
+                    $picWords = array_filter(explode(' ', $cleanPic), fn ($w) => strlen($w) >= 3);
+                    $userWords = array_filter(explode(' ', $cleanUser), fn ($w) => strlen($w) >= 3);
+                    return ! empty(array_intersect($picWords, $userWords));
+                });
+
+                if ($matchedLeader) {
+                    if ($targetModel && ! $targetModel->pic_user_id) {
+                        $targetModel->update(['pic_user_id' => $matchedLeader->id]);
+                    }
+                    return $matchedLeader;
+                }
+
+                $matchedUser = User::where('name', 'like', '%'.$cleanPic.'%')->first();
+                if ($matchedUser) {
+                    if ($targetModel && ! $targetModel->pic_user_id) {
+                        $targetModel->update(['pic_user_id' => $matchedUser->id]);
+                    }
+                    return $matchedUser;
+                }
+            }
+        }
+
+        // 4. Jika ada bagian, cocokkan dengan inspector_area atau user bagian
+        if (! empty($bagian)) {
+            $normBagian = $this->normalizeAreaName($bagian);
+            $matchedBagianTeam = $allTeams->first(function ($t) use ($normBagian, $bagian) {
+                if (strcasecmp(trim($t->inspector_area), trim($bagian)) === 0) {
+                    return true;
+                }
+                return ! empty($normBagian) && $this->normalizeAreaName($t->inspector_area) === $normBagian;
+            });
+
+            if ($matchedBagianTeam) {
+                $leaderMember = $matchedBagianTeam->members->firstWhere('is_leader', true)
+                    ?? $matchedBagianTeam->members->first();
+                if ($leaderMember?->user) {
+                    if ($targetModel && ! $targetModel->pic_user_id) {
+                        $targetModel->update(['pic_user_id' => $leaderMember->user->id]);
+                    }
+                    return $leaderMember->user;
+                }
+            }
+        }
+
+        return null;
+    }
 }
+

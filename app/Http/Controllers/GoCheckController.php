@@ -7,6 +7,7 @@ use App\Models\FiveRTeamMember;
 use App\Models\GoCheck;
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\GoCheckTeamService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,7 @@ use Inertia\Inertia;
 
 class GoCheckController extends Controller
 {
-    public function create()
+    public function create(GoCheckTeamService $teamService)
     {
         $user = Auth::user();
         $assignedBagian = $user->assignedBagianList();
@@ -27,10 +28,62 @@ class GoCheckController extends Controller
         }
 
         $allLeaders = $this->allInspectorTeamLeaders($user);
+        $userTargets = $user->assignedAuditTargets();
+
+        $assignmentSolverMap = [];
+
+        foreach ($assignedBagian as $areaOrBagian) {
+            $matchedTarget = $userTargets->first(function ($t) use ($areaOrBagian) {
+                return $t->target_area === $areaOrBagian || $t->bagian === $areaOrBagian;
+            });
+
+            $resolvedUser = null;
+            $teamName = null;
+            $picName = null;
+
+            if ($matchedTarget) {
+                $resolvedUser = $teamService->resolveSolverForTarget($matchedTarget);
+                $teamName = $matchedTarget->target_area;
+                $picName = $matchedTarget->pic_name;
+            } else {
+                $resolvedUser = $teamService->resolveSolverForTarget($areaOrBagian);
+                $teamName = $areaOrBagian;
+            }
+
+            if ($resolvedUser) {
+                if (! collect($allLeaders)->contains('id', $resolvedUser->id)) {
+                    $teamOfLeader = FiveRTeamMember::where('user_id', $resolvedUser->id)
+                        ->with('team')
+                        ->first()?->team?->inspector_area;
+
+                    $allLeaders[] = [
+                        'id' => $resolvedUser->id,
+                        'name' => $resolvedUser->name,
+                        'npp' => $resolvedUser->npp,
+                        'team_name' => $teamOfLeader ?: ($teamName ?: 'Tim Solver'),
+                    ];
+                }
+
+                $assignmentSolverMap[$areaOrBagian] = [
+                    'solver_user_id' => $resolvedUser->id,
+                    'solver_name' => $resolvedUser->name,
+                    'solver_npp' => $resolvedUser->npp,
+                    'team_name' => $teamName,
+                    'pic_name' => $picName ?: $resolvedUser->name,
+                ];
+            }
+        }
+
+        $defaultBagian = $assignedBagian[0] ?? '';
+        $defaultSolverId = $assignmentSolverMap[$defaultBagian]['solver_user_id']
+            ?? ($allLeaders[0]['id'] ?? '');
 
         return Inertia::render('GoCheck/Create', [
             'assignedBagian' => $assignedBagian,
             'solverLeaders' => $allLeaders,
+            'assignmentSolverMap' => $assignmentSolverMap,
+            'defaultBagian' => $defaultBagian,
+            'defaultSolverId' => $defaultSolverId,
         ]);
     }
 
@@ -58,8 +111,28 @@ class GoCheckController extends Controller
 
     private function solverAllowed(User $finder, int $solverId): bool
     {
-        return collect($this->allInspectorTeamLeaders($finder))
-            ->contains(fn ($row) => (int) $row['id'] === $solverId);
+        if (collect($this->allInspectorTeamLeaders($finder))->contains(fn ($row) => (int) $row['id'] === $solverId)) {
+            return true;
+        }
+
+        $finderTeamIds = FiveRTeamMember::where('user_id', $finder->id)->pluck('team_id');
+        $isPic = FiveRTeamAuditTarget::whereIn('team_id', $finderTeamIds)
+            ->where('pic_user_id', $solverId)
+            ->exists();
+
+        if ($isPic) {
+            return true;
+        }
+
+        $teamService = app(GoCheckTeamService::class);
+        foreach ($finder->assignedAuditTargets() as $target) {
+            $resolved = $teamService->resolveSolverForTarget($target);
+            if ($resolved && (int) $resolved->id === $solverId) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -68,17 +141,19 @@ class GoCheckController extends Controller
     private function assignmentMetaMap(User $user): array
     {
         $meta = [];
+        $teamService = app(GoCheckTeamService::class);
 
         FiveRTeamMember::query()
             ->where('user_id', $user->id)
             ->with('team.auditTargets')
             ->get()
-            ->each(function ($membership) use (&$meta) {
+            ->each(function ($membership) use (&$meta, $teamService) {
                 foreach ($membership->team?->auditTargets ?? [] as $target) {
+                    $resolvedUser = $teamService->resolveSolverForTarget($target);
                     foreach (array_filter([$target->bagian, $target->target_area]) as $key) {
                         $meta[$key] = [
                             'solver_bagian' => $target->bagian ?: $key,
-                            'default_solver_id' => $target->pic_user_id,
+                            'default_solver_id' => $resolvedUser?->id ?? $target->pic_user_id,
                         ];
                     }
                 }
