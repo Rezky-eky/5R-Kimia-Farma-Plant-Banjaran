@@ -178,6 +178,16 @@ class User extends Authenticatable
         return $this->hasMany(GoCheck::class, 'finder_user_id');
     }
 
+    public function assignedAuditTargets()
+    {
+        return FiveRTeamMember::query()
+            ->where('user_id', $this->id)
+            ->with('team.auditTargets')
+            ->get()
+            ->flatMap(fn ($m) => $m->team?->auditTargets ?? collect())
+            ->values();
+    }
+
     public function assignedBagianList(): array
     {
         $legacy = $this->fiveRBagianAssignments()->pluck('bagian')->all();
@@ -188,12 +198,12 @@ class User extends Authenticatable
             ->get()
             ->flatMap(function ($membership) {
                 return $membership->team?->auditTargets?->flatMap(
-                    fn ($t) => array_filter([$t->bagian, $t->target_area])
+                    fn ($t) => array_filter([$t->target_area, $t->bagian])
                 ) ?? collect();
             })
             ->all();
 
-        return array_values(array_unique(array_filter(array_merge($legacy, $fromTeams))));
+        return array_values(array_unique(array_filter(array_merge($fromTeams, $legacy))));
     }
 
     /**
