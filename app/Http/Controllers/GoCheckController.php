@@ -15,7 +15,7 @@ use Inertia\Inertia;
 
 class GoCheckController extends Controller
 {
-    public function create(GoCheckTeamService $teamService)
+    public function create()
     {
         $user = Auth::user();
         $assignedBagian = $user->assignedBagianList();
@@ -27,109 +27,113 @@ class GoCheckController extends Controller
             );
         }
 
-        $allLeaders = $this->allInspectorTeamLeaders($user);
-        $userTargets = $user->assignedAuditTargets();
+        // Ambil semua audit targets milik tim di mana user ini menjadi anggota,
+        // beserta relasi picUser agar kita bisa langsung pakai data PIC-nya.
+        $userTargets = FiveRTeamMember::where('user_id', $user->id)
+            ->with('team.auditTargets.picUser:id,name,npp')
+            ->get()
+            ->flatMap(fn ($m) => $m->team?->auditTargets ?? collect())
+            ->values();
 
+        // Kumpulkan PIC unik berdasarkan pic_user_id yang sudah terdaftar di database.
+        // Jika finder sendiri adalah PIC di suatu area, tetap ikutkan (tidak difilter).
+        $picUsersById    = [];
         $assignmentSolverMap = [];
 
         foreach ($assignedBagian as $areaOrBagian) {
+            // Cari audit target yang cocok dengan area/bagian ini
             $matchedTarget = $userTargets->first(function ($t) use ($areaOrBagian) {
                 return $t->target_area === $areaOrBagian || $t->bagian === $areaOrBagian;
             });
 
-            $resolvedUser = null;
-            $teamName = null;
-            $picName = null;
-
-            if ($matchedTarget) {
-                $resolvedUser = $teamService->resolveSolverForTarget($matchedTarget);
-                $teamName = $matchedTarget->target_area;
-                $picName = $matchedTarget->pic_name;
-            } else {
-                $resolvedUser = $teamService->resolveSolverForTarget($areaOrBagian);
-                $teamName = $areaOrBagian;
+            if (! $matchedTarget) {
+                continue;
             }
 
-            if ($resolvedUser) {
-                if (! collect($allLeaders)->contains('id', $resolvedUser->id)) {
-                    $teamOfLeader = FiveRTeamMember::where('user_id', $resolvedUser->id)
-                        ->with('team')
-                        ->first()?->team?->inspector_area;
+            // Ambil PIC langsung dari pic_user_id — ini adalah nama dari kolom PIC Area Pengecekan di Excel.
+            // Tidak menggunakan resolveSolverForTarget() agar tidak jatuh ke ketua tim.
+            $picUser = $matchedTarget->picUser;
 
-                    $allLeaders[] = [
-                        'id' => $resolvedUser->id,
-                        'name' => $resolvedUser->name,
-                        'npp' => $resolvedUser->npp,
-                        'team_name' => $teamOfLeader ?: ($teamName ?: 'Tim Solver'),
-                    ];
-                }
+            // Jika pic_user_id belum terisi tapi pic_name ada, coba cari user berdasarkan nama
+            if (! $picUser && $matchedTarget->pic_name) {
+                $picUser = User::where('name', 'like', '%'.trim($matchedTarget->pic_name).'%')->first();
+            }
 
-                $assignmentSolverMap[$areaOrBagian] = [
-                    'solver_user_id' => $resolvedUser->id,
-                    'solver_name' => $resolvedUser->name,
-                    'solver_npp' => $resolvedUser->npp,
+            if (! $picUser) {
+                continue;
+            }
+
+            $teamName = $matchedTarget->target_area;
+            $picName  = $matchedTarget->pic_name ?: $picUser->name;
+
+            // Tambahkan ke daftar PIC (termasuk jika PIC adalah finder sendiri)
+            if (! isset($picUsersById[$picUser->id])) {
+                $picUsersById[$picUser->id] = [
+                    'id'        => $picUser->id,
+                    'name'      => $picUser->name,
+                    'npp'       => $picUser->npp,
                     'team_name' => $teamName,
-                    'pic_name' => $picName ?: $resolvedUser->name,
                 ];
             }
+
+            $assignmentSolverMap[$areaOrBagian] = [
+                'solver_user_id' => $picUser->id,
+                'solver_name'    => $picUser->name,
+                'solver_npp'     => $picUser->npp,
+                'team_name'      => $teamName,
+                'pic_name'       => $picName,
+            ];
         }
 
-        $defaultBagian = $assignedBagian[0] ?? '';
+        $allPicUsers = array_values($picUsersById);
+
+        $defaultBagian   = $assignedBagian[0] ?? '';
         $defaultSolverId = $assignmentSolverMap[$defaultBagian]['solver_user_id']
-            ?? ($allLeaders[0]['id'] ?? '');
+            ?? ($allPicUsers[0]['id'] ?? '');
 
         return Inertia::render('GoCheck/Create', [
-            'assignedBagian' => $assignedBagian,
-            'solverLeaders' => $allLeaders,
+            'assignedBagian'      => $assignedBagian,
+            'solverLeaders'       => $allPicUsers,
             'assignmentSolverMap' => $assignmentSolverMap,
-            'defaultBagian' => $defaultBagian,
-            'defaultSolverId' => $defaultSolverId,
+            'defaultBagian'       => $defaultBagian,
+            'defaultSolverId'     => $defaultSolverId,
         ]);
     }
 
     /**
-     * @return list<array{id: int, name: string, npp: string, team_name: string|null}>
+     * Validasi apakah solverId diizinkan untuk finder ini.
+     * PIC boleh sama dengan finder (kasus finder sekaligus PIC area).
      */
-    private function allInspectorTeamLeaders(User $finder): array
+    private function picAreaUserIds(User $finder): array
     {
-        return FiveRTeamMember::query()
-            ->where('is_leader', true)
-            ->where('user_id', '!=', $finder->id)
-            ->with(['user:id,name,npp', 'team:id,inspector_area'])
-            ->orderBy('team_id')
+        $targets = FiveRTeamMember::where('user_id', $finder->id)
+            ->with('team.auditTargets.picUser:id,name,npp')
             ->get()
-            ->map(fn ($member) => [
-                'id' => $member->user->id,
-                'name' => $member->user->name,
-                'npp' => $member->user->npp,
-                'team_name' => $member->team?->inspector_area,
-            ])
-            ->unique('id')
-            ->values()
-            ->all();
+            ->flatMap(fn ($m) => $m->team?->auditTargets ?? collect())
+            ->values();
+
+        $ids = [];
+
+        foreach ($targets as $target) {
+            if ($target->pic_user_id) {
+                $ids[] = (int) $target->pic_user_id;
+            } elseif ($target->pic_name) {
+                // Fallback: cari user berdasarkan pic_name jika pic_user_id belum terisi
+                $u = User::where('name', 'like', '%'.trim($target->pic_name).'%')->first();
+                if ($u) {
+                    $ids[] = (int) $u->id;
+                }
+            }
+        }
+
+        return array_unique($ids);
     }
 
     private function solverAllowed(User $finder, int $solverId): bool
     {
-        if (collect($this->allInspectorTeamLeaders($finder))->contains(fn ($row) => (int) $row['id'] === $solverId)) {
+        // PIC area pengecekan (termasuk jika finder sendiri adalah PIC suatu area)
+        if (in_array($solverId, $this->picAreaUserIds($finder), true)) {
             return true;
-        }
-
-        $finderTeamIds = FiveRTeamMember::where('user_id', $finder->id)->pluck('team_id');
-        $isPic = FiveRTeamAuditTarget::whereIn('team_id', $finderTeamIds)
-            ->where('pic_user_id', $solverId)
-            ->exists();
-
-        if ($isPic) {
-            return true;
-        }
-
-        $teamService = app(GoCheckTeamService::class);
-        foreach ($finder->assignedAuditTargets() as $target) {
-            $resolved = $teamService->resolveSolverForTarget($target);
-            if ($resolved && (int) $resolved->id === $solverId) {
-                return true;
-            }
         }
 
         return false;
@@ -193,12 +197,8 @@ class GoCheckController extends Controller
 
         $solver = User::findOrFail($validated['solver_user_id']);
 
-        if ((int) $solver->id === (int) $user->id) {
-            return back()->withErrors(['solver_user_id' => 'Finder tidak dapat menjadi Solver.'])->withInput();
-        }
-
         if (! $this->solverAllowed($user, (int) $solver->id)) {
-            return back()->withErrors(['solver_user_id' => 'Solver harus ketua tim inspector yang terdaftar.'])->withInput();
+            return back()->withErrors(['solver_user_id' => 'Solver harus PIC area pengecekan yang terdaftar.'])->withInput();
         }
 
         $meta = $this->assignmentMetaMap($user);
@@ -267,9 +267,7 @@ class GoCheckController extends Controller
             return back()->withErrors(['error' => 'Hanya karyawan bagian '.$goCheck->bagian.' yang dapat menjadi Solver.']);
         }
 
-        if ($goCheck->finder_user_id === $user->id) {
-            return back()->withErrors(['error' => 'Finder tidak dapat menjadi Solver pada temuan yang sama.']);
-        }
+        // Catatan: finder yang juga menjadi PIC (solver) area tersebut diizinkan submit perbaikan.
 
         $validated = $request->validate([
             'keterangan_perbaikan' => 'required|string',

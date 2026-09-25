@@ -82,31 +82,31 @@ const submit = () => {
                             <InputError class="mt-2" :message="form.errors.bagian" />
                         </div>
                         <div>
-                            <InputLabel for="solver_user_id" value="Solver (Ketua Tim Area Penugasan) *" />
+                            <InputLabel for="solver_user_id" value="PIC Area Pengecekan" />
                             <select
                                 id="solver_user_id"
                                 v-model="form.solver_user_id"
                                 required
                                 class="mt-2 block w-full rounded-xl border-0 bg-white px-3 py-2 text-sm shadow-inner ring-1 ring-gray-200 focus:ring-2 focus:ring-[#00529b]"
                             >
-                                <option value="" disabled>Pilih ketua tim</option>
+                                <option value="" disabled>Pilih PIC area</option>
                                 <option
                                     v-for="solver in solverLeaders"
                                     :key="solver.id"
                                     :value="solver.id"
-                                    :title="`${solver.name} (NPP: ${solver.npp}) — Ketua ${solver.team_name || 'Tim Area Penugasan'}`"
+                                    :title="`${solver.name} (NPP: ${solver.npp}) — ${solver.team_name || 'Area Penugasan'}`"
                                 >
-                                    {{ solver.name }} — Ketua {{ solver.team_name || 'Tim Area Penugasan' }}
+                                    {{ solver.name }} — {{ solver.team_name || 'Area Penugasan' }}
                                 </option>
                             </select>
                             <p v-if="currentSolverInfo?.solver_name" class="mt-1 text-xs text-emerald-700 flex items-center gap-1 font-medium">
                                 <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                                 </svg>
-                                Otomatis terhubung: {{ currentSolverInfo.solver_name }} ({{ currentSolverInfo.team_name || 'Ketua Tim Solver' }})
+                                Otomatis terhubung: {{ currentSolverInfo.solver_name }} ({{ currentSolverInfo.team_name || 'PIC Area' }})
                             </p>
                             <p v-else-if="!solverLeaders.length" class="mt-2 text-xs text-amber-700">
-                                Belum ada ketua tim inspector. Tandai anggota sebagai ketua tim di Kelola Go Check.
+                                Belum ada PIC area pengecekan yang terdaftar. Hubungi manajemen 5R.
                             </p>
                             <InputError class="mt-2" :message="form.errors.solver_user_id" />
                         </div>
