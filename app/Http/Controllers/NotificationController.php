@@ -91,14 +91,24 @@ class NotificationController extends Controller
                 $goBoost = $notification->goBoost;
                 $isMentioned = $goBoost && (int) $goBoost->mentioned_user_id === (int) $user->id;
                 $goCheck = $notification->goCheck;
+                $isSolverOrTeam = false;
+                if ($goCheck && $goCheck->solver_user_id) {
+                    if ((int) $goCheck->solver_user_id === (int) $user->id) {
+                        $isSolverOrTeam = true;
+                    } else {
+                        $solverTeamIds = \App\Models\FiveRTeamMember::where('user_id', $goCheck->solver_user_id)->pluck('team_id');
+                        $isSolverOrTeam = \App\Models\FiveRTeamMember::where('user_id', $user->id)
+                                ->whereIn('team_id', $solverTeamIds)->exists();
+                    }
+                } elseif ($goCheck && ! $goCheck->solver_user_id && ($user->bagian ?? '') === $goCheck->bagian) {
+                    $isSolverOrTeam = true;
+                }
+
                 $canSubmitGoCheckSolver = $goCheck
                     && $notification->type === 'go_check_solver_needed'
                     && ($goCheck->status_perbaikan ?? 'pending') !== 'selesai'
                     && (int) $goCheck->finder_user_id !== (int) $user->id
-                    && (
-                        ($goCheck->solver_user_id && (int) $goCheck->solver_user_id === (int) $user->id)
-                        || (! $goCheck->solver_user_id && ($user->bagian ?? '') === $goCheck->bagian)
-                    );
+                    && $isSolverOrTeam;
                 $hasPerbaikan = $goBoost && !empty($goBoost->keterangan_perbaikan);
                 $goCare = $notification->goCare;
                 $schedule = $notification->goCheckSchedule;
