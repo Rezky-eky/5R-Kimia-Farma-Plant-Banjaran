@@ -30,6 +30,7 @@ const form = useForm({
     penjelasan_temuan: '',
     pic_terkait: '',
     photo_temuan: [],
+    is_no_finding: false,
 });
 
 watch(
@@ -46,6 +47,17 @@ watch(
 const currentSolverInfo = computed(() => {
     return props.assignmentSolverMap[form.bagian] || null;
 });
+
+watch(
+    () => form.is_no_finding,
+    (val) => {
+        if (val) {
+            form.penjelasan_temuan = 'Tidak ada temuan. Area dalam keadaan baik dan memenuhi standar 5R.';
+        } else {
+            form.penjelasan_temuan = '';
+        }
+    }
+);
 
 const submit = () => {
     form.post(route('go_check.store'), { forceFormData: true });
@@ -115,6 +127,12 @@ const submit = () => {
 
                 <section class="rounded-2xl bg-white p-6 shadow ring-1 ring-gray-100">
                     <div class="grid md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="inline-flex items-center gap-2 cursor-pointer p-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors w-full md:w-auto">
+                                <input type="checkbox" v-model="form.is_no_finding" class="rounded border-gray-300 text-[#00529b] shadow-sm focus:ring-[#00529b]">
+                                <span class="text-sm font-medium text-gray-900">Tidak ada temuan (Area sudah sesuai standar 5R)</span>
+                            </label>
+                        </div>
                         <div>
                             <InputLabel for="area_temuan" value="Area temuan *" />
                             <TextInput id="area_temuan" v-model="form.area_temuan" class="mt-2 w-full" required placeholder="Contoh: Area Produksi" />
@@ -132,6 +150,8 @@ const submit = () => {
                                 v-model="form.penjelasan_temuan"
                                 rows="4"
                                 required
+                                :readonly="form.is_no_finding"
+                                :class="{'bg-gray-100 text-gray-600': form.is_no_finding}"
                                 class="mt-2 block w-full rounded-xl px-3 py-2 text-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-[#00529b]"
                                 placeholder="Jelaskan temuan audit 5R..."
                             />
