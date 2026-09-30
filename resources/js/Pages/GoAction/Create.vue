@@ -380,7 +380,7 @@ const submit = () => {
                                         input-id="go-action-foto-kegiatan"
                                         :max-files="maxFiles"
                                         label=""
-                                        accept="image/*,*/*"
+                                        accept="*/*"
                                         hint="Maksimal 5 file @ 10MB. Semua format file didukung."
                                     >
                                         <div v-if="errorMessage" class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">

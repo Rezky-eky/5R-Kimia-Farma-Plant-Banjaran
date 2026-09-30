@@ -341,7 +341,7 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                                 :input-id="`foto-perbaikan-${notification.go_boost.id}`"
                                                                 :max-files="maxFiles"
                                                                 label=""
-                                                                accept="image/*,*/*"
+                                                                accept="*/*"
                                                                 hint="Maksimal 5 file @ 10MB. Semua format file didukung."
                                                             />
                                                             <InputError class="mt-2" :message="perbaikanForms[notification.go_boost.id]?.errors?.foto_perbaikan" />
@@ -450,7 +450,7 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                                 :input-id="`foto-perbaikan-gocheck-${notification.go_check.id}`"
                                                                 :max-files="maxFiles"
                                                                 label=""
-                                                                accept="image/*,*/*"
+                                                                accept="*/*"
                                                                 hint="Maksimal 5 file @ 10MB. Semua format file didukung."
                                                             />
                                                             <InputError class="mt-2" :message="perbaikanForms['go_check_' + notification.go_check.id]?.errors?.foto_perbaikan" />

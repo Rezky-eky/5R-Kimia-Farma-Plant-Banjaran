@@ -240,7 +240,7 @@ const submit = () => {
                                             input-id="go-care-photo-before"
                                             :max-files="maxFiles"
                                             label=""
-                                            accept="image/*,*/*"
+                                            accept="*/*"
                                             hint="Maksimal 5 file @ 10MB. Semua format file didukung."
                                         >
                                             <div v-if="errorMessageBefore" class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
@@ -279,7 +279,7 @@ const submit = () => {
                                             input-id="go-care-photo-after"
                                             :max-files="maxFiles"
                                             label=""
-                                            accept="image/*,*/*"
+                                            accept="*/*"
                                             hint="Maksimal 5 file @ 10MB. Semua format file didukung."
                                         >
                                             <div v-if="errorMessageAfter" class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">

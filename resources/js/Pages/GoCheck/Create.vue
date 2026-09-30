@@ -170,7 +170,7 @@ const submit = () => {
                         v-model="form.photo_temuan"
                         input-id="go-check-photo-temuan"
                         label=""
-                        accept="image/*,*/*"
+                        accept="*/*"
                         hint="Maksimal 5 file, masing-masing maksimal 10MB. Semua format file didukung."
                     >
                         <InputError class="mt-2" :message="form.errors.photo_temuan" />
