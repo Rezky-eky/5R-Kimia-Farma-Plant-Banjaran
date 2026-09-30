@@ -391,12 +391,91 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                             <p class="text-xs text-teal-700 mt-1 break-words break-all whitespace-pre-wrap">
                                                 {{ notification.go_check.penjelasan_temuan }}
                                             </p>
-                                            <p
-                                                v-if="notification.go_check.has_perbaikan"
-                                                class="mt-2 text-xs text-teal-800 break-words break-all whitespace-pre-wrap"
-                                            >
-                                                ✅ Perbaikan sudah dilakukan
-                                            </p>
+                                            <div v-if="notification.go_check.has_perbaikan" class="mt-3 rounded-lg bg-teal-50 p-3 border border-teal-200">
+                                                <p class="text-xs font-medium text-teal-900 mb-1">
+                                                    ✅ Perbaikan Selesai
+                                                </p>
+                                                <p class="text-xs text-teal-700 mb-2 break-words break-all whitespace-pre-wrap">
+                                                    <strong>Keterangan:</strong> {{ notification.go_check.keterangan_perbaikan }}
+                                                </p>
+                                                <p class="text-xs text-teal-600 mb-2" v-if="notification.go_check.tanggal_perbaikan">
+                                                    Selesai pada: {{ notification.go_check.tanggal_perbaikan }}
+                                                </p>
+                                                <div v-if="notification.go_check.foto_perbaikan?.length" class="mt-2">
+                                                    <PhotoGallery
+                                                        :images="notification.go_check.foto_perbaikan.map((f) => (String(f).startsWith('http') ? f : `/storage/${f}`))"
+                                                        title="Foto perbaikan"
+                                                        grid-class="grid-cols-2"
+                                                        thumbnail-height-class="h-24"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <!-- Form Perbaikan GO CHECK -->
+                                            <div v-else-if="notification.go_check.can_submit_solver" class="mt-3">
+                                                <button
+                                                    v-if="!showPerbaikanForm['go_check_' + notification.go_check.id]"
+                                                    @click="toggleGoCheckPerbaikanForm(notification.go_check.id)"
+                                                    class="w-full rounded-lg bg-[#00529b] px-4 py-2 text-xs font-semibold text-white hover:bg-[#004080] transition-colors"
+                                                >
+                                                    📝 Lakukan Perbaikan
+                                                </button>
+                                                
+                                                <div
+                                                    v-if="showPerbaikanForm['go_check_' + notification.go_check.id]"
+                                                    class="mt-3 rounded-lg bg-white p-4 border border-teal-200"
+                                                >
+                                                    <h4 class="text-sm font-semibold text-gray-900 mb-3">
+                                                        Form Perbaikan GO CHECK
+                                                    </h4>
+                                                    
+                                                    <form @submit.prevent="submitGoCheckPerbaikan(notification.go_check.id)">
+                                                        <div class="mb-4">
+                                                            <InputLabel for="keterangan_perbaikan_gocheck" value="Keterangan Perbaikan *" />
+                                                            <textarea
+                                                                id="keterangan_perbaikan_gocheck"
+                                                                v-model="perbaikanForms['go_check_' + notification.go_check.id].keterangan_perbaikan"
+                                                                rows="4"
+                                                                class="mt-2 block w-full rounded-xl border-0 bg-white/95 px-3 py-3 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0"
+                                                                required
+                                                                placeholder="Jelaskan perbaikan yang telah dilakukan..."
+                                                            ></textarea>
+                                                            <InputError class="mt-2" :message="perbaikanForms['go_check_' + notification.go_check.id]?.errors?.keterangan_perbaikan" />
+                                                        </div>
+                                                        
+                                                        <div v-if="perbaikanForms['go_check_' + notification.go_check.id]" class="mb-4">
+                                                            <InputLabel value="Bukti Perbaikan (Opsional)" />
+                                                            <PhotoImagePicker
+                                                                v-model="perbaikanForms['go_check_' + notification.go_check.id].foto_perbaikan"
+                                                                :input-id="`foto-perbaikan-gocheck-${notification.go_check.id}`"
+                                                                :max-files="maxFiles"
+                                                                label=""
+                                                                accept="image/*,*/*"
+                                                                hint="Maksimal 5 file @ 10MB. Semua format file didukung."
+                                                            />
+                                                            <InputError class="mt-2" :message="perbaikanForms['go_check_' + notification.go_check.id]?.errors?.foto_perbaikan" />
+                                                        </div>
+                                                        
+                                                        <div class="flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                @click="toggleGoCheckPerbaikanForm(notification.go_check.id)"
+                                                                class="flex-1 rounded-lg bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300 transition-colors"
+                                                            >
+                                                                Batal
+                                                            </button>
+                                                            <PrimaryButton
+                                                                type="submit"
+                                                                :disabled="perbaikanForms['go_check_' + notification.go_check.id]?.processing"
+                                                                class="flex-1"
+                                                            >
+                                                                <span v-if="perbaikanForms['go_check_' + notification.go_check.id]?.processing">Menyimpan...</span>
+                                                                <span v-else>✅ Submit Perbaikan</span>
+                                                            </PrimaryButton>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
