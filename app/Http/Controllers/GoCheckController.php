@@ -50,13 +50,12 @@ class GoCheckController extends Controller
                 continue;
             }
 
-            // Ambil PIC langsung dari pic_user_id — ini adalah nama dari kolom PIC Area Pengecekan di Excel.
-            // Tidak menggunakan resolveSolverForTarget() agar tidak jatuh ke ketua tim.
             $picUser = $matchedTarget->picUser;
 
-            // Jika pic_user_id belum terisi tapi pic_name ada, coba cari user berdasarkan nama
-            if (! $picUser && $matchedTarget->pic_name) {
-                $picUser = User::where('name', 'like', '%'.trim($matchedTarget->pic_name).'%')->first();
+            // Jika pic_user_id belum terisi, gunakan TeamService untuk me-resolve dan mengkonek-kannya
+            if (! $picUser) {
+                $teamService = app(GoCheckTeamService::class);
+                $picUser = $teamService->resolveSolverForTarget($matchedTarget);
             }
 
             if (! $picUser) {
@@ -117,9 +116,9 @@ class GoCheckController extends Controller
         foreach ($targets as $target) {
             if ($target->pic_user_id) {
                 $ids[] = (int) $target->pic_user_id;
-            } elseif ($target->pic_name) {
-                // Fallback: cari user berdasarkan pic_name jika pic_user_id belum terisi
-                $u = User::where('name', 'like', '%'.trim($target->pic_name).'%')->first();
+            } else {
+                $teamService = app(GoCheckTeamService::class);
+                $u = $teamService->resolveSolverForTarget($target);
                 if ($u) {
                     $ids[] = (int) $u->id;
                 }
@@ -189,6 +188,7 @@ class GoCheckController extends Controller
             'pic_terkait' => 'nullable|string|max:255',
             'photo_temuan' => 'nullable|array|max:5',
             'photo_temuan.*' => 'file|max:10240',
+            'is_no_finding' => 'boolean|nullable',
         ]);
 
         if (! in_array($validated['bagian'], $assignedBagian, true)) {
@@ -219,6 +219,7 @@ class GoCheckController extends Controller
 
         try {
             $nextId = ((int) DB::table('go_checks')->max('id')) + 1;
+            $isNoFinding = $validated['is_no_finding'] ?? false;
             $goCheck = GoCheck::create([
                 'id' => $nextId,
                 'finder_user_id' => $user->id,
@@ -229,20 +230,30 @@ class GoCheckController extends Controller
                 'penjelasan_temuan' => $validated['penjelasan_temuan'],
                 'pic_terkait' => $validated['pic_terkait'] ?? null,
                 'photo_temuan' => ! empty($photoPaths) ? json_encode($photoPaths) : null,
-                'status' => 'OPEN',
-                'status_perbaikan' => 'pending',
+                'status' => $isNoFinding ? 'CLOSED' : 'OPEN',
+                'status_perbaikan' => $isNoFinding ? 'selesai' : 'pending',
+                'keterangan_perbaikan' => $isNoFinding ? 'Tidak perlu perbaikan (Tidak ada temuan)' : null,
+                'tanggal_perbaikan' => $isNoFinding ? now() : null,
             ]);
         } finally {
             DB::selectOne('SELECT RELEASE_LOCK(?) AS released', [$lockName]);
         }
 
-        Notification::create([
-            'user_id' => $solver->id,
-            'go_check_id' => $goCheck->id,
-            'type' => 'go_check_solver_needed',
-            'title' => 'Go Check — Perlu tindak lanjut (Solver)',
-            'message' => 'Tim 5R menemukan temuan di bagian Anda ('.$storeBagian.'). Silakan input perbaikan sebagai Solver.',
-        ]);
+        if (! ($validated['is_no_finding'] ?? false)) {
+            // Ambil ID dari solver dan seluruh anggota timnya untuk dikirimkan notifikasi
+            $solverTeamIds = FiveRTeamMember::where('user_id', $solver->id)->pluck('team_id');
+            $notifiedUserIds = FiveRTeamMember::whereIn('team_id', $solverTeamIds)->pluck('user_id')->push($solver->id)->unique();
+
+            foreach ($notifiedUserIds as $notifiedUserId) {
+                Notification::create([
+                    'user_id' => $notifiedUserId,
+                    'go_check_id' => $goCheck->id,
+                    'type' => 'go_check_solver_needed',
+                    'title' => 'Go Check — Perlu tindak lanjut (Solver)',
+                    'message' => 'Tim 5R menemukan temuan di bagian Anda ('.$storeBagian.'). Silakan input perbaikan sebagai Solver.',
+                ]);
+            }
+        }
 
         return redirect()->route('dashboard')->with(
             'success',
@@ -259,11 +270,24 @@ class GoCheckController extends Controller
             return back()->withErrors(['error' => 'Perbaikan sudah disubmit.']);
         }
 
-        if ($goCheck->solver_user_id && (int) $goCheck->solver_user_id !== (int) $user->id) {
-            return back()->withErrors(['error' => 'Hanya Solver yang ditunjuk yang dapat menginput perbaikan.']);
-        }
+        if ($goCheck->solver_user_id) {
+            $isSolverOrTeam = false;
+            if ((int) $goCheck->solver_user_id === (int) $user->id) {
+                $isSolverOrTeam = true;
+            } else {
+                // Cek apakah user berada di tim yang sama dengan solver
+                $solverTeamIds = FiveRTeamMember::where('user_id', $goCheck->solver_user_id)->pluck('team_id');
+                $isSameTeam = FiveRTeamMember::where('user_id', $user->id)
+                                ->whereIn('team_id', $solverTeamIds)->exists();
+                if ($isSameTeam) {
+                    $isSolverOrTeam = true;
+                }
+            }
 
-        if (! $goCheck->solver_user_id && ($user->bagian ?? '') !== $goCheck->bagian) {
+            if (! $isSolverOrTeam) {
+                return back()->withErrors(['error' => 'Hanya Solver yang ditunjuk atau anggota timnya yang dapat menginput perbaikan.']);
+            }
+        } elseif (! $goCheck->solver_user_id && ($user->bagian ?? '') !== $goCheck->bagian) {
             return back()->withErrors(['error' => 'Hanya karyawan bagian '.$goCheck->bagian.' yang dapat menjadi Solver.']);
         }
 
