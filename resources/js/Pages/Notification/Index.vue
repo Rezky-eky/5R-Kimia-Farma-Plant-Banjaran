@@ -95,7 +95,7 @@ const submitPerbaikan = (goBoostId) => {
     });
 };
 
-const gcKey = (id) => `gc_${id}`;
+const gcKey = (id) => `go_check_${id}`;
 
 const toggleGoCheckPerbaikanForm = (goCheckId) => {
     const key = gcKey(goCheckId);
