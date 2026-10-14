@@ -103,6 +103,11 @@ const deleteReward = (id) => {
         });
     }
 };
+
+const isImage = (url) => {
+    if (!url) return false;
+    return url.match(/\.(jpeg|jpg|gif|png|webp|svg|heic|heif)(\?.*)?$/i) != null;
+};
 </script>
 
 <template>
@@ -258,14 +263,19 @@ const deleteReward = (id) => {
                                 class="rounded-xl border border-gray-200 bg-white p-4 shadow-lg hover:shadow-xl transition"
                             >
                                 <div class="relative">
-                                    <img
-                                        v-if="reward.image_path"
-                                        :src="reward.image_path"
-                                        :alt="reward.title"
-                                        class="w-full h-48 object-cover rounded-lg mb-4"
-                                    />
+                                    <template v-if="reward.image_path">
+                                        <img
+                                            v-if="isImage(reward.image_path)"
+                                            :src="reward.image_path"
+                                            :alt="reward.title"
+                                            class="w-full h-48 object-cover rounded-lg mb-4"
+                                        />
+                                        <div v-else class="w-full h-48 bg-gray-200 rounded-lg mb-4 flex items-center justify-center cursor-pointer hover:bg-gray-300 transition" @click="window.open(reward.image_path, '_blank')">
+                                            <span class="text-gray-600 font-bold text-sm">Lihat File (Bukan Gambar)</span>
+                                        </div>
+                                    </template>
                                     <div v-else class="w-full h-48 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
-                                        <span class="text-gray-400 text-sm">Tidak ada gambar</span>
+                                        <span class="text-gray-400 text-sm">Tidak ada lampiran</span>
                                     </div>
                                     <span
                                         v-if="!reward.is_active"

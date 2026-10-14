@@ -104,6 +104,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/go-action/realisasi-mingguan', [AdminController::class, 'goActionWeeklyRealization'])->name('go_action.weekly_realization');
     Route::get('/go-action/realisasi-mingguan-export.xlsx', [AdminController::class, 'goActionWeeklyRealizationExport'])->name('go_action.weekly_realization_export');
     Route::get('/laporan/go-action.xlsx', [MonthlyReportExportController::class, 'goAction'])->name('reports.go_action.export');
+    Route::get('/laporan/go-boost.xlsx', [MonthlyReportExportController::class, 'goBoost'])->name('reports.go_boost.export');
     Route::get('/laporan/go-care.xlsx', [MonthlyReportExportController::class, 'goCare'])->name('reports.go_care.export');
     Route::get('/laporan/go-reward.xlsx', [MonthlyReportExportController::class, 'goReward'])->name('reports.go_reward.export');
     Route::get('/laporan/5r-keseluruhan.xlsx', [MonthlyReportExportController::class, 'overall'])->name('reports.overall.export');
