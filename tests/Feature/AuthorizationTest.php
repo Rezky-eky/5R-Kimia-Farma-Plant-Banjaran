@@ -63,6 +63,10 @@ class AuthorizationTest extends TestCase
                 ->where('personalStats.go_actions', 1)
                 ->where('personalStats.ringkas_items', 1)
                 ->where('personalStats.go_boosts', 0)
+                ->where('personalStats.activity_breakdown.0.count', 1)
+                ->has('personalStats.recent_records', 1)
+                ->where('personalStats.recent_records.0.module', 'Go Action')
+                ->where('personalStats.recent_records.0.description', 'Bagian Produksi I')
             );
     }
 

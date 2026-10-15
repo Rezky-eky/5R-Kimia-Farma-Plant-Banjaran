@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
     stats: {
@@ -28,6 +28,40 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+});
+
+const selectedPersonalModule = ref('All');
+const personalCurrentPage = ref(1);
+const personalPageSize = 10;
+const expandedPersonalRows = ref([]);
+const personalBreakdown = computed(() => props.personalStats.activity_breakdown ?? []);
+const personalRecords = computed(() => props.personalStats.recent_records ?? []);
+const personalModuleOptions = computed(() => [
+    { label: 'Semua Modul', value: 'All' },
+    ...personalBreakdown.value.map((item) => ({ label: item.label, value: item.label })),
+]);
+const filteredPersonalRecords = computed(() => selectedPersonalModule.value === 'All'
+    ? personalRecords.value
+    : personalRecords.value.filter((record) => record.module === selectedPersonalModule.value));
+const personalPageCount = computed(() => Math.max(1, Math.ceil(filteredPersonalRecords.value.length / personalPageSize)));
+const pagedPersonalRecords = computed(() => {
+    const start = (personalCurrentPage.value - 1) * personalPageSize;
+    return filteredPersonalRecords.value.slice(start, start + personalPageSize);
+});
+const maxPersonalActivityValue = computed(() => Math.max(1, ...personalBreakdown.value.map((item) => item.count ?? 0)));
+const togglePersonalRowDetails = (id) => {
+    const index = expandedPersonalRows.value.indexOf(id);
+    if (index >= 0) {
+        expandedPersonalRows.value.splice(index, 1);
+    } else {
+        expandedPersonalRows.value.push(id);
+    }
+};
+const isPersonalRowExpanded = (id) => expandedPersonalRows.value.includes(id);
+
+watch(selectedPersonalModule, () => {
+    personalCurrentPage.value = 1;
+    expandedPersonalRows.value = [];
 });
 
 const fallbackTrendData = [
@@ -105,17 +139,6 @@ const activityBars = computed(() => [
     { label: 'Go Check', value: props.stats.total_go_checks ?? 0, color: '#c3c9a8' },
 ]);
 const activityMax = computed(() => Math.max(1, ...activityBars.value.map((item) => item.value)));
-const personalActivityBars = computed(() => [
-    { label: 'GO ACTION', value: props.personalStats.go_actions ?? 0, color: '#a9c8c0' },
-    { label: 'Barang Ringkas', value: props.personalStats.ringkas_items ?? 0, color: '#b9c7dc' },
-    { label: 'GO BOOST', value: props.personalStats.go_boosts ?? 0, color: '#d8b7c8' },
-    { label: 'GO CARE', value: props.personalStats.go_cares ?? 0, color: '#e8c7a8' },
-    { label: 'GO OFFER', value: props.personalStats.go_offers ?? 0, color: '#c2d2e1' },
-    { label: 'GO SALE', value: props.personalStats.go_sales ?? 0, color: '#efd0b6' },
-    { label: 'GO CHECK', value: props.personalStats.go_checks ?? 0, color: '#c3c9a8' },
-]);
-const personalActivityMax = computed(() => Math.max(1, ...personalActivityBars.value.map((item) => item.value)));
-
 const gridLines = computed(() => {
     const lines = 4;
     return Array.from({ length: lines + 1 }, (_, idx) => {
@@ -332,32 +355,138 @@ const gridLines = computed(() => {
                     </Link>
                 </div>
 
-                <section v-if="isAdmin" class="soft-panel rounded-xl p-5">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold text-slate-800">Aktivitas 5R Saya</h3>
-                            <p class="mt-1 text-sm text-slate-500">Ringkasan kegiatan 5R yang dilakukan oleh akun Anda.</p>
-                        </div>
-                        <div class="rounded-lg bg-[#edf3f0] px-4 py-2 text-right">
-                            <span class="block text-xs font-medium uppercase tracking-wide text-[#5f827f]">Total aktivitas</span>
-                            <strong class="text-2xl text-slate-800">{{ personalStats.total_records ?? 0 }}</strong>
-                        </div>
-                    </div>
-                    <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
-                        <div v-for="item in personalActivityBars" :key="`personal-bar-${item.label}`">
-                            <div class="mb-1.5 flex justify-between text-xs font-medium text-slate-600">
-                                <span>{{ item.label }}</span>
-                                <span>{{ item.value }}</span>
+                <div class="grid gap-6 xl:grid-cols-3">
+                    <section class="soft-panel rounded-xl p-5">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-800">Distribusi Aktivitas Saya</h3>
+                                <p class="text-sm text-slate-500">Persentase interaksi setiap modul dalam data pribadi Anda.</p>
                             </div>
-                            <div class="h-3 overflow-hidden rounded-full bg-slate-100">
-                                <div
-                                    class="h-full rounded-full transition-all duration-700 ease-out"
-                                    :style="{ width: `${item.value ? Math.max(4, (item.value / personalActivityMax) * 100) : 0}%`, backgroundColor: item.color }"
-                                ></div>
+                            <span class="text-2xl">📈</span>
+                        </div>
+                        <div class="mt-6 space-y-4">
+                            <div v-for="item in personalBreakdown" :key="item.label">
+                                <div class="flex items-center justify-between text-sm text-gray-600">
+                                    <span>{{ item.label }}</span>
+                                    <span>{{ item.count }}</span>
+                                </div>
+                                <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                                    <div
+                                        class="h-full rounded-full bg-sky-500"
+                                        :style="{ width: `${Math.round(((item.count ?? 0) / maxPersonalActivityValue) * 100)}%` }"
+                                    ></div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+
+                    <section class="soft-panel rounded-xl p-5 xl:col-span-2">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-slate-800">Aktivitas Terakhir Saya</h3>
+                                <p class="text-sm text-slate-500">Ringkasan entri data terbaru yang Anda masukkan.</p>
+                            </div>
+                            <span class="text-2xl">📝</span>
+                        </div>
+
+                        <div class="mt-6 space-y-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button
+                                    v-for="option in personalModuleOptions"
+                                    :key="option.value"
+                                    type="button"
+                                    @click="selectedPersonalModule = option.value"
+                                    :class="selectedPersonalModule === option.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-slate-50'"
+                                    class="rounded-full px-4 py-2 text-xs font-semibold transition"
+                                >
+                                    {{ option.label }}
+                                </button>
+                            </div>
+
+                            <div class="text-sm text-gray-500">
+                                Menampilkan {{ filteredPersonalRecords.length }} catatan untuk
+                                <span class="font-semibold">{{ selectedPersonalModule === 'All' ? 'Semua Modul' : selectedPersonalModule }}</span>.
+                            </div>
+
+                            <div v-if="!filteredPersonalRecords.length" class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-6 text-sm text-gray-500">
+                                Tidak ada data untuk filter ini.
+                            </div>
+
+                            <div v-else class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+                                <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
+                                    <thead class="bg-slate-50 text-xs uppercase tracking-[0.2em] text-gray-500">
+                                        <tr>
+                                            <th class="px-4 py-3">Modul</th>
+                                            <th class="px-4 py-3">Deskripsi</th>
+                                            <th class="px-4 py-3">Waktu</th>
+                                            <th class="px-4 py-3"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        <template v-for="record in pagedPersonalRecords" :key="record.id">
+                                            <tr class="hover:bg-slate-50">
+                                                <td class="px-4 py-4 font-semibold text-gray-900">{{ record.module }}</td>
+                                                <td class="px-4 py-4 text-gray-600">{{ record.description }}</td>
+                                                <td class="px-4 py-4 text-xs uppercase tracking-[0.15em] text-gray-400">{{ record.created_at }}</td>
+                                                <td class="px-4 py-4 text-right">
+                                                    <button
+                                                        type="button"
+                                                        class="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-slate-50"
+                                                        @click="togglePersonalRowDetails(record.id)"
+                                                    >
+                                                        {{ isPersonalRowExpanded(record.id) ? 'Tutup' : 'Lihat Detail' }}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="isPersonalRowExpanded(record.id)" class="bg-slate-50">
+                                                <td colspan="4" class="px-4 py-4 text-sm text-gray-700">
+                                                    <div class="space-y-4">
+                                                        <div class="grid gap-3 md:grid-cols-3">
+                                                            <div v-for="detail in record.details" :key="detail.label" class="rounded-2xl bg-white p-3 shadow-sm">
+                                                                <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400">{{ detail.label }}</p>
+                                                                <p class="mt-2 text-sm text-gray-800">{{ detail.value }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div v-if="record.photos?.length" class="space-y-3">
+                                                            <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Foto Kegiatan</p>
+                                                            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                                                <div v-for="photo in record.photos" :key="photo" class="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+                                                                    <img :src="photo" alt="Foto kegiatan 5R" class="h-40 w-full object-cover" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
+                                <p class="text-sm text-gray-500">Menampilkan halaman {{ personalCurrentPage }} dari {{ personalPageCount }}.</p>
+                                <div class="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        class="rounded-full border px-4 py-2 text-sm font-semibold transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                        :disabled="personalCurrentPage <= 1"
+                                        @click="personalCurrentPage = Math.max(1, personalCurrentPage - 1)"
+                                    >
+                                        Previous
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="rounded-full border px-4 py-2 text-sm font-semibold transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                        :disabled="personalCurrentPage >= personalPageCount"
+                                        @click="personalCurrentPage = Math.min(personalPageCount, personalCurrentPage + 1)"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
 
                 <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
                     <section class="soft-panel rounded-xl p-5">
