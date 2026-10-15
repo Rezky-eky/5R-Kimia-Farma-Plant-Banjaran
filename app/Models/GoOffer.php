@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class GoOffer extends Model
 {
     protected $fillable = [
+        'created_at',
         'go_action_id',
         'dbr_index',
         'dbr_snapshot',

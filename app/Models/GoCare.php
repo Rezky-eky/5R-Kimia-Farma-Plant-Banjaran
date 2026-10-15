@@ -25,6 +25,7 @@ class GoCare extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'created_at',
         'user_id',
         'nama_karyawan',
         'npp_karyawan',

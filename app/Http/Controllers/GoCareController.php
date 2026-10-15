@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GoCare;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -31,6 +32,7 @@ class GoCareController extends Controller
         $validatedData = $request->validate([
             'nama_karyawan' => 'nullable|string|max:255',
             'npp_karyawan' => 'nullable|string|max:255',
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'bagian' => 'required|string|max:255',
             'bagian_temuan' => 'required|string|max:255',
             'area_temuan' => 'nullable|string|max:255',
@@ -64,6 +66,7 @@ class GoCareController extends Controller
         // 5. Simpan data ke Database (hanya kolom yang ada di tabel go_cares)
         $data = array_merge([
             'user_id' => $user->id,
+            'created_at' => Carbon::parse($validatedData['entry_date'])->setTimeFrom(now()),
             'bagian_temuan' => $validatedData['bagian_temuan'],
             'penjelasan_temuan' => $validatedData['penjelasan_temuan'],
             'photo_before' => !empty($photoBeforePaths) ? json_encode($photoBeforePaths) : null,

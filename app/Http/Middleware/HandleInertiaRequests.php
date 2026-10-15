@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                 ]) : null,
             ],
             'unreadNotificationsCount' => $unreadNotificationsCount,
+            'today' => now()->toDateString(),
             // Flash session (redirect()->with('success'|'error')) agar toast Inertia tampil.
             'flash' => [
                 'success' => $request->session()->get('success'),

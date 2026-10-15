@@ -4,11 +4,13 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import BackdateDateInput from '@/Components/BackdateDateInput.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
 import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
 
 const user = usePage().props.auth.user;
+const today = usePage().props.today;
 
 // List Bagian Kimia Farma
 const departemenOptions = [
@@ -57,20 +59,10 @@ const kondisiOptions = [
     { value: 'lainnya', label: 'Lainnya' }
 ];
 
-// Format tanggal dan waktu saat ini
-const currentDateTime = new Date().toLocaleString('id-ID', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZone: 'Asia/Jakarta',
-});
-
 const form = useForm({
     nama_karyawan: user.name || '',
     npp_karyawan: user.npp || '',
+    entry_date: today,
     bagian: user.bagian || '',
     nama_ruangan: '',
     penjelasan_aksi: '',
@@ -247,16 +239,11 @@ const submit = () => {
                                 <InputError class="mt-2" :message="form.errors.npp_karyawan" />
                             </div>
 
-                                <div>
-                                    <InputLabel for="tanggal_waktu" value="Tanggal/Waktu" />
-                                    <input
-                                        id="tanggal_waktu"
-                                        type="text"
-                                        :value="currentDateTime"
-                                        readonly
-                                        class="mt-2 block w-full rounded-xl border-0 bg-gray-50/90 px-3 py-2 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
-                                    />
-                                </div>
+                                <BackdateDateInput
+                                    id="go-action-entry-date"
+                                    v-model="form.entry_date"
+                                    :error="form.errors.entry_date"
+                                />
 
                             </div>
 
@@ -587,4 +574,3 @@ const submit = () => {
         </div>
     </AuthenticatedLayout>
 </template>
-

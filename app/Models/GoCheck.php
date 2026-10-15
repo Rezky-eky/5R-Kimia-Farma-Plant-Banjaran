@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Schema;
 class GoCheck extends Model
 {
     protected $fillable = [
+        'created_at',
         'id',
         'finder_user_id',
         'solver_user_id',

@@ -8,6 +8,7 @@ use App\Models\GoSale;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -221,6 +222,7 @@ class GoOfferController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'go_action_id' => 'required|exists:go_actions,id',
             'dbr_index' => 'required|integer|min:0',
             'mode' => 'required|in:request',
@@ -278,9 +280,12 @@ class GoOfferController extends Controller
 
         $namaBarang = $item['nama_barang'] ?? '-';
 
-        DB::transaction(function () use ($goAction, $dbrIndex, $snapshot, $targetBagian, $user, $namaBarang) {
+        $entryDate = Carbon::parse($validated['entry_date'])->setTimeFrom(now());
+
+        DB::transaction(function () use ($goAction, $dbrIndex, $snapshot, $targetBagian, $user, $namaBarang, $entryDate) {
             GoOffer::create([
                 'go_action_id' => $goAction->id,
+                'created_at' => $entryDate,
                 'dbr_index' => $dbrIndex,
                 'dbr_snapshot' => $snapshot,
                 'offered_by_user_id' => $goAction->user_id,

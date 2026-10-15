@@ -6,6 +6,7 @@ use App\Models\GoBoost;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -37,6 +38,59 @@ class GoBoostController extends Controller
         return Inertia::render('GoBoost/Index', [
             'goBoosts' => $goBoosts,
         ]);
+    }
+
+    /**
+     * Tampilkan detail GO BOOST kepada pembuat atau user yang di-mention.
+     */
+    public function show($id)
+    {
+        $goBoost = GoBoost::with(['user', 'mentionedUser'])->findOrFail($id);
+        $user = Auth::user();
+
+        abort_unless(
+            $user->isAdmin()
+                || (int) $goBoost->user_id === (int) $user->id
+                || (int) $goBoost->mentioned_user_id === (int) $user->id,
+            403
+        );
+
+        return Inertia::render('GoBoost/Show', [
+            'goBoost' => [
+                'id' => $goBoost->id,
+                'nama_karyawan' => $goBoost->nama_karyawan ?: ($goBoost->user->name ?? 'N/A'),
+                'npp_karyawan' => $goBoost->npp_karyawan ?: ($goBoost->user->npp ?? 'N/A'),
+                'bagian' => $goBoost->bagian,
+                'area_temuan' => $goBoost->area_temuan,
+                'ruangan_temuan' => $goBoost->ruangan_temuan,
+                'penjelasan_temuan' => $goBoost->penjelasan_temuan,
+                'pic_terkait' => $goBoost->pic_terkait,
+                'mentioned_user_name' => $goBoost->mentionedUser?->name,
+                'status' => $goBoost->status ?? 'OPEN',
+                'approval_status' => $goBoost->approval_status,
+                'status_perbaikan' => $goBoost->status_perbaikan,
+                'keterangan_perbaikan' => $goBoost->keterangan_perbaikan,
+                'tanggal_perbaikan' => $goBoost->tanggal_perbaikan?->format('d/m/Y H:i'),
+                'created_at' => $goBoost->created_at->format('d/m/Y H:i'),
+                'foto_temuan' => $this->photoUrls($goBoost->photo_temuan),
+                'foto_perbaikan' => $this->photoUrls($goBoost->foto_perbaikan),
+            ],
+        ]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function photoUrls(?string $photos): array
+    {
+        if (! $photos) {
+            return [];
+        }
+
+        $paths = json_decode($photos, true);
+        $paths = is_array($paths) ? $paths : [$photos];
+
+        return array_map(fn ($path) => asset('storage/' . $path), $paths);
     }
 
     /**
@@ -82,6 +136,7 @@ class GoBoostController extends Controller
         $validatedData = $request->validate([
             'nama_karyawan' => 'nullable|string|max:255',
             'npp_karyawan' => 'nullable|string|max:255',
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'bagian' => 'required|string|max:255',
             'area_temuan' => 'required|string|max:255',
             'ruangan_temuan' => 'required|string|max:255',
@@ -105,6 +160,7 @@ class GoBoostController extends Controller
         // 4. Simpan data ke Database dengan user_id dari user yang login
         $goBoost = GoBoost::create([
             'user_id' => $user->id,
+            'created_at' => Carbon::parse($validatedData['entry_date'])->setTimeFrom(now()),
             'mentioned_user_id' => $validatedData['mentioned_user_id'] ?? null,
             'nama_karyawan' => $validatedData['nama_karyawan'] ?? $user->name,
             'npp_karyawan' => $validatedData['npp_karyawan'] ?? $user->npp,
@@ -162,6 +218,7 @@ class GoBoostController extends Controller
 
         // Validasi input
         $validatedData = $request->validate([
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'keterangan_perbaikan' => 'required|string',
             'foto_perbaikan' => 'nullable|array|max:5',
             'foto_perbaikan.*' => 'file|max:10240',
@@ -176,12 +233,15 @@ class GoBoostController extends Controller
             }
         }
 
-        // Update GO BOOST dengan data perbaikan
+        $entryDate = Carbon::parse($validatedData['entry_date'])->setTimeFrom(now());
+
+        // Update GO BOOST yang sama dengan data perbaikan
         $goBoost->update(array_merge([
+            'created_at' => $entryDate,
             'keterangan_perbaikan' => $validatedData['keterangan_perbaikan'],
             'foto_perbaikan' => !empty($photoPaths) ? json_encode($photoPaths) : null,
             'status_perbaikan' => 'selesai',
-            'tanggal_perbaikan' => now(),
+            'tanggal_perbaikan' => $entryDate,
             'status' => 'CLOSED',
         ], GoBoost::pendingApprovalAttributes()));
 

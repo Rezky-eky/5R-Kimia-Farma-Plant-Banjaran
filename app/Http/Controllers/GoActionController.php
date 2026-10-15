@@ -8,6 +8,7 @@ use App\Models\GoSale;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -32,6 +33,7 @@ class GoActionController extends Controller
         // 2. Validasi Input menggunakan Form Request
         $validatedData = $request->validate([
             'nama_karyawan' => 'required|string|max:255',
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'bagian' => 'required|string|max:255',
             'nama_ruangan' => 'nullable|string|max:255',
             'penjelasan_aksi' => 'nullable|string',
@@ -75,6 +77,7 @@ class GoActionController extends Controller
         // 4. Simpan data ke Database dengan user_id dan npp_karyawan dari user yang login
         $goAction = GoAction::create([
             'user_id' => $user->id,
+            'created_at' => Carbon::parse($validatedData['entry_date'])->setTimeFrom(now()),
             'npp_karyawan' => $user->npp,
             'nama_karyawan' => $validatedData['nama_karyawan'],
             'metode' => 'GO ACTION',
@@ -96,6 +99,7 @@ class GoActionController extends Controller
     {
         $user = Auth::user();
         $validated = $request->validate([
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'bagian' => 'required|string|max:255',
             'nama_ruangan' => 'nullable|string|max:255',
             'nama_barang' => 'required|string|max:255',
@@ -111,6 +115,7 @@ class GoActionController extends Controller
 
         GoAction::create([
             'user_id' => $user->id,
+            'created_at' => Carbon::parse($validated['entry_date'])->setTimeFrom(now()),
             'npp_karyawan' => $user->npp,
             'nama_karyawan' => $user->name,
             'metode' => 'GO ACTION',

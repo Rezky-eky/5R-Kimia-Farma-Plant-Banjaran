@@ -1595,6 +1595,7 @@ class AdminController extends Controller
     public function goActionDbrImportStore(Request $request, DbrImportService $dbrImportService)
     {
         $validated = $request->validate([
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'user_id' => 'required|exists:users,id',
             'bagian' => 'required|string|max:255',
             'nama_ruangan' => 'nullable|string|max:255',
@@ -1623,6 +1624,7 @@ class AdminController extends Controller
 
         GoAction::create([
             'user_id' => $targetUser->id,
+            'created_at' => Carbon::parse($validated['entry_date'])->setTimeFrom(now()),
             'npp_karyawan' => $targetUser->npp,
             'nama_karyawan' => $targetUser->name,
             'metode' => 'GO ACTION',

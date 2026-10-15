@@ -3,10 +3,12 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
+import BackdateDateInput from '@/Components/BackdateDateInput.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed, watch } from 'vue';
 
 const page = usePage();
+const today = page.props.today;
 
 const props = defineProps({
     dbrItems: {
@@ -28,6 +30,7 @@ const selectedStatusFilter = ref(props.filters.status_tps ?? 'Semua');
 const searchQuery = ref(props.filters.search ?? '');
 const showAddForm = ref(false);
 const addForm = ref({
+    entry_date: today,
     bagian: page.props.auth?.user?.bagian ?? '',
     nama_ruangan: '', nama_barang: '', jumlah: 1, satuan: 'Unit',
     distribution_type: 'offer', harga: '', no_aktiva_sap: '',
@@ -64,7 +67,15 @@ const submitAdd = () => {
         onSuccess: () => {
             showAddForm.value = false;
             addErrors.value = {};
-            addForm.value = { ...addForm.value, nama_barang: '', jumlah: 1, harga: '', no_aktiva_sap: '', tindakan_barang: '' };
+            addForm.value = {
+                ...addForm.value,
+                entry_date: today,
+                nama_barang: '',
+                jumlah: 1,
+                harga: '',
+                no_aktiva_sap: '',
+                tindakan_barang: '',
+            };
         },
     });
 };
@@ -180,6 +191,7 @@ const rejectSale = (id) => {
                         <div class="mt-5 border-t border-slate-200 pt-4">
                             <div v-if="showAddForm" class="mb-4 rounded-xl border border-blue-100 bg-blue-50/50 p-4">
                                 <form class="grid grid-cols-1 gap-3 md:grid-cols-4" @submit.prevent="submitAdd">
+                                    <BackdateDateInput id="dbr-entry-date" v-model="addForm.entry_date" :error="addErrors.entry_date" />
                                     <input v-model="addForm.nama_barang" required placeholder="Nama barang" class="rounded-lg border-gray-200 text-sm" />
                                     <input v-model="addForm.bagian" required placeholder="Bagian" class="rounded-lg border-gray-200 text-sm" />
                                     <input v-model="addForm.nama_ruangan" placeholder="Nama ruangan" class="rounded-lg border-gray-200 text-sm" />
@@ -402,4 +414,3 @@ const rejectSale = (id) => {
         </div>
     </AuthenticatedLayout>
 </template>
-

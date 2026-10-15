@@ -4,11 +4,13 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import BackdateDateInput from '@/Components/BackdateDateInput.vue';
 import { Head, useForm, Link, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
 
 const user = usePage().props.auth.user;
+const today = usePage().props.today;
 const props = defineProps({
     users: {
         type: Array,
@@ -60,16 +62,10 @@ const departemenOptions = [
     'Lainnya'
 ];
 
-// Computed property for current date and time
-const currentDateTime = computed(() => {
-    const now = new Date();
-    const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    return now.toLocaleDateString('id-ID', options);
-});
-
 const form = useForm({
     nama_karyawan: user.name || '',
     npp_karyawan: user.npp || '',
+    entry_date: today,
     bagian: '',
     area_temuan: '',
     ruangan_temuan: '',
@@ -142,16 +138,12 @@ const submit = () => {
                                     />
                                 </div>
 
-                                <div class="md:col-span-2">
-                                    <InputLabel for="current_datetime" value="Tanggal & Waktu" />
-                                    <input
-                                        id="current_datetime"
-                                        type="text"
-                                        :value="currentDateTime"
-                                        readonly
-                                        class="mt-2 block w-full rounded-xl border-0 bg-gray-50/90 px-3 py-2 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0 focus:shadow-[0_0_0_3px_rgba(0,82,155,0.2)]"
-                                    />
-                                </div>
+                                <BackdateDateInput
+                                    id="go-boost-entry-date"
+                                    class="md:col-span-2"
+                                    v-model="form.entry_date"
+                                    :error="form.errors.entry_date"
+                                />
 
                                 <div class="md:col-span-2">
                                     <InputLabel for="bagian" value="Bagian *" />

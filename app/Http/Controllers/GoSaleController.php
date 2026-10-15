@@ -7,6 +7,7 @@ use App\Models\GoSale;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -212,6 +213,7 @@ class GoSaleController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'go_action_id' => 'required|exists:go_actions,id',
             'dbr_index' => 'required|integer|min:0',
             'mode' => 'required|in:request',
@@ -248,6 +250,7 @@ class GoSaleController extends Controller
 
         GoSale::create([
             'go_action_id' => $goAction->id,
+            'created_at' => Carbon::parse($validated['entry_date'])->setTimeFrom(now()),
             'dbr_index' => $validated['dbr_index'],
             'dbr_snapshot' => $item,
             'seller_user_id' => $goAction->user_id, // creator

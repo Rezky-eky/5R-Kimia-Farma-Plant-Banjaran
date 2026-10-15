@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
     // GO BOOST Routes
     Route::get('/go-boost', [GoBoostController::class, 'index'])->name('go_boost.index');
     Route::get('/go-boost/create', [GoBoostController::class, 'create'])->name('go_boost.create');
+    Route::get('/go-boost/{id}', [GoBoostController::class, 'show'])->name('go_boost.show');
     Route::post('/go-boost', [GoBoostController::class, 'store'])->name('go_boost.store');
     
     // GO CARE Routes

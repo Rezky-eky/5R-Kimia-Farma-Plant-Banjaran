@@ -4,7 +4,8 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-import { Head, useForm, Link } from '@inertiajs/vue3';
+import BackdateDateInput from '@/Components/BackdateDateInput.vue';
+import { Head, useForm, Link, usePage } from '@inertiajs/vue3';
 import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
 import { watch, computed } from 'vue';
 
@@ -21,8 +22,10 @@ const initialSolverId = props.defaultSolverId
     || props.assignmentSolverMap[initialBagian]?.solver_user_id
     || props.solverLeaders[0]?.id
     || '';
+const today = usePage().props.today;
 
 const form = useForm({
+    entry_date: today,
     bagian: initialBagian,
     solver_user_id: initialSolverId,
     area_temuan: '',
@@ -127,6 +130,12 @@ const submit = () => {
 
                 <section class="rounded-2xl bg-white p-6 shadow ring-1 ring-gray-100">
                     <div class="grid md:grid-cols-2 gap-4">
+                        <BackdateDateInput
+                            id="go-check-entry-date"
+                            class="md:col-span-2"
+                            v-model="form.entry_date"
+                            :error="form.errors.entry_date"
+                        />
                         <div class="md:col-span-2">
                             <label class="inline-flex items-center gap-2 cursor-pointer p-3 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors w-full md:w-auto">
                                 <input type="checkbox" v-model="form.is_no_finding" class="rounded border-gray-300 text-[#00529b] shadow-sm focus:ring-[#00529b]">
