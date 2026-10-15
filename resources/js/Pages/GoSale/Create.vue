@@ -3,7 +3,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import BackdateDateInput from '@/Components/BackdateDateInput.vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     goAction: { type: Object, required: true },
@@ -14,7 +15,9 @@ const props = defineProps({
     departemenOptions: { type: Array, default: () => [] },
 });
 
+const page = usePage();
 const form = useForm({
+    entry_date: page.props.today,
     go_action_id: props.goAction.id,
     dbr_index: props.dbrIndex,
     mode: props.mode,
@@ -66,6 +69,7 @@ const isMention = () => props.mode === 'mention';
                             />
                             <InputError class="mt-2" :message="form.errors.agreed_price" />
                         </div>
+                        <BackdateDateInput id="go-sale-entry-date" v-model="form.entry_date" :error="form.errors.entry_date" />
                         <div class="flex gap-4">
                             <PrimaryButton type="submit" :disabled="form.processing">Ajukan Beli</PrimaryButton>
                             <Link :href="route('go_sale.index')" class="inline-flex items-center rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300">
@@ -76,6 +80,7 @@ const isMention = () => props.mode === 'mention';
 
                     <!-- Mode: Jual ke User (nama + bagian) -->
                     <form v-else @submit.prevent="form.post(route('go_sale.store'))" class="space-y-6">
+                        <BackdateDateInput id="go-sale-entry-date-mention" v-model="form.entry_date" :error="form.errors.entry_date" />
                         <div>
                             <InputLabel for="buyer_user_id" value="Jual ke User (Nama - Bagian) *" />
                             <select

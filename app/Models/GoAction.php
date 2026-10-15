@@ -21,6 +21,7 @@ class GoAction extends Model
      * Jika ini tidak ada atau tidak lengkap, data tidak akan tersimpan.
      */
     protected $fillable = [
+        'created_at',
         'user_id',
         'npp_karyawan',
         'nama_karyawan',

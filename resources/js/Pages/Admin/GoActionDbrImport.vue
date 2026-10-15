@@ -6,7 +6,8 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import MonthlyExcelExport from '@/Components/MonthlyExcelExport.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import BackdateDateInput from '@/Components/BackdateDateInput.vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     users: {
@@ -20,6 +21,7 @@ const props = defineProps({
 });
 
 const form = useForm({
+    entry_date: usePage().props.today,
     user_id: '',
     bagian: '',
     nama_ruangan: '',
@@ -91,6 +93,7 @@ const onFile = (e) => {
                     </p>
 
                     <form class="space-y-6" @submit.prevent="submit">
+                        <BackdateDateInput id="dbr-import-entry-date" v-model="form.entry_date" :error="form.errors.entry_date" />
                         <div>
                             <InputLabel for="user_id" value="User / pemilik laporan *" />
                             <select

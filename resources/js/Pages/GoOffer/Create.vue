@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import BackdateDateInput from '@/Components/BackdateDateInput.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -17,6 +18,7 @@ const props = defineProps({
 const page = usePage();
 
 const form = useForm({
+    entry_date: page.props.today,
     go_action_id: Number(props.goAction.id),
     dbr_index: Number(props.dbrIndex),
     mode: props.mode || 'request',
@@ -66,6 +68,7 @@ const isMention = () => props.mode === 'mention';
                         <p class="text-sm text-gray-700">
                             Anda mengajukan <strong>permintaan mutasi</strong> barang ini ke bagian Anda. Pemilik entri DBR (yang menginput data) akan menerima notifikasi dan dapat menyetujui atau menolak.
                         </p>
+                        <BackdateDateInput id="go-offer-entry-date" v-model="form.entry_date" :error="form.errors.entry_date" />
                         <div class="flex gap-4">
                             <PrimaryButton type="submit" :disabled="form.processing">Kirim permintaan mutasi</PrimaryButton>
                             <Link :href="route('go_offer.index')" class="inline-flex items-center rounded-xl bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300">
@@ -76,6 +79,7 @@ const isMention = () => props.mode === 'mention';
 
                     <!-- Mode: Tawarkan ke User (nama + bagian) -->
                     <form v-else @submit.prevent="form.post(route('go_offer.store'))" class="space-y-6">
+                        <BackdateDateInput id="go-offer-entry-date-mention" v-model="form.entry_date" :error="form.errors.entry_date" />
                         <div>
                             <InputLabel for="target_user_id" value="Tawarkan ke User (Nama - Bagian) *" />
                             <select

@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Services\GoCheckTeamService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -180,6 +181,7 @@ class GoCheckController extends Controller
         $assignedBagian = $user->assignedBagianList();
 
         $validated = $request->validate([
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'bagian' => 'required|string|max:255',
             'solver_user_id' => 'required|exists:users,id',
             'area_temuan' => 'required|string|max:255',
@@ -220,8 +222,10 @@ class GoCheckController extends Controller
         try {
             $nextId = ((int) DB::table('go_checks')->max('id')) + 1;
             $isNoFinding = $validated['is_no_finding'] ?? false;
+            $entryDate = Carbon::parse($validated['entry_date'])->setTimeFrom(now());
             $goCheck = GoCheck::create([
                 'id' => $nextId,
+                'created_at' => $entryDate,
                 'finder_user_id' => $user->id,
                 'solver_user_id' => $solver->id,
                 'bagian' => $storeBagian,
@@ -233,7 +237,7 @@ class GoCheckController extends Controller
                 'status' => $isNoFinding ? 'CLOSED' : 'OPEN',
                 'status_perbaikan' => $isNoFinding ? 'selesai' : 'pending',
                 'keterangan_perbaikan' => $isNoFinding ? 'Tidak perlu perbaikan (Tidak ada temuan)' : null,
-                'tanggal_perbaikan' => $isNoFinding ? now() : null,
+                'tanggal_perbaikan' => $isNoFinding ? $entryDate : null,
             ]);
         } finally {
             DB::selectOne('SELECT RELEASE_LOCK(?) AS released', [$lockName]);
@@ -294,6 +298,7 @@ class GoCheckController extends Controller
         // Catatan: finder yang juga menjadi PIC (solver) area tersebut diizinkan submit perbaikan.
 
         $validated = $request->validate([
+            'entry_date' => 'required|date_format:Y-m-d|before_or_equal:today',
             'keterangan_perbaikan' => 'required|string',
             'foto_perbaikan' => 'nullable|array|max:5',
             'foto_perbaikan.*' => 'file|max:10240',
@@ -306,12 +311,15 @@ class GoCheckController extends Controller
             }
         }
 
+        $entryDate = Carbon::parse($validated['entry_date'])->setTimeFrom(now());
+
         $goCheck->update(array_merge([
+            'created_at' => $entryDate,
             'solver_user_id' => $user->id,
             'keterangan_perbaikan' => $validated['keterangan_perbaikan'],
             'foto_perbaikan' => ! empty($photoPaths) ? json_encode($photoPaths) : null,
             'status_perbaikan' => 'selesai',
-            'tanggal_perbaikan' => now(),
+            'tanggal_perbaikan' => $entryDate,
             'status' => 'CLOSED',
         ], GoCheck::pendingApprovalAttributes()));
 

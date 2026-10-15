@@ -1,10 +1,11 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
+import BackdateDateInput from '@/Components/BackdateDateInput.vue';
 import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
 import BackToDashboard from '@/Components/BackToDashboard.vue';
 import PhotoGallery from '@/Components/PhotoGallery.vue';
@@ -15,6 +16,7 @@ const props = defineProps({
         required: true,
     },
 });
+const today = usePage().props.today;
 
 const markAllAsRead = () => {
     router.post(route('notifications.markAllAsRead'), {}, {
@@ -74,6 +76,7 @@ const togglePerbaikanForm = (goBoostId) => {
     if (!showPerbaikanForm.value[goBoostId]) {
         showPerbaikanForm.value[goBoostId] = true;
         perbaikanForms.value[goBoostId] = useForm({
+            entry_date: today,
             keterangan_perbaikan: '',
             foto_perbaikan: [],
         });
@@ -102,6 +105,7 @@ const toggleGoCheckPerbaikanForm = (goCheckId) => {
     if (!showPerbaikanForm.value[key]) {
         showPerbaikanForm.value[key] = true;
         perbaikanForms.value[key] = useForm({
+            entry_date: today,
             keterangan_perbaikan: '',
             foto_perbaikan: [],
         });
@@ -321,6 +325,13 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                     </h4>
                                                     
                                                     <form @submit.prevent="submitPerbaikan(notification.go_boost.id)">
+                                                        <BackdateDateInput
+                                                            :id="`go-boost-repair-date-${notification.go_boost.id}`"
+                                                            class="mb-4"
+                                                            v-model="perbaikanForms[notification.go_boost.id].entry_date"
+                                                            :error="perbaikanForms[notification.go_boost.id]?.errors?.entry_date"
+                                                            label="Tanggal perbaikan *"
+                                                        />
                                                         <div class="mb-4">
                                                             <InputLabel for="keterangan_perbaikan" value="Keterangan Perbaikan *" />
                                                             <textarea
@@ -369,7 +380,7 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                             </div>
                                             
                                             <Link
-                                                :href="route('go_boost.index')"
+                                                :href="route('go_boost.show', notification.go_boost.id)"
                                                 class="mt-2 inline-block text-xs font-medium text-blue-600 hover:text-blue-800"
                                             >
                                                 Lihat Detail GO BOOST →
@@ -430,6 +441,13 @@ const submitGoCheckPerbaikan = (goCheckId) => {
                                                     </h4>
                                                     
                                                     <form @submit.prevent="submitGoCheckPerbaikan(notification.go_check.id)">
+                                                        <BackdateDateInput
+                                                            :id="`go-check-repair-date-${notification.go_check.id}`"
+                                                            class="mb-4"
+                                                            v-model="perbaikanForms['go_check_' + notification.go_check.id].entry_date"
+                                                            :error="perbaikanForms['go_check_' + notification.go_check.id]?.errors?.entry_date"
+                                                            label="Tanggal perbaikan *"
+                                                        />
                                                         <div class="mb-4">
                                                             <InputLabel for="keterangan_perbaikan_gocheck" value="Keterangan Perbaikan *" />
                                                             <textarea
