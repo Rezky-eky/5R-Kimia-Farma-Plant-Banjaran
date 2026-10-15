@@ -8,6 +8,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    personalStats: {
+        type: Object,
+        default: () => ({}),
+    },
     trendData: {
         type: Array,
         default: () => [],
@@ -101,6 +105,16 @@ const activityBars = computed(() => [
     { label: 'Go Check', value: props.stats.total_go_checks ?? 0, color: '#c3c9a8' },
 ]);
 const activityMax = computed(() => Math.max(1, ...activityBars.value.map((item) => item.value)));
+const personalActivityBars = computed(() => [
+    { label: 'GO ACTION', value: props.personalStats.go_actions ?? 0, color: '#a9c8c0' },
+    { label: 'Barang Ringkas', value: props.personalStats.ringkas_items ?? 0, color: '#b9c7dc' },
+    { label: 'GO BOOST', value: props.personalStats.go_boosts ?? 0, color: '#d8b7c8' },
+    { label: 'GO CARE', value: props.personalStats.go_cares ?? 0, color: '#e8c7a8' },
+    { label: 'GO OFFER', value: props.personalStats.go_offers ?? 0, color: '#c2d2e1' },
+    { label: 'GO SALE', value: props.personalStats.go_sales ?? 0, color: '#efd0b6' },
+    { label: 'GO CHECK', value: props.personalStats.go_checks ?? 0, color: '#c3c9a8' },
+]);
+const personalActivityMax = computed(() => Math.max(1, ...personalActivityBars.value.map((item) => item.value)));
 
 const gridLines = computed(() => {
     const lines = 4;
@@ -318,6 +332,33 @@ const gridLines = computed(() => {
                     </Link>
                 </div>
 
+                <section v-if="isAdmin" class="soft-panel rounded-xl p-5">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">Aktivitas 5R Saya</h3>
+                            <p class="mt-1 text-sm text-slate-500">Ringkasan kegiatan 5R yang dilakukan oleh akun Anda.</p>
+                        </div>
+                        <div class="rounded-lg bg-[#edf3f0] px-4 py-2 text-right">
+                            <span class="block text-xs font-medium uppercase tracking-wide text-[#5f827f]">Total aktivitas</span>
+                            <strong class="text-2xl text-slate-800">{{ personalStats.total_records ?? 0 }}</strong>
+                        </div>
+                    </div>
+                    <div class="mt-6 grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+                        <div v-for="item in personalActivityBars" :key="`personal-bar-${item.label}`">
+                            <div class="mb-1.5 flex justify-between text-xs font-medium text-slate-600">
+                                <span>{{ item.label }}</span>
+                                <span>{{ item.value }}</span>
+                            </div>
+                            <div class="h-3 overflow-hidden rounded-full bg-slate-100">
+                                <div
+                                    class="h-full rounded-full transition-all duration-700 ease-out"
+                                    :style="{ width: `${item.value ? Math.max(4, (item.value / personalActivityMax) * 100) : 0}%`, backgroundColor: item.color }"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
                     <section class="soft-panel rounded-xl p-5">
                         <div class="flex items-start justify-between gap-4">
@@ -511,4 +552,3 @@ const gridLines = computed(() => {
         </div>
     </AuthenticatedLayout>
 </template>
-

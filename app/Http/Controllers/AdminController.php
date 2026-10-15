@@ -30,6 +30,8 @@ class AdminController extends Controller
      */
     public function dashboard()
     {
+        $user = Auth::user();
+
         // Statistik total laporan
         $totalGoActions = GoAction::count();
         $totalGoBoosts = GoBoost::count();
@@ -46,6 +48,23 @@ class AdminController extends Controller
         $departementStats = $this->getDepartementStats();
         $leaderboards = $this->getLeaderboards();
 
+        $personalGoActions = GoAction::where('user_id', $user->id)->count();
+        $personalRingkasItems = GoAction::where('user_id', $user->id)
+            ->whereNotNull('list_barang_ringkas')
+            ->get()
+            ->sum(fn ($goAction) => is_array($goAction->list_barang_ringkas) ? count($goAction->list_barang_ringkas) : 0);
+        $personalGoBoosts = GoBoost::where('user_id', $user->id)->count();
+        $personalGoCares = GoCare::where('user_id', $user->id)->count();
+        $personalGoOffers = GoOffer::where('requested_by_user_id', $user->id)->count();
+        $personalGoSales = GoSale::where(function ($query) use ($user) {
+            $query->where('seller_user_id', $user->id)
+                ->orWhere('buyer_user_id', $user->id);
+        })->count();
+        $personalGoChecks = GoCheck::where(function ($query) use ($user) {
+            $query->where('finder_user_id', $user->id)
+                ->orWhere('solver_user_id', $user->id);
+        })->count();
+
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
                 'total_go_actions' => $totalGoActions,
@@ -60,7 +79,18 @@ class AdminController extends Controller
             'trendData' => $trendData,
             'departementStats' => $departementStats,
             'leaderboards' => $leaderboards,
-            'isAdmin' => Auth::user()->isAdmin(),
+            'isAdmin' => $user->isAdmin(),
+            'personalStats' => [
+                'total_records' => $personalGoActions + $personalGoBoosts + $personalGoCares
+                    + $personalGoOffers + $personalGoSales + $personalGoChecks,
+                'go_actions' => $personalGoActions,
+                'ringkas_items' => $personalRingkasItems,
+                'go_boosts' => $personalGoBoosts,
+                'go_cares' => $personalGoCares,
+                'go_offers' => $personalGoOffers,
+                'go_sales' => $personalGoSales,
+                'go_checks' => $personalGoChecks,
+            ],
         ]);
     }
 
@@ -1038,76 +1068,20 @@ class AdminController extends Controller
 
     public function goActionWeeklyRealization(Request $request)
     {
-        $month = $request->input('month', now()->format('Y-m')); // YYYY-MM
-        [$year, $m] = array_pad(explode('-', (string) $month), 2, null);
-        $year = (int) $year;
-        $m = (int) $m;
-
-        $start = \Carbon\Carbon::create($year, $m, 1, 0, 0, 0);
-        $end = $start->copy()->endOfMonth();
-
-        $bagianList = GoAction::query()
-            ->whereBetween('created_at', [$start, $end])
-            ->distinct()
-            ->pluck('bagian')
-            ->filter()
-            ->sort()
-            ->values();
-
-        $weekRanges = [
-            'week1' => [$start->copy()->day(1)->startOfDay(), $start->copy()->day(7)->endOfDay()],
-            'week2' => [$start->copy()->day(8)->startOfDay(), $start->copy()->day(14)->endOfDay()],
-            'week3' => [$start->copy()->day(15)->startOfDay(), $start->copy()->day(21)->endOfDay()],
-            'week4' => [$start->copy()->day(22)->startOfDay(), $end->copy()->endOfDay()],
-        ];
-
-        $rows = $bagianList->map(function ($bagian, $idx) use ($weekRanges) {
-            $has = function (\Carbon\Carbon $from, \Carbon\Carbon $to) use ($bagian) {
-                return GoAction::where('bagian', $bagian)
-                    ->whereBetween('created_at', [$from, $to])
-                    ->exists();
-            };
-
-            return [
-                'no' => $idx + 1,
-                'bagian' => $bagian,
-                'week1' => $has(...$weekRanges['week1']),
-                'week2' => $has(...$weekRanges['week2']),
-                'week3' => $has(...$weekRanges['week3']),
-                'week4' => $has(...$weekRanges['week4']),
-            ];
-        });
+        [$startMonth, $endMonth, $start, $end] = $this->goActionWeeklyRealizationPeriod($request);
+        $rows = $this->goActionWeeklyRealizationRows($start, $end);
 
         return Inertia::render('Admin/GoActionWeeklyRealization', [
-            'month' => $month,
+            'startMonth' => $startMonth,
+            'endMonth' => $endMonth,
             'rows' => $rows,
         ]);
     }
 
     public function goActionWeeklyRealizationExport(Request $request)
     {
-        $month = $request->input('month', now()->format('Y-m'));
-        [$year, $m] = array_pad(explode('-', (string) $month), 2, null);
-        $year = (int) $year;
-        $m = (int) $m;
-
-        $start = \Carbon\Carbon::create($year, $m, 1, 0, 0, 0);
-        $end = $start->copy()->endOfMonth();
-
-        $bagianList = GoAction::query()
-            ->whereBetween('created_at', [$start, $end])
-            ->distinct()
-            ->pluck('bagian')
-            ->filter()
-            ->sort()
-            ->values();
-
-        $weekRanges = [
-            'Week 1' => [$start->copy()->day(1)->startOfDay(), $start->copy()->day(7)->endOfDay()],
-            'Week 2' => [$start->copy()->day(8)->startOfDay(), $start->copy()->day(14)->endOfDay()],
-            'Week 3' => [$start->copy()->day(15)->startOfDay(), $start->copy()->day(21)->endOfDay()],
-            'Week 4' => [$start->copy()->day(22)->startOfDay(), $end->copy()->endOfDay()],
-        ];
+        [$startMonth, $endMonth, $start, $end] = $this->goActionWeeklyRealizationPeriod($request);
+        $rows = $this->goActionWeeklyRealizationRows($start, $end);
 
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -1116,33 +1090,98 @@ class AdminController extends Controller
         $sheet->fromArray([$headers], null, 'A1');
 
         $rowIndex = 2;
-        foreach ($bagianList as $i => $bagian) {
-            $has = function (\Carbon\Carbon $from, \Carbon\Carbon $to) use ($bagian) {
-                return GoAction::where('bagian', $bagian)
-                    ->whereBetween('created_at', [$from, $to])
-                    ->exists();
-            };
-
+        foreach ($rows as $row) {
             $sheet->fromArray([[
-                $i + 1,
-                $bagian,
-                $has(...$weekRanges['Week 1']) ? '✓' : '',
-                $has(...$weekRanges['Week 2']) ? '✓' : '',
-                $has(...$weekRanges['Week 3']) ? '✓' : '',
-                $has(...$weekRanges['Week 4']) ? '✓' : '',
+                $row['no'],
+                $row['bagian'],
+                $row['week1'] ? '✓' : '',
+                $row['week2'] ? '✓' : '',
+                $row['week3'] ? '✓' : '',
+                $row['week4'] ? '✓' : '',
             ]], null, 'A' . $rowIndex);
 
             $rowIndex++;
         }
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'realisasi-go-action-' . $month . '.xlsx';
+        $filename = 'realisasi-go-action-' . $startMonth . '-sampai-' . $endMonth . '.xlsx';
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
         }, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
+    }
+
+    private function goActionWeeklyRealizationPeriod(Request $request): array
+    {
+        $validated = $request->validate([
+            'month' => ['nullable', 'date_format:Y-m'],
+            'start_month' => ['nullable', 'date_format:Y-m'],
+            'end_month' => ['nullable', 'date_format:Y-m'],
+        ]);
+
+        $defaultMonth = $validated['month'] ?? now()->format('Y-m');
+        $startMonth = $validated['start_month'] ?? $defaultMonth;
+        $endMonth = $validated['end_month'] ?? $defaultMonth;
+
+        $start = \Carbon\Carbon::createFromFormat('Y-m-d', $startMonth . '-01')->startOfMonth();
+        $end = \Carbon\Carbon::createFromFormat('Y-m-d', $endMonth . '-01')->endOfMonth();
+
+        if ($start->greaterThan($end)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'end_month' => 'Bulan akhir harus sama dengan atau setelah bulan mulai.',
+            ]);
+        }
+
+        return [$startMonth, $endMonth, $start, $end];
+    }
+
+    private function goActionWeeklyRealizationRows(\Carbon\Carbon $start, \Carbon\Carbon $end): array
+    {
+        $bagianList = collect($this->departemenKimiaFarmaOptions())
+            ->merge(GoAction::query()->whereNotNull('bagian')->distinct()->pluck('bagian'))
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        $weekRanges = [
+            'week1' => [],
+            'week2' => [],
+            'week3' => [],
+            'week4' => [],
+        ];
+
+        for ($month = $start->copy()->startOfMonth(); $month->lte($end); $month->addMonth()) {
+            $lastDay = $month->daysInMonth;
+            $weekRanges['week1'][] = [$month->copy()->startOfDay(), $month->copy()->day(7)->endOfDay()];
+            $weekRanges['week2'][] = [$month->copy()->day(8)->startOfDay(), $month->copy()->day(14)->endOfDay()];
+            $weekRanges['week3'][] = [$month->copy()->day(15)->startOfDay(), $month->copy()->day(21)->endOfDay()];
+            $weekRanges['week4'][] = [$month->copy()->day(22)->startOfDay(), $month->copy()->day($lastDay)->endOfDay()];
+        }
+
+        return $bagianList->values()->map(function ($bagian, $idx) use ($weekRanges) {
+            $has = function (array $ranges) use ($bagian) {
+                return GoAction::query()
+                    ->where('bagian', $bagian)
+                    ->where(function ($query) use ($ranges) {
+                        foreach ($ranges as [$from, $to]) {
+                            $query->orWhereBetween('created_at', [$from, $to]);
+                        }
+                    })
+                    ->exists();
+            };
+
+            return [
+                'no' => $idx + 1,
+                'bagian' => $bagian,
+                'week1' => $has($weekRanges['week1']),
+                'week2' => $has($weekRanges['week2']),
+                'week3' => $has($weekRanges['week3']),
+                'week4' => $has($weekRanges['week4']),
+            ];
+        })->all();
     }
 
     /**
