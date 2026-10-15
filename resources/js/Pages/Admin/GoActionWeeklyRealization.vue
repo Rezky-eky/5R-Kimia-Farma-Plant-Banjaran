@@ -5,23 +5,34 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
 const props = defineProps({
-    month: { type: String, required: true },
+    startMonth: { type: String, required: true },
+    endMonth: { type: String, required: true },
     rows: { type: Array, default: () => [] },
 });
 
-const selectedMonth = ref(props.month);
+const selectedStartMonth = ref(props.startMonth);
+const selectedEndMonth = ref(props.endMonth);
 
-// Sync selectedMonth ketika props berubah setelah navigasi
-watch(() => props.month, (newMonth) => {
-    selectedMonth.value = newMonth;
+watch(() => props.startMonth, (value) => { selectedStartMonth.value = value; });
+watch(() => props.endMonth, (value) => { selectedEndMonth.value = value; });
+watch(selectedStartMonth, (value) => {
+    if (selectedEndMonth.value < value) {
+        selectedEndMonth.value = value;
+    }
 });
 
 const apply = () => {
-    router.get(route('admin.go_action.weekly_realization'), { month: selectedMonth.value }, { preserveState: true, preserveScroll: true });
+    router.get(route('admin.go_action.weekly_realization'), {
+        start_month: selectedStartMonth.value,
+        end_month: selectedEndMonth.value,
+    }, { preserveState: true, preserveScroll: true });
 };
 
 const exportExcel = () => {
-    const url = route('admin.go_action.weekly_realization_export', { month: selectedMonth.value });
+    const url = route('admin.go_action.weekly_realization_export', {
+        start_month: selectedStartMonth.value,
+        end_month: selectedEndMonth.value,
+    });
     window.location.href = url;
 };
 </script>
@@ -51,16 +62,23 @@ const exportExcel = () => {
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="mb-6 rounded-2xl bg-white/90 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60">
                     <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                        <div class="w-full md:w-72">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Bulan
-                            </label>
+                        <label class="w-full text-sm font-medium text-gray-700 md:w-72">
+                            Dari bulan
                             <input
                                 type="month"
-                                v-model="selectedMonth"
-                                class="block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0"
+                                v-model="selectedStartMonth"
+                                class="mt-2 block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0"
                             />
-                        </div>
+                        </label>
+                        <label class="w-full text-sm font-medium text-gray-700 md:w-72">
+                            Sampai bulan
+                            <input
+                                type="month"
+                                v-model="selectedEndMonth"
+                                :min="selectedStartMonth"
+                                class="mt-2 block w-full rounded-xl border-0 bg-white/95 px-4 py-2.5 text-sm text-gray-700 shadow-inner shadow-gray-200/60 transition focus:ring-2 focus:ring-[#00529b] focus:ring-offset-0"
+                            />
+                        </label>
                         <div class="flex gap-2">
                             <button
                                 type="button"
@@ -78,6 +96,9 @@ const exportExcel = () => {
                             </button>
                         </div>
                     </div>
+                    <p class="mt-3 text-xs text-gray-500">
+                        Tanda centang menunjukkan terdapat aksi pada minggu tersebut di dalam rentang bulan yang dipilih.
+                    </p>
                 </div>
 
                 <div class="rounded-2xl bg-white/90 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/60 overflow-hidden">
@@ -123,4 +144,3 @@ const exportExcel = () => {
         </div>
     </AuthenticatedLayout>
 </template>
-
