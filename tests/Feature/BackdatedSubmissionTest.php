@@ -29,12 +29,12 @@ class BackdatedSubmissionTest extends TestCase
                 'nama_karyawan' => $user->name,
                 'bagian' => 'Bagian Produksi',
                 'penjelasan_aksi' => 'Aksi yang dilakukan',
-                'latitude' => '-6.9',
-                'longitude' => '107.5',
             ])
             ->assertRedirect(route('dashboard'));
 
         $this->assertSame($entryDate, GoAction::query()->sole()->created_at->toDateString());
+        $this->assertNull(GoAction::query()->sole()->latitude);
+        $this->assertNull(GoAction::query()->sole()->longitude);
     }
 
     public function test_go_boost_is_saved_under_the_selected_date(): void
@@ -203,8 +203,6 @@ class BackdatedSubmissionTest extends TestCase
                 'nama_karyawan' => $user->name,
                 'bagian' => 'Bagian Produksi',
                 'penjelasan_aksi' => 'Aksi yang dilakukan',
-                'latitude' => '-6.9',
-                'longitude' => '107.5',
             ])
             ->assertSessionHasErrors('entry_date');
 

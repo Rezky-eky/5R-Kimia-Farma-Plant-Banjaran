@@ -227,13 +227,6 @@ const toggleDetail = (id) => {
                                                         </p>
                                                     </div>
 
-                                                    <div v-if="goAction.latitude && goAction.longitude">
-                                                        <h4 class="text-sm font-semibold text-gray-900 mb-2">Koordinat GPS</h4>
-                                                        <p class="text-sm text-gray-700 bg-white p-3 rounded-lg">
-                                                            Lat: {{ goAction.latitude }}, Long: {{ goAction.longitude }}
-                                                        </p>
-                                                    </div>
-
                                                     <div v-if="goAction.list_barang_ringkas && goAction.list_barang_ringkas.length > 0">
                                                         <h4 class="text-sm font-semibold text-gray-900 mb-2">Daftar Barang Ringkas ({{ goAction.list_barang_ringkas.length }})</h4>
                                                         <div class="bg-white p-3 rounded-lg space-y-2 max-h-64 overflow-y-auto">
@@ -282,4 +275,3 @@ const toggleDetail = (id) => {
         </div>
     </AuthenticatedLayout>
 </template>
-

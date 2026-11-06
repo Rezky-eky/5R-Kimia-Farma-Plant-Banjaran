@@ -31,8 +31,6 @@ class StoreGoActionRequest extends FormRequest
             'penjelasan_aksi' => ['nullable', 'string'],
             'foto_kegiatan' => ['nullable', 'array', 'max:5'],
             'foto_kegiatan.*' => ['file', 'max:10240'],
-            'latitude' => ['required', 'numeric'],
-            'longitude' => ['required', 'numeric'],
             'list_barang_ringkas' => ['nullable', 'array'],
             'list_barang_ringkas.*.nama_barang' => ['required_with:list_barang_ringkas', 'string', 'max:255'],
             'list_barang_ringkas.*.jumlah' => ['required_with:list_barang_ringkas', 'integer', 'min:1'],
@@ -103,10 +101,6 @@ class StoreGoActionRequest extends FormRequest
             'foto_kegiatan.max' => 'Maksimal 5 file yang dapat diunggah.',
             'foto_kegiatan.*.file' => 'Setiap lampiran harus berupa file yang valid.',
             'foto_kegiatan.*.max' => 'Ukuran setiap file maksimal 10MB.',
-            'latitude.required' => 'Lokasi GPS wajib diambil. Pastikan izin lokasi diaktifkan.',
-            'latitude.numeric' => 'Koordinat latitude tidak valid.',
-            'longitude.required' => 'Lokasi GPS wajib diambil. Pastikan izin lokasi diaktifkan.',
-            'longitude.numeric' => 'Koordinat longitude tidak valid.',
             'list_barang_ringkas.array' => 'Daftar Barang Ringkas harus berupa array.',
             'list_barang_ringkas.*.nama_barang.required_with' => 'Nama barang wajib diisi.',
             'list_barang_ringkas.*.nama_barang.string' => 'Nama barang harus berupa teks.',
@@ -128,4 +122,3 @@ class StoreGoActionRequest extends FormRequest
         ];
     }
 }
-
