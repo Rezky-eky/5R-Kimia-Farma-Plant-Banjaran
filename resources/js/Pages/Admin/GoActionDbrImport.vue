@@ -26,8 +26,6 @@ const form = useForm({
     bagian: '',
     nama_ruangan: '',
     penjelasan_aksi: '',
-    latitude: '-6.950000',
-    longitude: '107.570000',
     excel_file: null,
 });
 
@@ -144,19 +142,6 @@ const onFile = (e) => {
                                 placeholder="Opsional (mis. impor massal dari Excel)"
                             />
                             <InputError class="mt-2" :message="form.errors.penjelasan_aksi" />
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div>
-                                <InputLabel for="latitude" value="Latitude *" />
-                                <TextInput id="latitude" v-model="form.latitude" type="text" class="mt-2 block w-full" required />
-                                <InputError class="mt-2" :message="form.errors.latitude" />
-                            </div>
-                            <div>
-                                <InputLabel for="longitude" value="Longitude *" />
-                                <TextInput id="longitude" v-model="form.longitude" type="text" class="mt-2 block w-full" required />
-                                <InputError class="mt-2" :message="form.errors.longitude" />
-                            </div>
                         </div>
 
                         <div>

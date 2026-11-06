@@ -65,7 +65,7 @@ class FiveRMonthlyReportService
 
         $headers = [
             'No', 'ID', 'Tanggal', 'Nama Karyawan', 'NPP', 'Bagian', 'Nama Ruangan', 'Kode Ruangan',
-            'Penjelasan Aksi', 'Status Audit', 'Skor Audit', 'Auditor', 'Latitude', 'Longitude',
+            'Penjelasan Aksi', 'Status Audit', 'Skor Audit', 'Auditor',
         ];
 
         $rows = [];
@@ -84,8 +84,6 @@ class FiveRMonthlyReportService
                 $item->audit ? 'Audited' : 'Belum',
                 $item->audit?->score,
                 $item->audit?->auditor?->name,
-                $item->latitude,
-                $item->longitude,
             ];
         }
 

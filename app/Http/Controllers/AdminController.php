@@ -684,8 +684,6 @@ class AdminController extends Controller
                 'penjelasan_aksi' => $goAction->penjelasan_aksi,
                 'fotos' => $fotos,
                 'list_barang_ringkas' => $goAction->list_barang_ringkas,
-                'latitude' => $goAction->latitude,
-                'longitude' => $goAction->longitude,
                 'created_at' => $goAction->created_at->format('d/m/Y H:i'),
                 'audit' => $goAction->audit ? [
                     'score' => $goAction->audit->score,
@@ -1150,8 +1148,6 @@ class AdminController extends Controller
                 'penjelasan_aksi' => $goAction->penjelasan_aksi,
                 'fotos' => $fotos,
                 'list_barang_ringkas' => $goAction->list_barang_ringkas,
-                'latitude' => $goAction->latitude,
-                'longitude' => $goAction->longitude,
                 'created_at' => $goAction->created_at->format('d/m/Y H:i'),
                 'user_name' => $goAction->user->name ?? 'N/A',
                 'status' => $goAction->audit ? 'Audited' : '-',
@@ -1747,8 +1743,6 @@ class AdminController extends Controller
             'bagian' => 'required|string|max:255',
             'nama_ruangan' => 'nullable|string|max:255',
             'penjelasan_aksi' => 'nullable|string',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
             'excel_file' => 'required|file|mimes:xlsx,xls,xlsm,csv,txt|max:10240',
         ]);
 
@@ -1780,8 +1774,6 @@ class AdminController extends Controller
             'kode_ruangan' => null,
             'penjelasan_aksi' => $validated['penjelasan_aksi'] ?? null,
             'foto_kegiatan_path' => null,
-            'latitude' => $validated['latitude'],
-            'longitude' => $validated['longitude'],
             'list_barang_ringkas' => $result['items'],
         ]);
 

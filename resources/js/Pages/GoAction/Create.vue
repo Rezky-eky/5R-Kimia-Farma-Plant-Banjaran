@@ -6,7 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import BackdateDateInput from '@/Components/BackdateDateInput.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import PhotoImagePicker from '@/Components/PhotoImagePicker.vue';
 
 const user = usePage().props.auth.user;
@@ -67,8 +67,6 @@ const form = useForm({
     nama_ruangan: '',
     penjelasan_aksi: '',
     foto_kegiatan: [],
-    latitude: null,
-    longitude: null,
     list_barang_ringkas: [],
 });
 
@@ -77,55 +75,6 @@ const showDaftarBarangRingkas = ref(true);
 
 const maxFiles = 5;
 const errorMessage = ref('');
-const locationError = ref('');
-const isGettingLocation = ref(false);
-
-// Fungsi untuk mendapatkan lokasi GPS
-const getLocation = () => {
-    if (!navigator.geolocation) {
-        locationError.value = 'Geolocation tidak didukung oleh browser Anda.';
-        return;
-    }
-
-    isGettingLocation.value = true;
-    locationError.value = '';
-
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            form.latitude = position.coords.latitude;
-            form.longitude = position.coords.longitude;
-            isGettingLocation.value = false;
-            locationError.value = '';
-        },
-        (error) => {
-            isGettingLocation.value = false;
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    locationError.value = 'Izin lokasi ditolak. Silakan aktifkan izin lokasi di pengaturan browser.';
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    locationError.value = 'Informasi lokasi tidak tersedia.';
-                    break;
-                case error.TIMEOUT:
-                    locationError.value = 'Waktu permintaan lokasi habis.';
-                    break;
-                default:
-                    locationError.value = 'Terjadi kesalahan saat mengambil lokasi.';
-                    break;
-            }
-        },
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
-    );
-};
-
-// Ambil lokasi otomatis saat komponen dimuat
-onMounted(() => {
-    getLocation();
-});
 
 // Fungsi untuk menambahkan item DBR baru
 const addBarang = () => {
@@ -147,15 +96,6 @@ const removeBarang = (index) => {
 };
 
 const submit = () => {
-    if (!form.latitude || !form.longitude) {
-        getLocation();
-    }
-
-    if (!form.latitude || !form.longitude) {
-        locationError.value = 'Lokasi GPS wajib diambil. Silakan refresh halaman atau aktifkan izin lokasi.';
-        return;
-    }
-
     // Validasi fleksibilitas: minimal salah satu (Foto/Aksi ATAU DBR)
     const hasFotoAksi = form.foto_kegiatan.length > 0 || form.penjelasan_aksi.trim() !== '';
     const hasDBR = form.list_barang_ringkas.length > 0;
@@ -173,9 +113,6 @@ const submit = () => {
             form.reset();
             form.list_barang_ringkas = [];
             errorMessage.value = '';
-            locationError.value = '';
-            // Ambil lokasi lagi setelah reset
-            getLocation();
         },
     });
 };
@@ -206,11 +143,11 @@ const submit = () => {
                     </div>
 
                     <form @submit.prevent="submit" enctype="multipart/form-data" class="space-y-8 px-8 py-8">
-                        <!-- Card 1: Identitas & Lokasi (Wajib) -->
+                        <!-- Card 1: Identitas -->
                         <section class="rounded-2xl bg-white/95 p-6 shadow-xl shadow-gray-300/50 ring-1 ring-gray-100/40">
                             <div class="mb-6">
-                                <h4 class="text-lg font-semibold text-gray-900">Identitas & Lokasi</h4>
-                                <p class="text-sm text-gray-500">Data identitas dan lokasi wajib diisi untuk keperluan traceability.</p>
+                                <h4 class="text-lg font-semibold text-gray-900">Identitas GO ACTION</h4>
+                                <p class="text-sm text-gray-500">Data identitas dan area aksi untuk keperluan traceability.</p>
                             </div>
 
                             <!-- Identitas Karyawan & Waktu -->
@@ -247,7 +184,7 @@ const submit = () => {
 
                             </div>
 
-                            <!-- Lokasi -->
+                            <!-- Area aksi -->
                             <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                     <InputLabel for="bagian" value="Bagian *" />
@@ -282,59 +219,6 @@ const submit = () => {
                                 </div>
                             </div>
 
-                            <!-- Konfirmasi Geotagging -->
-                            <div class="mb-4 flex items-center justify-between">
-                                <div>
-                                    <h5 class="text-sm font-semibold text-gray-700">Konfirmasi Geotagging</h5>
-                                    <p class="text-xs text-gray-500">Koordinat lokasi diambil otomatis untuk keperluan traceability.</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    @click="getLocation"
-                                    :disabled="isGettingLocation"
-                                    class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-lg transition duration-200 focus:outline-none focus:ring-2 focus:ring-[#00529b] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                        style="background-color: #00529b; box-shadow: 0 10px 15px -3px rgba(0, 82, 155, 0.3);"
-                                >
-                                    <svg v-if="isGettingLocation" class="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                    </svg>
-                                    <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    </svg>
-                                    <span>{{ isGettingLocation ? 'Mengambil...' : 'Refresh Lokasi' }}</span>
-                                </button>
-                            </div>
-
-                            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                <div>
-                                    <InputLabel for="latitude" value="Latitude" />
-                                    <TextInput
-                                        id="latitude"
-                                        type="text"
-                                        class="mt-2 block w-full bg-gray-50/60"
-                                        v-model="form.latitude"
-                                        readonly
-                                    />
-                                    <InputError class="mt-2" :message="form.errors.latitude" />
-                                </div>
-
-                                <div>
-                                    <InputLabel for="longitude" value="Longitude" />
-                                    <TextInput
-                                        id="longitude"
-                                        type="text"
-                                        class="mt-2 block w-full bg-gray-50/60"
-                                        v-model="form.longitude"
-                                        readonly
-                                    />
-                                    <InputError class="mt-2" :message="form.errors.longitude" />
-                                </div>
-                            </div>
-
-                            <div v-if="locationError" class="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                                {{ locationError }}
-                            </div>
                         </section>
 
                         <!-- Card 2: Foto & Detail Aksi (Opsional) -->

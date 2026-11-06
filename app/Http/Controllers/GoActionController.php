@@ -39,8 +39,6 @@ class GoActionController extends Controller
             'penjelasan_aksi' => 'nullable|string',
             'foto_kegiatan' => 'nullable|array|max:5',
             'foto_kegiatan.*' => 'file|max:10240',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
             'list_barang_ringkas' => 'nullable|array',
             'list_barang_ringkas.*.nama_barang' => 'required_with:list_barang_ringkas|string|max:255',
             'list_barang_ringkas.*.jumlah' => 'required_with:list_barang_ringkas|integer|min:1',
@@ -86,8 +84,6 @@ class GoActionController extends Controller
             'kode_ruangan' => null,
             'penjelasan_aksi' => $validatedData['penjelasan_aksi'] ?? null,
             'foto_kegiatan_path' => !empty($fotoPaths) ? json_encode($fotoPaths) : null,
-            'latitude' => $validatedData['latitude'],
-            'longitude' => $validatedData['longitude'],
             'list_barang_ringkas' => $validatedData['list_barang_ringkas'] ?? null,
         ]);
 
